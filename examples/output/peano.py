@@ -1,0 +1,5 @@
+add(s(s(s('zero'))), 'zero', s(s(s('zero'))))
+add(s(s('zero')), s('zero'), s(s(s('zero'))))
+add(s('zero'), s(s('zero')), s(s(s('zero'))))
+add('zero', s(s(s('zero'))), s(s(s('zero'))))
+multiply(s('zero'), s(s('zero')), s(s('zero'))) & add(s(s('zero')), s(s(s('zero'))), s(s(s(s(s('zero')))))) & factorial(s(s(s(s(s('zero'))))), s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s(s('zero')))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))

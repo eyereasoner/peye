@@ -1,0 +1,3 @@
+posterior('paper_jam', 18000, 37200, 0.4838709677419355)
+posterior('network_loss', 14250, 37200, 0.38306451612903225)
+posterior('power_loss', 4950, 37200, 0.13306451612903225)

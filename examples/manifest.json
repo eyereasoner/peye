@@ -1,0 +1,339 @@
+[
+  {
+    "name": "socrates",
+    "description": "Class membership derived through a subclass rule",
+    "trusted": []
+  },
+  {
+    "name": "deep-taxonomy-10",
+    "description": "A ten-level subclass chain with branches that lead nowhere",
+    "trusted": []
+  },
+  {
+    "name": "deep-taxonomy-100",
+    "description": "The same taxonomy benchmark at a hundred levels",
+    "trusted": []
+  },
+  {
+    "name": "deep-taxonomy-1000",
+    "description": "The same taxonomy benchmark at a thousand levels",
+    "trusted": []
+  },
+  {
+    "name": "deep-taxonomy-10000",
+    "description": "The same taxonomy benchmark at ten thousand levels",
+    "trusted": []
+  },
+  {
+    "name": "backward",
+    "description": "Backward definitions inside forward bodies",
+    "trusted": []
+  },
+  {
+    "name": "fibonacci",
+    "description": "Fast doubling for exact Fibonacci numbers, and the golden ratio",
+    "trusted": []
+  },
+  {
+    "name": "graphs",
+    "description": "Base data, negation and collection",
+    "trusted": [
+      "absent",
+      "collected"
+    ]
+  },
+  {
+    "name": "terms",
+    "description": "Quoted graphs, triple terms and residual witnesses",
+    "trusted": []
+  },
+  {
+    "name": "reachability",
+    "description": "Finite closure in a graph containing a cycle",
+    "trusted": []
+  },
+  {
+    "name": "shortest-path",
+    "description": "Weighted paths and stratified minimum selection",
+    "trusted": [
+      "absent"
+    ]
+  },
+  {
+    "name": "path-discovery",
+    "description": "Full airport network with configurable endpoints and maximum stopovers",
+    "trusted": []
+  },
+  {
+    "name": "lists",
+    "description": "Concatenation, mapping and summation",
+    "trusted": []
+  },
+  {
+    "name": "strings",
+    "description": "Text construction and Unicode inspection",
+    "trusted": []
+  },
+  {
+    "name": "inventory",
+    "description": "An invoice from collected line totals",
+    "trusted": [
+      "collected"
+    ]
+  },
+  {
+    "name": "permissions",
+    "description": "Role permissions with exclusions",
+    "trusted": [
+      "absent"
+    ]
+  },
+  {
+    "name": "witnesses",
+    "description": "Structured witnesses and shared multi-head conclusions",
+    "trusted": []
+  },
+  {
+    "name": "state-transitions",
+    "description": "Account balances from an ordered event log",
+    "trusted": []
+  },
+  {
+    "name": "integrity",
+    "description": "A provable integrity violation",
+    "halt_code": 65,
+    "trusted": []
+  },
+  {
+    "name": "alternatives",
+    "description": "Alternative routes, disjunction and once",
+    "trusted": []
+  },
+  {
+    "name": "unification",
+    "description": "Open lists and repeated-variable constraints",
+    "trusted": []
+  },
+  {
+    "name": "schema-inference",
+    "description": "Subclasses, subproperties, domains and ranges",
+    "trusted": []
+  },
+  {
+    "name": "family-cousins",
+    "description": "Generations, family branches and cousin relationships",
+    "trusted": []
+  },
+  {
+    "name": "dog-license",
+    "description": "A licensing threshold based on collected dog counts",
+    "trusted": [
+      "collected"
+    ]
+  },
+  {
+    "name": "hanoi",
+    "description": "Recursive construction of a disk-move sequence",
+    "trusted": []
+  },
+  {
+    "name": "collatz",
+    "description": "Parity-based recursive trajectories over a range of starts",
+    "trusted": []
+  },
+  {
+    "name": "flat-map",
+    "description": "Predicate-based mapping with multiple or missing values",
+    "trusted": [
+      "collected"
+    ]
+  },
+  {
+    "name": "paraconsistent-animals",
+    "description": "Local summaries of conflicting observations",
+    "trusted": [
+      "absent"
+    ]
+  },
+  {
+    "name": "scoped-audit",
+    "description": "Presence and absence within separate quoted graphs",
+    "trusted": [
+      "absent"
+    ]
+  },
+  {
+    "name": "control-system",
+    "description": "Feedforward and nonlinear feedback commands for two actuators",
+    "trusted": []
+  },
+  {
+    "name": "lldm",
+    "description": "Leg length discrepancy measured from radiograph landmarks, with an alarm and its reason",
+    "trusted": []
+  },
+  {
+    "name": "variable-predicates",
+    "description": "Relations selected and renamed through data bindings",
+    "trusted": []
+  },
+  {
+    "name": "good-cobbler",
+    "description": "Trade-specific classification from structured descriptions",
+    "trusted": []
+  },
+  {
+    "name": "peano",
+    "description": "Symbolic arithmetic, relational addition and a chained derivation",
+    "trusted": []
+  },
+  {
+    "name": "expression-eval",
+    "description": "Recursive expression graphs used in forward inference",
+    "trusted": []
+  },
+  {
+    "name": "complex",
+    "description": "Complex arithmetic, exact over Gaussian integers and polar beyond them",
+    "trusted": []
+  },
+  {
+    "name": "polynomial",
+    "description": "Complex roots of polynomials up to degree 4 by Cardan and Lagrange",
+    "trusted": [
+      "collected"
+    ]
+  },
+  {
+    "name": "interval-relations",
+    "description": "All thirteen interval relations and endpoint completion",
+    "trusted": []
+  },
+  {
+    "name": "bayes-diagnosis",
+    "description": "Normalized probabilities for illustrative printer faults",
+    "trusted": [
+      "collected"
+    ]
+  },
+  {
+    "name": "policy-risk",
+    "description": "Ranked findings with explanations and suggested mitigations",
+    "trusted": [
+      "absent",
+      "collected"
+    ]
+  },
+  {
+    "name": "research-portal",
+    "description": "A hospital research portal combines ODRL/DPV policy decisions with Digital Omnibus device consent and breach plans",
+    "trusted": [
+      "collected"
+    ]
+  },
+  {
+    "name": "package-holiday",
+    "description": "Package holiday cancellations under the tour operator's ODRL terms and the 2015 and revised EU Package Travel Directive",
+    "trusted": []
+  },
+  {
+    "name": "queens",
+    "description": "Configurable N-queens search with diagonal constraints",
+    "trusted": []
+  },
+  {
+    "name": "age",
+    "description": "Calendar-year and elapsed-day age checks at an explicit reference date",
+    "trusted": []
+  },
+  {
+    "name": "ackermann",
+    "description": "The Ackermann function through the hyperoperation sequence, exactly",
+    "trusted": []
+  },
+  {
+    "name": "peasant",
+    "description": "Peasant multiplication and exponentiation by halving and doubling",
+    "trusted": []
+  },
+  {
+    "name": "sieve",
+    "description": "The sieve of Eratosthenes over an explicit list of integers",
+    "trusted": []
+  },
+  {
+    "name": "goldbach",
+    "description": "Goldbach splits of every power of two up to 2^25",
+    "trusted": [
+      "absent"
+    ]
+  },
+  {
+    "name": "kaprekar",
+    "description": "Every four-digit Kaprekar routine reaches 6174 within seven steps",
+    "trusted": [
+      "absent"
+    ]
+  },
+  {
+    "name": "easter",
+    "description": "Easter Sunday by the anonymous Gregorian algorithm, 2021 to 2050",
+    "trusted": []
+  },
+  {
+    "name": "turing",
+    "description": "A Turing machine interpreter running a binary incrementer",
+    "trusted": []
+  },
+  {
+    "name": "zebra",
+    "description": "The zebra puzzle solved by narrowing five partially known houses",
+    "trusted": []
+  },
+  {
+    "name": "aunt-agatha",
+    "description": "Who killed Aunt Agatha? A conclusion entailed by holding in every model of the premises",
+    "trusted": [
+      "collected"
+    ]
+  },
+  {
+    "name": "four-color",
+    "description": "Four-colouring the map of the European Union",
+    "trusted": [
+      "absent",
+      "collected"
+    ]
+  },
+  {
+    "name": "wolf-goat-cabbage",
+    "description": "The river crossing, with seven crossings shown to be minimal",
+    "trusted": [
+      "absent"
+    ]
+  },
+  {
+    "name": "monkey-bananas",
+    "description": "Every plan of up to five moves that gets the monkey the bananas",
+    "trusted": []
+  },
+  {
+    "name": "gps",
+    "description": "Goal-driven parallel sequences: routes to a goal state within duration, cost, belief and comfort limits",
+    "trusted": []
+  },
+  {
+    "name": "superdense-coding",
+    "description": "Superdense coding in discrete quantum theory, with interference as odd path counts",
+    "trusted": [
+      "collected"
+    ]
+  },
+  {
+    "name": "teleportation",
+    "description": "Quantum teleportation in discrete quantum theory, checked for every state and outcome",
+    "trusted": [
+      "collected"
+    ]
+  }
+]

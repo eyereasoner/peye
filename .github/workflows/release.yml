@@ -1,0 +1,39 @@
+name: Create GitHub Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # A release created by hand already, for instance while no runner
+          # was available, is left as it is.
+          if gh release view "${{ github.ref_name }}" > /dev/null 2>&1; then
+            echo "Release ${{ github.ref_name }} already exists."
+            exit 0
+          fi
+
+          # The notes go through a file: a message starting with -- would
+          # otherwise be read as an option.
+          git tag -l --format='%(contents)' "${{ github.ref_name }}" > "$RUNNER_TEMP/notes.txt"
+
+          gh release create "${{ github.ref_name }}" \
+            --verify-tag \
+            --title "${{ github.ref_name }}" \
+            --notes-file "$RUNNER_TEMP/notes.txt" \
+            --generate-notes

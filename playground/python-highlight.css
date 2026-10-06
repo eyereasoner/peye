@@ -1,0 +1,20 @@
+/* Python syntax colors, shared by the playground and the documentation pages.
+   The playground redefines these variables for its dark mode. */
+:root {
+  --syntax-comment: #6b7280;
+  --syntax-keyword: #7c3aed;
+  --syntax-variable: #0369a1;
+  --syntax-string: #047857;
+  --syntax-number: #be123c;
+  --syntax-predicate: #b45309;
+  --syntax-operator: #475569;
+  --syntax-punctuation: #64748b;
+}
+.tok-comment { color: var(--syntax-comment); font-style: italic; }
+.tok-keyword { color: var(--syntax-keyword); font-weight: 700; }
+.tok-variable { color: var(--syntax-variable); }
+.tok-string { color: var(--syntax-string); }
+.tok-number { color: var(--syntax-number); }
+.tok-predicate { color: var(--syntax-predicate); }
+.tok-operator { color: var(--syntax-operator); }
+.tok-punctuation { color: var(--syntax-punctuation); }

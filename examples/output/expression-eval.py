@@ -1,0 +1,1 @@
+result('example', 12)

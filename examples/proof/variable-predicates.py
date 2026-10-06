@@ -1,0 +1,15 @@
+t('alice', 'name', 'Alice')
+t('alice', 'age', 30)
+
+clause(1, fact(t('alice', 'source_name', 'Alice')))
+clause(2, fact(t('alice', 'source_age', 30)))
+clause(3, fact(maps('source_name', 'name')))
+clause(4, fact(maps('source_age', 'age')))
+clause(5, forward(t(S, Target, O), t(S, Source, O), maps(Source, Target)))
+
+step(t('alice', 'name', 'Alice'), rule(5), {'S': 'alice', 'Target': 'name', 'O': 'Alice', 'Source': 'source_name'}, [t('alice', 'source_name', 'Alice'), maps('source_name', 'name')])
+step(t('alice', 'source_name', 'Alice'), fact(1), {}, [])
+step(maps('source_name', 'name'), fact(3), {}, [])
+step(t('alice', 'age', 30), rule(5), {'S': 'alice', 'Target': 'age', 'O': 30, 'Source': 'source_age'}, [t('alice', 'source_age', 30), maps('source_age', 'age')])
+step(t('alice', 'source_age', 30), fact(2), {}, [])
+step(maps('source_age', 'age'), fact(4), {}, [])

@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>peye Playground</title>
+  <link rel="icon" href="https://josd.github.io/images/eye.png">
+  <link rel="stylesheet" href="python-highlight.css">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #f6f8fa;
+      --panel: #ffffff;
+      --panel-2: #f0f3f6;
+      --text: #17202a;
+      --muted: #64748b;
+      --border: #d8dee4;
+      --accent: #2563eb;
+      --accent-strong: #1d4ed8;
+      --danger: #b91c1c;
+      --ok: #047857;
+      --warn: #b45309;
+      --shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --selection: rgba(37, 99, 235, 0.22);
+      --error-line: rgba(185, 28, 28, 0.12);
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --panel: #111827;
+        --panel-2: #1f2937;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --border: #334155;
+        --accent: #60a5fa;
+        --accent-strong: #93c5fd;
+        --danger: #fca5a5;
+        --ok: #6ee7b7;
+        --warn: #fbbf24;
+        --shadow: 0 18px 42px rgba(0, 0, 0, 0.35);
+        --syntax-comment: #9ca3af;
+        --syntax-keyword: #c4b5fd;
+        --syntax-variable: #7dd3fc;
+        --syntax-string: #86efac;
+        --syntax-number: #fda4af;
+        --syntax-predicate: #fbbf24;
+        --syntax-operator: #cbd5e1;
+        --syntax-punctuation: #94a3b8;
+        --selection: rgba(96, 165, 250, 0.30);
+        --error-line: rgba(252, 165, 165, 0.14);
+      }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font: 15px/1.5 var(--sans);
+    }
+    header, main, footer { max-width: 1180px; margin: 0 auto; padding: 0 20px; }
+    header { display: flex; gap: 16px; align-items: center; padding-top: 28px; padding-bottom: 8px; }
+    header img { flex: none; width: 64px; height: 64px; border-radius: 50%; }
+    header h1 { margin: 0 0 2px; font-size: 26px; letter-spacing: -0.01em; }
+    header p { margin: 0; color: var(--muted); }
+    header p.tagline { color: var(--text); font-weight: 600; margin-bottom: 4px; }
+    header a, footer a { color: var(--accent); }
+    main { display: grid; gap: 16px; padding-top: 12px; padding-bottom: 24px; }
+    section {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      padding: 12px 14px;
+    }
+    .toolbar + .toolbar { border-top: 1px solid var(--border); }
+    .toolbar label { font-weight: 600; }
+    .toolbar label.option { font-weight: 400; display: inline-flex; gap: 6px; align-items: center; }
+    input[type="search"], input[type="text"], input[type="url"], input[type="number"], select {
+      font: inherit;
+      color: var(--text);
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      min-width: 0;
+    }
+    input[type="number"] { width: 9em; }
+    #example-search { width: 12em; }
+    #examples { flex: 1 1 22em; }
+    #goal { flex: 1 1 24em; font-family: var(--mono); }
+    #source-url { flex: 1 1 24em; }
+    button {
+      font: inherit;
+      color: var(--text);
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 12px;
+      cursor: pointer;
+    }
+    button:hover:not(:disabled) { border-color: var(--accent); }
+    button:disabled { opacity: 0.5; cursor: default; }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+    button.primary:hover:not(:disabled) { background: var(--accent-strong); border-color: var(--accent-strong); }
+    details > summary { cursor: pointer; padding: 12px 14px; font-weight: 600; }
+    details[open] > summary { border-bottom: 1px solid var(--border); }
+    .hint { color: var(--muted); font-size: 13px; font-weight: 400; }
+    .panel-body { padding: 0 14px 12px; }
+    .editor-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--border);
+    }
+    .editor {
+      position: relative;
+      height: 460px;
+      font: 14px/1.55 var(--mono);
+      background: var(--panel);
+    }
+    .line-numbers {
+      position: absolute;
+      inset: 0 auto 0 0;
+      width: 52px;
+      overflow: hidden;
+      background: var(--panel-2);
+      border-right: 1px solid var(--border);
+      color: var(--muted);
+      text-align: right;
+      user-select: none;
+    }
+    .line-numbers-inner { padding: 12px 8px 12px 0; }
+    .line-number { display: block; }
+    .line-number.error { color: var(--danger); font-weight: 700; }
+    .error-line-marker {
+      position: absolute;
+      left: 52px;
+      right: 0;
+      height: 1.55em;
+      background: var(--error-line);
+      pointer-events: none;
+      display: none;
+    }
+    #highlight, #source {
+      position: absolute;
+      inset: 0 0 0 52px;
+      margin: 0;
+      padding: 12px 14px;
+      border: 0;
+      font: inherit;
+      white-space: pre;
+      overflow: auto;
+      tab-size: 4;
+    }
+    #highlight { pointer-events: none; color: var(--text); }
+    #highlight code { font: inherit; }
+    #source {
+      resize: none;
+      color: transparent;
+      background: transparent;
+      caret-color: var(--text);
+      outline: none;
+    }
+    #source::selection { background: var(--selection); }
+    .output {
+      margin: 0;
+      padding: 12px 14px;
+      min-height: 140px;
+      max-height: 520px;
+      overflow: auto;
+      font: 14px/1.55 var(--mono);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .output.error { color: var(--danger); }
+    .output .tok-comment { font-style: normal; }
+    .status {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 14px;
+      border-top: 1px solid var(--border);
+      background: var(--panel-2);
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .status .error { color: var(--danger); }
+    .badge { font-weight: 600; }
+    .badge.ok { color: var(--ok); }
+    .badge.warn { color: var(--warn); }
+    .badge.bad { color: var(--danger); }
+    footer { padding-bottom: 28px; color: var(--muted); font-size: 13px; }
+    code { font-family: var(--mono); }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://josd.github.io/images/eye.png" alt="" width="64" height="64">
+    <div>
+      <h1>The peye Playground</h1>
+      <p class="tagline">peye — reasoning you can see.</p>
+      <p>Write facts and rules in Python, see what follows, and check the proof of every conclusion — in your browser.
+        <a href="https://eyereasoner.github.io/peye/GUIDE">What is peye?</a></p>
+    </div>
+  </header>
+  <main>
+    <section aria-labelledby="examples-heading">
+      <div class="toolbar" aria-label="Example loader">
+        <label id="examples-heading" for="example-search">Load an example</label>
+        <input id="example-search" type="search" placeholder="Filter examples" autocomplete="off">
+        <select id="examples" aria-label="Examples"></select>
+        <button id="load-example" type="button">Load example</button>
+      </div>
+    </section>
+
+    <section aria-labelledby="advanced-heading">
+      <details>
+        <summary id="advanced-heading">⚙ Advanced configuration</summary>
+        <div class="toolbar" aria-label="URL loader">
+          <label for="source-url">Load from URL</label>
+          <input id="source-url" type="url" placeholder="https://example.org/program.py">
+          <button id="load-url" type="button">Load from URL</button>
+        </div>
+        <div class="toolbar">
+          <label class="option"><input id="load-background" type="checkbox"> Load into background knowledge instead of replacing the editor</label>
+          <span id="background-status" class="hint">No background knowledge loaded.</span>
+          <button id="clear-background" type="button">Clear background</button>
+        </div>
+        <div class="toolbar" aria-label="Reasoning bounds">
+          <label for="max-depth">Max depth</label>
+          <input id="max-depth" type="number" min="1" step="1" value="1000000">
+          <label for="max-iterations">Max iterations per stratum</label>
+          <input id="max-iterations" type="number" min="1" step="1" value="1000">
+          <label for="max-inferences">Max inferences</label>
+          <input id="max-inferences" type="number" min="1" step="1" value="1000000">
+        </div>
+        <div class="panel-body">
+          <p class="hint">Background knowledge is prepended to the editor when the program runs. Exceeding a bound
+            stops the run with an error rather than returning a partial closure.</p>
+        </div>
+      </details>
+    </section>
+
+    <section aria-labelledby="editor-heading">
+      <div class="editor-label">
+        <strong id="editor-heading">Program</strong>
+        <span id="source-name" class="hint">custom program</span>
+      </div>
+      <div class="editor">
+        <div id="line-numbers" class="line-numbers" aria-hidden="true"><div class="line-numbers-inner"></div></div>
+        <div id="error-line-marker" class="error-line-marker" aria-hidden="true"></div>
+        <pre id="highlight" aria-hidden="true"><code></code></pre>
+        <textarea id="source" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="Editable peye program"></textarea>
+      </div>
+      <div class="toolbar" aria-label="Run options">
+        <label for="goal">Goal</label>
+        <input id="goal" type="text" placeholder="optional, e.g. ancestor('alice', Who)" aria-label="Goal to ask after forward reasoning">
+        <label class="option"><input id="proof" type="checkbox"> Show proof</label>
+        <label class="option"><input id="check" type="checkbox" checked> Check proof (C1–C7)</label>
+        <label class="option"><input id="strict" type="checkbox"> Strict</label>
+        <label class="option"><input id="stats" type="checkbox"> Stats</label>
+      </div>
+      <div class="toolbar" aria-label="Actions">
+        <button id="run" type="button" class="primary" title="Ctrl+Enter">Run reasoning</button>
+        <button id="stop" type="button" disabled>Stop</button>
+        <button id="copy-source" type="button">Copy source</button>
+        <button id="copy-output" type="button">Copy output</button>
+        <button id="share" type="button">Copy share link</button>
+        <span class="hint">Ctrl+Enter runs. A goal here replaces the program's own <code>query(...)</code> questions.</span>
+      </div>
+    </section>
+
+    <section aria-labelledby="output-heading">
+      <div class="editor-label">
+        <strong id="output-heading">Output</strong>
+        <span id="elapsed" class="hint">Idle.</span>
+      </div>
+      <pre id="output" class="output">(no output yet)</pre>
+      <div class="status">
+        <span id="status">Ready.</span>
+        <span id="version">peye</span>
+      </div>
+      <div class="panel-body">
+        <p class="hint">peye runs in this page as Python, through <a href="https://pyodide.org/">Pyodide</a>; the first run
+          waits a few seconds while Python starts. Serve the checkout over HTTP to use the playground — for example
+          <code>python3 -m http.server</code> — then open <code>/playground/</code>, or use the hosted copy at
+          <a href="https://eyereasoner.github.io/peye/playground/">eyereasoner.github.io/peye/playground</a>. Browsers do not run
+          workers or load examples from <code>file://</code>.</p>
+      </div>
+    </section>
+  </main>
+  <footer>
+    Powered by <a href="https://github.com/eyereasoner/peye">peye</a>, a dependency-free Python rule language
+    with forward and backward reasoning and checkable proofs.
+  </footer>
+
+  <script type="module">
+    import { colorize, escapeHtml } from './python-highlight.js';
+
+    const FALLBACK_SOURCE = `# Facts and rules are Python. forward(Head, *Body) materializes
+# conclusions; backward(Head, *Body) is evaluated when called.
+from peye import *
+
+fact(parent('alice', 'bob'))
+fact(parent('bob', 'carol'))
+
+forward(ancestor(X, Y), parent(X, Y))
+forward(ancestor(X, Z), ancestor(X, Y), parent(Y, Z))
+
+# query(Goal) asks a question and publishes each answer.
+query(ancestor('alice', Who))
+`;
+    const HIGHLIGHT_LIMIT = 200000;
+
+    const $ = (selector) => document.querySelector(selector);
+    const source = $('#source');
+    const goal = $('#goal');
+    const highlight = $('#highlight');
+    const lineNumbersInner = $('#line-numbers').firstElementChild;
+    const errorLineMarker = $('#error-line-marker');
+    const exampleSelect = $('#examples');
+    const exampleSearch = $('#example-search');
+    const output = $('#output');
+    const status = $('#status');
+    const elapsed = $('#elapsed');
+    const sourceName = $('#source-name');
+    const runButton = $('#run');
+    const stopButton = $('#stop');
+    const flags = { proof: $('#proof'), check: $('#check'), strict: $('#strict'), stats: $('#stats') };
+    const bounds = { max_depth: $('#max-depth'), max_iterations: $('#max-iterations'), max_inferences: $('#max-inferences') };
+
+    let examples = [];
+    let background = { text: '', name: '' };
+    let worker = null;
+    let ready = false;
+    let pending = null;
+    let renderToken = 0;
+    let errorLine = null;
+    // What the editor holds: an unedited example can be shared by name.
+    let reference = { kind: 'custom' };
+
+    source.addEventListener('input', () => { reference = { kind: 'custom' }; sourceName.textContent = 'custom program'; clearErrorLine(); render(); });
+    source.addEventListener('scroll', syncScroll);
+    source.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) { event.preventDefault(); runProgram(); }
+      if (event.key === 'Tab' && !event.shiftKey) {
+        event.preventDefault();
+        source.setRangeText('    ', source.selectionStart, source.selectionEnd, 'end');
+        source.dispatchEvent(new Event('input'));
+      }
+    });
+    goal.addEventListener('keydown', (event) => { if (event.key === 'Enter') runProgram(); });
+    exampleSearch.addEventListener('input', () => populateExamples(exampleSearch.value));
+    exampleSelect.addEventListener('dblclick', () => loadExample(exampleSelect.value));
+    $('#load-example').addEventListener('click', () => loadExample(exampleSelect.value));
+    $('#load-url').addEventListener('click', loadUrl);
+    $('#clear-background').addEventListener('click', () => { background = { text: '', name: '' }; updateBackground(); setStatus('Background knowledge cleared.'); });
+    runButton.addEventListener('click', runProgram);
+    stopButton.addEventListener('click', () => { if (worker) { stopWorker(); finish({ ok: false, error: 'Stopped.' }); } });
+    $('#copy-source').addEventListener('click', () => copyText(source.value, 'Source copied.'));
+    $('#copy-output').addEventListener('click', () => copyText(output.textContent, 'Output copied.'));
+    $('#share').addEventListener('click', copyShareLink);
+    // A strict check is a check, so asking for one asks for the other.
+    flags.strict.addEventListener('change', () => { if (flags.strict.checked) flags.check.checked = true; });
+    flags.check.addEventListener('change', () => { if (!flags.check.checked) flags.strict.checked = false; });
+
+    await loadManifest();
+    await restore();
+    loadVersion();
+    // A share link pasted into a tab that is already open only changes the
+    // hash, which does not reload the page, so restore from it explicitly.
+    // Copying a link uses replaceState, which does not fire this event.
+    window.addEventListener('hashchange', restore);
+
+    // ----- examples -------------------------------------------------------
+
+    async function loadManifest() {
+      try {
+        const response = await fetch(new URL('../examples/manifest.json', location.href), { cache: 'no-store' });
+        if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+        examples = (await response.json()).sort((a, b) => a.name.localeCompare(b.name));
+      } catch (error) {
+        examples = [];
+        setStatus(`Could not load the example list (${formatError(error)}). Serve the checkout over HTTP.`, true);
+      }
+      populateExamples('');
+    }
+
+    function populateExamples(query) {
+      const needle = query.trim().toLowerCase();
+      const shown = examples.filter((entry) => !needle ||
+        entry.name.includes(needle) || entry.description.toLowerCase().includes(needle));
+      const current = exampleSelect.value;
+      exampleSelect.replaceChildren(...shown.map((entry) => {
+        const option = document.createElement('option');
+        option.value = entry.name;
+        option.textContent = `${entry.name} — ${entry.description}`;
+        return option;
+      }));
+      if (shown.some((entry) => entry.name === current)) exampleSelect.value = current;
+    }
+
+    async function loadExample(name) {
+      if (!name) return;
+      try {
+        setStatus(`Loading examples/${name}.py…`);
+        const text = await fetchText(new URL(`../examples/${name}.py`, location.href));
+        setSource(text, `examples/${name}.py`, { kind: 'example', name });
+        exampleSelect.value = name;
+        setStatus(`Loaded examples/${name}.py.`);
+      } catch (error) {
+        setStatus(`Could not load examples/${name}.py: ${formatError(error)}`, true);
+      }
+    }
+
+    async function loadUrl() {
+      const url = $('#source-url').value.trim();
+      if (!url) return;
+      try {
+        setStatus(`Loading ${url}…`);
+        const text = await fetchText(url);
+        if ($('#load-background').checked) {
+          background = { text, name: url };
+          updateBackground();
+          setStatus(`Loaded background knowledge from ${url}.`);
+        } else {
+          setSource(text, url, { kind: 'url', url });
+          setStatus(`Loaded ${url}.`);
+        }
+      } catch (error) {
+        setStatus(`Could not load ${url}: ${formatError(error)}`, true);
+      }
+    }
+
+    async function fetchText(url) {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+      return response.text();
+    }
+
+    function updateBackground() {
+      $('#background-status').textContent = background.text
+        ? `Background loaded from ${background.name} (${background.text.length.toLocaleString()} characters).`
+        : 'No background knowledge loaded.';
+    }
+
+    function setSource(text, name, ref = { kind: 'custom' }) {
+      source.value = text;
+      sourceName.textContent = name;
+      reference = ref;
+      clearErrorLine();
+      render();
+    }
+
+    // ----- running --------------------------------------------------------
+
+    function runProgram() {
+      clearErrorLine();
+      output.classList.remove('error');
+      output.textContent = '';
+      elapsed.textContent = 'Running…';
+      runButton.disabled = true;
+      stopButton.disabled = false;
+
+      const limits = {};
+      for (const [option, input] of Object.entries(bounds)) {
+        const value = Number(input.value);
+        if (Number.isSafeInteger(value) && value > 0) limits[option] = value;
+      }
+      const request = {
+        source: background.text ? `${background.text}\n${source.value}` : source.value,
+        goal: goal.value.trim(),
+        proof: flags.proof.checked,
+        check: flags.check.checked || flags.strict.checked,
+        strict: flags.strict.checked,
+        limits,
+      };
+      const current = startWorker();
+      if (ready) { setStatus('Reasoning…'); current.postMessage(request); }
+      else { setStatus('Starting Python…'); pending = request; }
+    }
+
+    // One worker serves run after run: starting Python is the slow part.
+    function startWorker() {
+      if (worker) return worker;
+      const current = new Worker(new URL('worker.js', location.href));
+      worker = current;
+      ready = false;
+      current.onmessage = ({ data }) => {
+        if (worker !== current) return;
+        if (data?.type === 'ready') {
+          ready = true;
+          if (pending) { setStatus('Reasoning…'); current.postMessage(pending); pending = null; }
+          return;
+        }
+        if (data?.type === 'failed') {
+          stopWorker();
+          finish({ ok: false, error: `Python could not start: ${data.error}. Serve the checkout over HTTP and reload.` });
+          return;
+        }
+        finish(data);
+      };
+      current.onerror = (event) => {
+        event.preventDefault();
+        stopWorker();
+        finish({ ok: false, error: `${event.message || 'The reasoning worker failed to start'}. Serve the checkout over HTTP; file:// is not supported.` });
+      };
+      return current;
+    }
+
+    function stopWorker() {
+      worker?.terminate();
+      worker = null;
+      ready = false;
+      pending = null;
+    }
+
+    function finish(result) {
+      runButton.disabled = false;
+      stopButton.disabled = true;
+      const time = result.milliseconds;
+      elapsed.textContent = time == null ? '' : `${formatTime(time)}`;
+
+      if (!result.ok) {
+        output.classList.add('error');
+        output.textContent = result.error;
+        const line = editorLine(result);
+        if (line != null) markErrorLine(line);
+        setStatus(result.error === 'Stopped.' ? 'Stopped.' : 'The program could not run.', result.error !== 'Stopped.');
+        return;
+      }
+
+      let text = result.output || (flags.proof.checked ? '' : '# no conclusions\n');
+      if (result.report) text += `${text.endsWith('\n') || !text ? '' : '\n'}\n# C1-C7 check report\n${result.report.text}`;
+      if (flags.stats.checked) text += `\n# stats\n${JSON.stringify(result.stats)}\n`;
+      // Conclusions, proofs and check reports are all Python text, so they are
+      // colored as the editor is.
+      output.innerHTML = text.length > HIGHLIGHT_LIMIT ? escapeHtml(text) : colorize(text);
+
+      const parts = [`${result.answers} ${result.answers === 1 ? 'conclusion' : 'conclusions'}`];
+      if (result.haltCode === 65) parts.push('<span class="badge bad">integrity constraint violated (exit 65)</span>');
+      if (result.report) {
+        parts.push(!result.report.valid
+          ? '<span class="badge bad">proof rejected</span>'
+          : result.report.trusted
+            ? `<span class="badge warn">proof checked with ${result.report.trusted} obligation${result.report.trusted === 1 ? '' : 's'}</span>`
+            : '<span class="badge ok">proof checked</span>');
+      }
+      status.classList.remove('error');
+      status.innerHTML = parts.join(' · ');
+    }
+
+    // Errors name a line of the combined source; map it back into the editor.
+    function editorLine(result) {
+      if (result.line == null) return null;
+      const line = result.line - (background.text ? background.text.split('\n').length : 0);
+      return line >= 1 ? line : null;
+    }
+
+    // ----- sharing --------------------------------------------------------
+
+    async function copyShareLink() {
+      const params = new URLSearchParams();
+      if (reference.kind === 'example') params.set('example', reference.name);
+      else if (reference.kind === 'url') params.set('url', reference.url);
+      else params.set('source', await pack(source.value));
+      if (goal.value.trim()) params.set('goal', goal.value.trim());
+      for (const [name, input] of Object.entries(flags)) if (input.checked) params.set(name, '1');
+      if (!flags.check.checked) params.set('check', '0');
+      const link = `${location.origin}${location.pathname}#${params}`;
+      history.replaceState(null, '', `#${params}`);
+      await copyText(link, link.length > 8000
+        ? 'Share link copied — it is long, so some services may truncate it.'
+        : 'Share link copied.');
+    }
+
+    async function restore() {
+      const params = new URLSearchParams(location.hash.slice(1));
+      // A link describes its options completely: anything it leaves out is at
+      // its default, so opening one link after another does not carry over.
+      for (const [name, input] of Object.entries(flags)) {
+        input.checked = params.has(name) ? params.get(name) === '1' : name === 'check';
+      }
+      goal.value = params.get('goal') ?? '';
+      try {
+        if (params.has('source')) { setSource(await unpack(params.get('source')), 'shared program'); return; }
+        if (params.has('url')) { $('#source-url').value = params.get('url'); setSource(await fetchText(params.get('url')), params.get('url'), { kind: 'url', url: params.get('url') }); return; }
+        if (params.has('example')) { await loadExample(params.get('example')); return; }
+      } catch (error) {
+        setStatus(`Could not restore the shared program: ${formatError(error)}`, true);
+      }
+      if (examples.some((entry) => entry.name === 'socrates')) await loadExample('socrates');
+      else setSource(FALLBACK_SOURCE, 'starter program');
+    }
+
+    // Shared source is deflated when the browser can, then base64url-encoded.
+    async function pack(text) {
+      const bytes = new TextEncoder().encode(text);
+      if (typeof CompressionStream === 'function') {
+        const stream = new Blob([bytes]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+        return `z${toBase64Url(new Uint8Array(await new Response(stream).arrayBuffer()))}`;
+      }
+      return `p${toBase64Url(bytes)}`;
+    }
+
+    async function unpack(value) {
+      const bytes = fromBase64Url(value.slice(1));
+      if (value[0] === 'z') {
+        const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+        return new TextDecoder().decode(await new Response(stream).arrayBuffer());
+      }
+      return new TextDecoder().decode(bytes);
+    }
+
+    function toBase64Url(bytes) {
+      let binary = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
+      return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    }
+
+    function fromBase64Url(text) {
+      const binary = atob(text.replace(/-/g, '+').replace(/_/g, '/'));
+      return Uint8Array.from(binary, (ch) => ch.charCodeAt(0));
+    }
+
+    // ----- editor ---------------------------------------------------------
+
+    function render() {
+      const token = ++renderToken;
+      requestAnimationFrame(() => {
+        if (token !== renderToken) return;
+        const text = source.value;
+        highlight.firstElementChild.innerHTML =
+          (text.length > HIGHLIGHT_LIMIT ? escapeHtml(text) : colorize(text)) + (text.endsWith('\n') ? ' ' : '');
+        updateLineNumbers(text);
+        syncScroll();
+      });
+    }
+
+    function syncScroll() {
+      highlight.scrollTop = source.scrollTop;
+      highlight.scrollLeft = source.scrollLeft;
+      lineNumbersInner.style.transform = `translateY(${-source.scrollTop}px)`;
+      placeErrorMarker();
+    }
+
+    function updateLineNumbers(text = source.value) {
+      const count = Math.max(1, text.split('\n').length);
+      let html = '';
+      for (let line = 1; line <= count; line++) {
+        html += `<span class="line-number${line === errorLine ? ' error' : ''}">${line}</span>`;
+      }
+      lineNumbersInner.innerHTML = html;
+    }
+
+    function markErrorLine(line) {
+      errorLine = line;
+      updateLineNumbers();
+      const lineHeight = parseFloat(getComputedStyle(source).lineHeight) || 21;
+      source.scrollTop = Math.max(0, (line - 4) * lineHeight);
+      syncScroll();
+    }
+
+    function clearErrorLine() {
+      errorLine = null;
+      updateLineNumbers();
+      placeErrorMarker();
+    }
+
+    function placeErrorMarker() {
+      if (errorLine == null) { errorLineMarker.style.display = 'none'; return; }
+      const lineHeight = parseFloat(getComputedStyle(source).lineHeight) || 21;
+      const top = 12 + (errorLine - 1) * lineHeight - source.scrollTop;
+      errorLineMarker.style.display = 'block';
+      errorLineMarker.style.top = `${top}px`;
+    }
+
+
+    // ----- small helpers --------------------------------------------------
+
+    async function copyText(text, message) {
+      try { await navigator.clipboard.writeText(text); setStatus(message); }
+      catch { setStatus('Copying is not allowed here; select the text and copy it by hand.', true); }
+    }
+
+    async function loadVersion() {
+      try {
+        const init = await fetchText(new URL('../peye/__init__.py', location.href));
+        $('#version').textContent = `peye v${init.match(/__version__ = '([^']+)'/)[1]}`;
+      } catch { /* the version is decoration */ }
+    }
+
+    function setStatus(message, isError = false) {
+      status.textContent = message;
+      status.classList.toggle('error', isError);
+    }
+
+    function formatTime(ms) { return ms < 1000 ? `${ms.toFixed(0)} ms` : `${(ms / 1000).toFixed(2)} s`; }
+    function formatError(error) { return error?.message ?? String(error); }
+  </script>
+</body>
+</html>

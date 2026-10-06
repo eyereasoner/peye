@@ -1,0 +1,6 @@
+subclass('cat', 'animal')
+type('koko', 'animal')
+type('koko', 'mammal')
+triple('alice', 'related_to', 'bob')
+type('alice', 'person')
+type('bob', 'person')

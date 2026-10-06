@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "peye"
+version = "0.1.0"
+description = "peye — reasoning you can see. A dependency-free Python rule language with forward and backward reasoning and checkable proofs."
+readme = "README.md"
+license = { file = "LICENSE.md" }
+authors = [{ name = "Jos De Roo" }]
+requires-python = ">=3.9"
+dependencies = []
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.urls]
+Homepage = "https://github.com/eyereasoner/peye"
+Documentation = "https://eyereasoner.github.io/peye/"
+
+[project.scripts]
+peye = "peye.cli:entry"
+
+[tool.setuptools]
+packages = ["peye"]
