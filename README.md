@@ -3,7 +3,7 @@
 [![PyPI version](https://img.shields.io/badge/pypi-v0.1.12-blue.svg)](https://pypi.org/project/peye/)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.23191223-blue.svg)](https://doi.org/10.5281/zenodo.23191223)
 
-![EYE](https://josd.github.io/images/eye.png)
+<img src="https://josd.github.io/images/eye.png" alt="EYE" width="100">
 
 *peye — reasoning you can see.*
 

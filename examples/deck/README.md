@@ -1,6 +1,6 @@
 # Example decks
 
-![EYE](https://josd.github.io/images/eye.png)
+<img src="https://josd.github.io/images/eye.png" alt="EYE" width="100">
 
 *peye — reasoning you can see.*
 
