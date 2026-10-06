@@ -124,6 +124,9 @@ print(check_proof(socrates, result.proof)['valid'])    # True
   concludes, why, and what the proof checker confirms.
 - **[Playground](https://eyereasoner.github.io/peye/playground/)** — write a program in the browser, run it, check
   its proof, and share a link to exactly what you see.
+- **[Specification](https://eyereasoner.github.io/peye/SPEC)** — the language, the canonical text, the proof
+  format, the C1-C7 checking conditions and the check report, precisely, in the
+  style of an RFC.
 
 ## License
 
