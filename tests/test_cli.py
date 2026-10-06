@@ -44,10 +44,12 @@ class CommandLine(unittest.TestCase):
             self.assertEqual(result.stdout, f'peye v{__version__}\n')
 
     def test_the_version_agrees_everywhere_it_is_written(self):
-        with open(os.path.join(ROOT, 'pyproject.toml'), encoding='utf-8') as handle:
-            self.assertIn(f'version = "{__version__}"', handle.read())
-        with open(os.path.join(ROOT, 'README.md'), encoding='utf-8') as handle:
-            self.assertIn(f'img.shields.io/badge/pypi-v{__version__}-blue.svg', handle.read())
+        # pyproject.toml, the README badge and every "peye X.Y.Z" in the docs.
+        import sys
+        sys.path.insert(0, os.path.join(ROOT, 'tools'))
+        import version
+        self.assertEqual(version.current(), __version__)
+        self.assertEqual(version.check(), [])
 
     def test_lists_the_clauses_that_make_no_difference(self):
         source = ("from peye import *\np, q, s, z = preds('p q s z')\nX = vars('X')\n"

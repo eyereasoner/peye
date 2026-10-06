@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "peye"
 version = "0.1.8"
-description = "peye — reasoning you can see. A dependency-free Python rule language with forward and backward reasoning and checkable proofs."
+description = "A dependency-free Python rule language with forward and backward reasoning and checkable proofs."
 readme = "README.md"
 license = { file = "LICENSE.md" }
 authors = [{ name = "Jos De Roo" }]

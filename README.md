@@ -13,7 +13,7 @@ reasoning and checkable proofs.
 **[Playground](https://eyereasoner.github.io/peye/playground/)** ·
 **[Examples](https://eyereasoner.github.io/peye/examples/)** ·
 **[Example decks](https://eyereasoner.github.io/peye/examples/deck/)** ·
-**[Specification](SPEC.md)** ·
+**[Specification](https://eyereasoner.github.io/peye/SPEC)** ·
 **[Conformance suite](conformance/)** ([run it in your browser](https://eyereasoner.github.io/peye/playground/conformance.html)) ·
 **[PyPI](https://pypi.org/project/peye/)**
 
