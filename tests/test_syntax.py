@@ -21,6 +21,17 @@ CASES = [
 ]
 
 
+def ast_terms(text):
+    """read_terms without its direct reading of simple lines."""
+    from peye import reader
+    saved = reader._read_lines
+    reader._read_lines = lambda text: None
+    try:
+        return read_terms(text)
+    finally:
+        reader._read_lines = saved
+
+
 class Syntax(unittest.TestCase):
     def test_edge_cases_round_trip(self):
         for text in CASES:
@@ -56,6 +67,45 @@ class Syntax(unittest.TestCase):
             read_terms('x = 1\n')
         with self.assertRaises(PeyeError):
             read_terms('import os\n')
+
+    def test_the_direct_reading_agrees_with_ast_on_every_saved_document(self):
+        from peye.reader import _read_lines
+        for path in sorted(glob.glob(os.path.join(ROOT, 'examples', '*', '*.py'))):
+            with self.subTest(os.path.relpath(path, ROOT)), open(path, encoding='utf-8') as handle:
+                text = handle.read()
+                direct = _read_lines(text)
+                expected = ast_terms(text)
+                if direct is None:
+                    continue  # read with ast as a whole
+                self.assertEqual([(write(t), n) for t, n in direct], [(write(t), n) for t, n in expected])
+
+    def test_the_direct_reading_agrees_with_ast_or_steps_aside(self):
+        from peye.reader import _read_lines
+        cases = CASES + [
+            "f('a', \"b\", 1, -2, 0.5, -1.5e-07, 1e+22, [], [X, *Y], {'X': 1, 'Y': g(Z)})",
+            "struct('hello world', 1)", "struct('x')", "p()", "_", "f(_, _)", "-0", "-0.0",
+            "f('\U0001F600', 'ä')", "f(\"it's\")",
+            # Each of these needs the full reader, which accepts it or rejects it.
+            "f(a,)", "'a' 'b'", "f(x) # comment", "  f(x)", "f(\n x)", "007", "1_000",
+            "f(True)", "b'x'", "f(*X)", "[*X, 1]", "x; y", "struct()", "f(é)", "f(x=1)",
+            "f(X) g(Y)", "[1 2]", "{1}", "f('a\\nb')",
+            # Operators and literals, where precedence and the folding of a
+            # minus into a negative number must come out as Python reads them.
+            "-(2)", "-(2) ** 2", "-(2 ** 2)", "+1", "~-1", "-(-1)", "--1", "-+1", "(X)", "(1, 2)",
+            "[*X < 1]", "f(-(1))", "- 1", "1 -1", "2**2", "a<b", "1 < 2 < 3", "X == Y", "X @ Y",
+            "-X ** -Y ** 2", "(-X) ** 2", "~X ** 2", "X - Y - Z", "X - (Y - Z)", "X | Y & Z ^ W",
+            "(X | Y) & Z", "X << 1 + 2", "X * -Y", "-1.5", "-1e+22", "f(*[1])", "[*(X | Y)]",
+            "f(X)(Y)", "{X: Y < 1}", "(X)(1)", "((1))", "-((1))",
+        ]
+        for text in cases:
+            with self.subTest(text):
+                direct = _read_lines(text)
+                try:
+                    expected = [(write(t), n) for t, n in ast_terms(text)]
+                except PeyeError:
+                    expected = None
+                if direct is not None:
+                    self.assertEqual([(write(t), n) for t, n in direct], expected)
 
     def test_every_saved_document_reads_back_to_its_own_spelling(self):
         for path in sorted(glob.glob(os.path.join(ROOT, 'examples', '*', '*.py'))):

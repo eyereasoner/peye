@@ -63,6 +63,16 @@ query(path(0, W))
         source = program("range = preds('range')\nN = vars('N')\nfact(range(1, 3))\nquery(range(1, N))")
         self.assertEqual(run(source).answers, ['range(1, 3)'])
 
+    def test_clauses_know_the_line_that_states_them(self):
+        lines = ['from peye import *', '', 'def state(n):', '    fact(n_(n))', '']
+        lines += [f'fact(p({i}))' for i in range(2000)]
+        lines += ['state(1)', 'backward(', '    q(X),', '    p(X),', ')']
+        clauses = load_text('\n'.join(lines) + '\n').clauses
+        self.assertEqual([clause.line for clause in clauses[:2]], [6, 7])
+        self.assertEqual(clauses[1999].line, 2005)
+        self.assertEqual(clauses[2000].line, 4)  # stated inside state()
+        self.assertEqual(clauses[2001].line, 2007)
+
     def test_a_misspelled_statement_is_an_error(self):
         with self.assertRaisesRegex(PeyeError, r'line 3: fcat\(\.\.\.\) on its own states nothing'):
             program("fact(p(1))\nfcat(p(2))")

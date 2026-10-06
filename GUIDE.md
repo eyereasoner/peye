@@ -511,6 +511,7 @@ what your change did:
 python -m unittest discover -s tests                         # everything
 python -m unittest discover -s tests -p test_examples.py     # just the corpus
 python tools/update_examples.py                              # regenerate artifacts after an intended change
+python tools/timings.py --sort                               # load, run and prove times, slowest first
 ```
 
 Tests never overwrite the saved artifacts. When you intend a change, you

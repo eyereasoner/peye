@@ -36,45 +36,100 @@ class Builder:
     def __init__(self):
         self.sources = []
         self.anonymous = itertools.count()
+        # Where each clause was stated, as (code, offset) until finish().
+        self.places = []
 
     def add(self, kind, head, body, line=None, file=None):
+        place = None
         if line is None:
-            line, file = _caller()
+            place = _caller()
         anonymous = self.anonymous
-
-        def convert(value):
-            return _rename_anonymous(_term(value), anonymous)
-        head = convert(head)
-        body = [convert(goal) for goal in body]
+        head = _rename_anonymous(_term(head), anonymous)
+        body = [_rename_anonymous(_term(goal), anonymous) for goal in body]
         for goal in body:
             if type(goal) is not Var and type(goal) is not str and type(goal) is not Struct:
-                raise PeyeError(f'line {line}: a goal must be an atom, a compound term or a variable, '
-                                f'not {goal!r}')
+                raise PeyeError(f'line {_line_now()}: a goal must be an atom, a compound term or a '
+                                f'variable, not {goal!r}')
             if type(goal) is Struct and goal.name == '.' and len(goal.args) == 2:
-                raise PeyeError(f'line {line}: a list is not a goal')
+                raise PeyeError(f'line {_line_now()}: a list is not a goal')
         self.sources.append(Source(kind, head, body, line, file))
+        self.places.append(place)
+
+    def finish(self):
+        """The sources, with the line each was stated on."""
+        # By identity: hashing a code object hashes all of its bytecode.
+        lines = {}
+        for source, place in zip(self.sources, self.places):
+            if place is None:
+                continue
+            code, offset = place
+            table = lines.get(id(code))
+            if table is None:
+                table = lines[id(code)] = _line_table(code)
+            source.line = _line_at(table, offset)
+            source.file = code.co_filename
+        self.places = [None] * len(self.sources)
+        return self.sources
 
 
 def _rename_anonymous(term, counter):
-    """Every _ in a clause is a variable of its own."""
+    """Every _ in a clause is a variable of its own. A term without one is
+    returned as it is."""
     kind = type(term)
     if kind is Var:
         return Var(f'__anon{next(counter)}') if term.name == '_' else term
     if kind is not Struct:
         return term
-    args = tuple(_rename_anonymous(arg, counter) for arg in term.args)
-    return term if all(a is b for a, b in zip(args, term.args)) else Struct(term.name, args)
+    args = None
+    for index, arg in enumerate(term.args):
+        kind = type(arg)
+        if kind is Struct or (kind is Var and arg.name == '_'):
+            renamed = _rename_anonymous(arg, counter)
+            if renamed is not arg:
+                if args is None:
+                    args = list(term.args)
+                args[index] = renamed
+    return term if args is None else Struct(term.name, tuple(args))
 
 
-def _caller():
-    """The line and file of the program statement that states a clause."""
-    frame = sys._getframe(1)
+def _program_frame():
+    frame = sys._getframe(2)
     here = __file__
     while frame is not None and frame.f_code.co_filename == here:
         frame = frame.f_back
-    if frame is None:
-        return None, None
-    return frame.f_lineno, frame.f_code.co_filename
+    return frame
+
+
+def _caller():
+    """Where the program statement that states a clause is: its code and the
+    offset of the instruction running in it. Asking a frame for its line
+    number scans the code's line table from the start, which makes a long
+    program cost quadratic time, so lines are resolved once, by finish()."""
+    frame = _program_frame()
+    return None if frame is None else (frame.f_code, frame.f_lasti)
+
+
+def _line_now():
+    """The line of the program statement running now, for an error."""
+    frame = _program_frame()
+    return None if frame is None else frame.f_lineno
+
+
+def _line_table(code):
+    """(offsets, lines): the first instruction offset of each line run."""
+    if hasattr(code, 'co_lines'):
+        runs = [(start, line) for start, _, line in code.co_lines() if line is not None]
+    else:
+        import dis
+        runs = list(dis.findlinestarts(code))
+    return [start for start, _ in runs], [line for _, line in runs]
+
+
+def _line_at(table, offset):
+    import bisect
+    offsets, lines = table
+    index = bisect.bisect_right(offsets, offset) - 1
+    return lines[index] if index >= 0 else None
 
 
 def _builder():
@@ -267,7 +322,7 @@ def load(*paths):
                     _exec(handle.read(), os.fspath(path))
     finally:
         _builders.pop()
-    return Program(builder.sources)
+    return Program(builder.finish())
 
 
 def load_text(source, filename='<program>'):
@@ -278,7 +333,7 @@ def load_text(source, filename='<program>'):
         _exec(source, filename)
     finally:
         _builders.pop()
-    return Program(builder.sources)
+    return Program(builder.finish())
 
 
 _PROOF = re.compile(r'^step\(', re.MULTILINE)
@@ -324,10 +379,17 @@ def implicit_names(source, filename='<program>'):
     return names
 
 
-def _statements_nothing(module, names):
-    """A top-level call of an implicit predicate states nothing: a misspelled fact?"""
+def _statements_nothing(source, filename, names):
+    """A top-level call of an implicit predicate states nothing: a misspelled fact?
+
+    Parsing a long program into a syntax tree is slow, so only a program with
+    a line that starts with such a call is parsed to look closer.
+    """
     import ast
-    for statement in module.body:
+    suspects = {match.group(1) for match in _LEADING_CALL.finditer(source)}
+    if not any(isinstance(names.get(name), Pred) for name in suspects):
+        return
+    for statement in ast.parse(source, filename).body:
         value = statement.value if type(statement) is ast.Expr else None
         if (type(value) is ast.Call and type(value.func) is ast.Name and
                 isinstance(names.get(value.func.id), Pred)):
@@ -336,17 +398,18 @@ def _statements_nothing(module, names):
                             f'write fact({name}(...)) to state it, or check the spelling')
 
 
+_LEADING_CALL = re.compile(r'^([^\W\d]\w*)[ \t]*\(', re.MULTILINE)
+
+
 def _exec(source, filename):
-    import ast
     if _PROOF.search(source) and not STAR.search(source):
         raise PeyeError('this is a proof document, not a program: check it with --check-proof PROOF PROGRAM')
     try:
-        module = ast.parse(source, filename)
+        code = compile(source, filename, 'exec')
         names = implicit_names(source, filename)
-        code = compile(module, filename, 'exec')
     except SyntaxError as error:
         raise PeyeError(f'line {error.lineno}: {error.msg}') from None
-    _statements_nothing(module, names)
+    _statements_nothing(source, filename, names)
     namespace = {'__name__': '__peye__', '__file__': filename, '__builtins__': __builtins__}
     namespace.update(names)
     exec(code, namespace)
@@ -404,4 +467,4 @@ def build(statements):
         statements()
     finally:
         _builders.pop()
-    return Program(builder.sources)
+    return Program(builder.finish())
