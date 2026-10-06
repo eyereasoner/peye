@@ -46,6 +46,7 @@ disagree, that is a defect in one of them.
 16. [Conformance](#16-conformance)
 - [Appendix A. Document Grammar](#appendix-a-document-grammar)
 - [Appendix B. Example](#appendix-b-example)
+- [Appendix C. Implementation Notes](#appendix-c-implementation-notes)
 
 ---
 
@@ -780,3 +781,63 @@ trusted(0)
 claims(2)
 verdict('checked')
 ```
+
+## Appendix C. Implementation Notes
+
+This appendix is informative: it describes how peye 0.1.x implements this
+document, not requirements on other implementations. The runtime has no
+dependencies beyond the Python standard library and there is no build step.
+
+| File | Responsibility |
+| --- | --- |
+| [peye/terms.py](https://github.com/eyereasoner/peye/blob/main/peye/terms.py) | Terms, unification, renaming, the standard order |
+| [peye/writer.py](https://github.com/eyereasoner/peye/blob/main/peye/writer.py), [peye/reader.py](https://github.com/eyereasoner/peye/blob/main/peye/reader.py) | Canonical Python spelling, and reading it back without executing it |
+| [peye/dsl.py](https://github.com/eyereasoner/peye/blob/main/peye/dsl.py), [peye/functions.py](https://github.com/eyereasoner/peye/blob/main/peye/functions.py) | Stating programs in Python |
+| [peye/program.py](https://github.com/eyereasoner/peye/blob/main/peye/program.py) | Profile validation, clause indexing and dependency stratification |
+| [peye/builtins.py](https://github.com/eyereasoner/peye/blob/main/peye/builtins.py), [peye/arith.py](https://github.com/eyereasoner/peye/blob/main/peye/arith.py) | The pure primitive profile and arithmetic |
+| [peye/engine.py](https://github.com/eyereasoner/peye/blob/main/peye/engine.py) | Backward resolution, forward fixpoints, proof recording |
+| [peye/proof.py](https://github.com/eyereasoner/peye/blob/main/peye/proof.py) | Certificate rendering and checking, with no solver dependency |
+| [peye/cli.py](https://github.com/eyereasoner/peye/blob/main/peye/cli.py) | The command line |
+| [playground/](https://github.com/eyereasoner/peye/tree/main/playground) | The browser playground, which runs the same package through Pyodide |
+| [tools/](https://github.com/eyereasoner/peye/tree/main/tools) | Regenerating the saved example output, proofs and check reports |
+
+**Search is an explicit machine, not nested host calls.** A frame is one body
+being worked through; frames are immutable, so a choice point only has to
+remember the frame it was created in and backtracking is a pointer assignment.
+Depth is therefore bounded by `max_depth` and by memory rather than by
+Python's recursion limit.
+
+**One substitution is threaded through a search**, restored by an undo trail
+when a branch fails, so an alternative costs the bindings it actually made
+instead of a copy of the whole map. The trail records each name's previous
+value, which also makes it safe for a dereference to shorten a chain of
+variable-to-variable bindings as it walks one. Together these make an N-step
+derivation cost O(N); without either it costs O(N²). One consequence worth
+knowing: an answer's bindings are valid only until the next answer is
+requested.
+
+**Unification is on finite trees.** An occurs check rejects a binding that
+would create a cycle. Fresh variable names are rendered injectively, so an
+internal `X#1` can never be confused with a source variable named `X_1`.
+
+**A program is Python, a document is data.** A program file is Python code
+you wrote, and running it states its clauses. A conclusion file, a proof or a
+check report is only ever parsed: the reader accepts literals, names, calls of
+a plain name, list displays, binding dictionaries and the operators peye
+writes, and nothing else, so a document cannot run code or change how another
+is read.
+
+**Stratification matches whole terms, not just predicate names.** Forward rules
+that use negation or collection run only after everything they inspect has
+reached its fixpoint. Because the analysis compares complete head and body
+terms, two relations sharing a predicate name can occupy different strata when
+their argument patterns do not overlap — which is exactly what you need when
+everything is `t/3`. Positive cycles stay in one stratum; closed dependency
+cycles are rejected, as are dynamic calls reachable from forward rules.
+
+**Proof steps record the first derivation found** for each conclusion, and are
+recorded only when a proof is asked for: without one, the search keeps just what
+it needs to find answers. Nodes carry the terms they were built from and are
+resolved once, by whoever consumes a complete answer, so a conjunction does not
+re-copy the proof forest for each of its goals. Renaming a clause apart shares
+every subterm that holds no variable, since terms never change once built.
