@@ -5,6 +5,7 @@ import sys
 import traceback
 
 from peye import PeyeError, __version__, check_proof, check_report, load_text, run
+from peye.proof import strict
 
 sys.setrecursionlimit(5000)
 PROGRAM = '<program>'
@@ -21,10 +22,25 @@ def _line(error):
     return int(match.group(1)) if match else None
 
 
+# The last program loaded, by its source text. Running the same program
+# again with another goal or other options then skips loading it, which for
+# a large program is much of the work. A Program keeps no state between runs.
+_last = {'source': None, 'program': None}
+
+
+def _program(source):
+    if _last['source'] != source:
+        # Forget the old program first, so a failed load leaves nothing cached.
+        _last['source'] = _last['program'] = None
+        _last['program'] = load_text(source, PROGRAM)
+        _last['source'] = source
+    return _last['program']
+
+
 def playground_run(request):
     request = json.loads(request)
     try:
-        program = load_text(request['source'], PROGRAM)
+        program = _program(request['source'])
         goals = [request['goal']] if request.get('goal') else []
         limits = {name: value for name, value in request.get('limits', {}).items() if value}
         # Checking needs a certificate even when the proof itself is not shown.
@@ -33,8 +49,9 @@ def playground_run(request):
         if request.get('check') and result.answers:
             # A generated proof is already checked once; a strict check is a
             # different question, so it gets its own run of the checker.
-            verdict = (check_proof(program, result.proof, goals=goals, allow_trusted=False)
-                       if request.get('strict') else result.proof_report)
+            verdict = result.proof_report
+            if request.get('strict'):
+                verdict = strict(verdict) or check_proof(program, result.proof, goals=goals, allow_trusted=False)
             report = {'text': check_report(verdict), 'valid': verdict['valid'], 'trusted': len(verdict['trusted'])}
         answers = ''.join(f'{answer}\n' for answer in result.answers)
         return json.dumps({

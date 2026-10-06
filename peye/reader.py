@@ -188,6 +188,7 @@ _TOKEN = re.compile(r"""
     | (?P<name>[A-Za-z_][A-Za-z0-9_]*)
     | (?P<op>\*\*|//|<<|>>|<=|>=|[-+*/%&|^~<>])
     | (?P<punct>[()\[\]{},:])
+    | (?P<other>.)
     )""", re.VERBOSE)
 _KEYWORDS = frozenset(keyword.kwlist)
 # Binary operators: their precedence, tighter higher, and the term they build.
@@ -205,100 +206,101 @@ class _NotSimple(Exception):
 
 
 def _read_lines(text):
-    reader = Reader()
-    out = []
     try:
-        for number, line in enumerate(text.split('\n'), 1):
-            if not line.strip():
-                continue
-            if line[0] in ' \t':
-                raise _NotSimple  # Python reads an indented line as an error
-            tokens = []
-            position = 0
-            end = len(line.rstrip())
-            while position < end:
-                match = _TOKEN.match(line, position)
-                if match is None:
-                    raise _NotSimple
-                tokens.append(match.group(match.lastgroup))
-                tokens.append(match.lastgroup)
-                position = match.end()
-            parser = _Line(tokens, reader)
-            term = parser.expression()
-            if parser.index != len(tokens):
-                raise _NotSimple
-            out.append((term, number))
+        return _parse_document(text, Reader())
     except (_NotSimple, RecursionError):
         return None
-    return out
 
 
-class _Line:
-    """Recursive descent over one line's tokens, as flat (text, kind) pairs."""
+def _parse_document(text, reader):
+    """Every line's expression, by recursive descent over one token stream in
+    which each line ends with an 'end' token."""
+    texts = []
+    kinds = []
+    numbers = []
+    for number, line in enumerate(text.split('\n'), 1):
+        if not line.strip():
+            continue
+        if line[0] in ' \t':
+            raise _NotSimple  # Python reads an indented line as an error
+        for m in _TOKEN.finditer(line.rstrip()):
+            kind = m.lastgroup
+            if kind == 'other':
+                raise _NotSimple
+            texts.append(m.group(kind))
+            kinds.append(kind)
+        texts.append('')
+        kinds.append('end')
+        numbers.append(number)
+    n = len(texts)
+    pos = 0
 
-    def __init__(self, tokens, reader):
-        self.tokens = tokens
-        self.index = 0
-        self.reader = reader
-
-    def peek(self):
-        return self.tokens[self.index] if self.index < len(self.tokens) else None
-
-    def take(self, value=None):
-        if self.index >= len(self.tokens):
-            raise _NotSimple
-        text = self.tokens[self.index]
-        kind = self.tokens[self.index + 1]
-        if value is not None and (text != value or kind == 'string'):
-            raise _NotSimple
-        self.index += 2
-        return text, kind
-
-    def operator(self):
-        if self.index < len(self.tokens) and self.tokens[self.index + 1] == 'op':
-            return self.tokens[self.index]
-        return None
-
-    def expression(self):
-        left = self.binary(1)
-        op = self.operator()
-        if op in _COMPARE:
-            self.take()
-            right = self.binary(1)
-            if self.operator() in _COMPARE:
-                raise _NotSimple  # a chained comparison
+    def expression():
+        nonlocal pos
+        left = binary(1)
+        if pos < n and kinds[pos] == 'op' and texts[pos] in _COMPARE:
+            op = texts[pos]
+            pos += 1
+            right = binary(1)
+            if pos < n and kinds[pos] == 'op' and texts[pos] in _COMPARE:
+                raise _NotSimple
             return Struct(op, (left, right))
         return left
 
-    def binary(self, minimum):
-        """Precedence climbing over the binary operators from minimum up."""
-        left = self.unary()[0]
-        while True:
-            op = self.operator()
-            entry = _BINARY.get(op)
+    def binary(minimum):
+        nonlocal pos
+        left = unary()[0]
+        while pos < n and kinds[pos] == 'op':
+            entry = _BINARY.get(texts[pos])
             if entry is None or entry[0] < minimum:
-                return left
-            self.take()
-            left = Struct(entry[1], (left, self.binary(entry[0] + 1)))
+                break
+            pos += 1
+            left = Struct(entry[1], (left, binary(entry[0] + 1)))
+        return left
 
-    def unary(self):
-        """A term, and whether it is a bare number literal, which a minus
-        applied to it turns into a negative number, as the ast reader does."""
-        op = self.operator()
-        if op in _UNARY:
-            self.take()
-            operand, literal = self.unary()
+    def unary():
+        nonlocal pos
+        if pos < n and kinds[pos] == 'op' and texts[pos] in _UNARY:
+            op = texts[pos]
+            pos += 1
+            operand, literal = unary()
             if op == '-' and literal:
                 return -operand, False
             return Struct(_UNARY[op], (operand,)), False
-        base, literal = self.primary()
-        if self.operator() == '**':
-            self.take()
-            return Struct('**', (base, self.unary()[0])), False
+        base, literal = primary()
+        if pos < n and kinds[pos] == 'op' and texts[pos] == '**':
+            pos += 1
+            return Struct('**', (base, unary()[0])), False
         return base, literal
 
-    def primary(self):
-        text, kind = self.take()
+    def expect(value):
+        nonlocal pos
+        if pos >= n or texts[pos] != value or kinds[pos] != 'punct':
+            raise _NotSimple
+        pos += 1
+
+    def at(value):
+        return pos < n and texts[pos] == value and kinds[pos] == 'punct'
+
+    def sequence(close):
+        nonlocal pos
+        args = []
+        while not at(close):
+            args.append(expression())
+            if not at(close):
+                expect(',')
+                if at(close):
+                    raise _NotSimple
+        pos += 1
+        return args
+
+    def primary():
+        nonlocal pos
+        if pos >= n:
+            raise _NotSimple
+        text = texts[pos]
+        kind = kinds[pos]
+        pos += 1
         if kind == 'string':
             return text[1:-1], False
         if kind == 'int':
@@ -308,13 +310,13 @@ class _Line:
         if kind == 'name':
             if text in _KEYWORDS:
                 raise _NotSimple
-            if self.peek() != '(' or self.tokens[self.index + 1] != 'punct':
+            if not at('('):
                 if text == '_':
-                    self.reader.anonymous += 1
-                    return Var(f'__anon{self.reader.anonymous - 1}'), False
+                    reader.anonymous += 1
+                    return Var(f'__anon{reader.anonymous - 1}'), False
                 return Var(text), False
-            self.take('(')
-            args = self.sequence(')')
+            pos += 1
+            args = sequence(')')
             if text == 'struct':
                 if not args or type(args[0]) is not str:
                     raise _NotSimple
@@ -323,62 +325,53 @@ class _Line:
         if kind != 'punct':
             raise _NotSimple
         if text == '(':
-            start = self.index
-            term = self.expression()
-            # Parentheses around a number literal, (2) or ((2)), keep it one.
-            literal = (type(term) is int or type(term) is float) and self._only_literal(start, self.index)
-            self.take(')')
+            start = pos
+            term = expression()
+            literal = ((type(term) is int or type(term) is float) and
+                       sum(1 for k in kinds[start:pos] if k in ('int', 'float')) == 1 and
+                       all(k in ('int', 'float') or t in '()' for k, t in zip(kinds[start:pos], texts[start:pos])))
+            expect(')')
             return term, literal
         if text == '[':
             items = []
             tail = EMPTY
-            while self.peek() != ']':
-                if self.operator() == '*':
-                    self.take()
-                    tail = self.binary(1)
+            while not at(']'):
+                if pos < n and kinds[pos] == 'op' and texts[pos] == '*':
+                    pos += 1
+                    tail = binary(1)
                     break
-                items.append(self.expression())
-                if self.peek() != ']':
-                    self.take(',')
-                    if self.peek() == ']':
+                items.append(expression())
+                if not at(']'):
+                    expect(',')
+                    if at(']'):
                         raise _NotSimple
-            self.take(']')
+            expect(']')
             result = tail
             for item in reversed(items):
                 result = Struct('.', (item, result))
             return result, False
         if text == '{':
             pairs = []
-            while self.peek() != '}':
-                key = self.expression()
-                self.take(':')
-                pairs.append(Struct('=', (key, self.expression())))
-                if self.peek() != '}':
-                    self.take(',')
-                    if self.peek() == '}':
+            while not at('}'):
+                key = expression()
+                expect(':')
+                pairs.append(Struct('=', (key, expression())))
+                if not at('}'):
+                    expect(',')
+                    if at('}'):
                         raise _NotSimple
-            self.take('}')
+            expect('}')
             result = EMPTY
             for pair in reversed(pairs):
                 result = Struct('.', (pair, result))
             return result, False
         raise _NotSimple
 
-    def _only_literal(self, start, end):
-        """Whether tokens[start:end] are one number literal in parentheses."""
-        kinds = [self.tokens[i + 1] for i in range(start, end, 2)]
-        texts = [self.tokens[i] for i in range(start, end, 2)]
-        numbers = [kind for kind in kinds if kind in ('int', 'float')]
-        return len(numbers) == 1 and all(kind in ('int', 'float') or text in '()'
-                                         for kind, text in zip(kinds, texts))
-
-    def sequence(self, close):
-        args = []
-        while self.peek() != close:
-            args.append(self.expression())
-            if self.peek() != close:
-                self.take(',')
-                if self.peek() == close:
-                    raise _NotSimple
-        self.take(close)
-        return args
+    out = []
+    for number in numbers:
+        term = expression()
+        if kinds[pos] != 'end':
+            raise _NotSimple
+        pos += 1
+        out.append((term, number))
+    return out

@@ -52,17 +52,37 @@ def _resolves_to(term, env, target):
     return True
 
 
+class _Spellings:
+    """The canonical text of terms, written once per term object.
+
+    A proof names most goals several times, as a step and as a use, and the
+    checks look each up more than once; the text is the same every time.
+    The memo keeps each term alive, so an id is never reused within it.
+    """
+    __slots__ = ('memo',)
+
+    def __init__(self):
+        self.memo = {}
+
+    def __call__(self, term):
+        entry = self.memo.get(id(term))
+        if entry is None:
+            entry = self.memo[id(term)] = (term, text(term))
+        return entry[1]
+
+
 def _bindings_text(bindings):
     return '{' + ', '.join(f'{name!r}: {write(value)}' for name, value in bindings) + '}'
 
 
 def render_proof(program, claims, roots):
+    spell = _Spellings()
     steps = {}
     cited = set()
     pending = list(reversed(roots))
     while pending:
         node = pending.pop()
-        node_id = text(node.goal)
+        node_id = spell(node.goal)
         if node_id in steps:
             continue
         steps[node_id] = node
@@ -76,8 +96,8 @@ def render_proof(program, claims, roots):
         lines.append(text(Struct('clause', (clause_id, clause_display(program.clauses[clause_id - 1])))))
     lines.append('')
     for node in steps.values():
-        uses = '[' + ', '.join(text(child.goal) for child in node.children) + ']'
-        lines.append(f'step({text(node.goal)}, {text(node.by)}, {_bindings_text(node.bindings)}, {uses})')
+        uses = '[' + ', '.join(spell(child.goal) for child in node.children) + ']'
+        lines.append(f'step({spell(node.goal)}, {text(node.by)}, {_bindings_text(node.bindings)}, {uses})')
     return '\n'.join(lines) + '\n'
 
 
@@ -103,16 +123,17 @@ def check_proof(program, document, goals=None, allow_trusted=True):
     if not isinstance(program, Program):
         program = load(program)
     fail = _Failures()
-    claims, steps = _read_document(program, document, fail)
+    spell = _Spellings()
+    claims, steps = _read_document(program, document, fail, spell)
     if not steps or not claims:
         fail('C4', 'a proof needs claims and steps')
     for claim in claims:
-        if not all(text(part) in steps for part in flatten_conjunction(claim)):
+        if not all(spell(part) in steps for part in flatten_conjunction(claim)):
             fail('C4', f'unjustified claim {text(claim)}', claim)
-    tally = _check_steps(program, steps, allow_trusted, fail)
+    tally = _check_steps(program, steps, allow_trusted, fail, spell)
     confronted = _check_boundaries(program, steps, tally['boundaries'], fail)
-    _check_relevance(program, claims, steps, goals or [], fail)
-    _check_well_founded(steps, fail)
+    _check_relevance(program, claims, steps, goals or [], fail, spell)
+    _check_well_founded(steps, fail, spell)
 
     uses = sum(len(step['uses']) for step in steps.values())
 
@@ -139,7 +160,24 @@ def check_proof(program, document, goals=None, allow_trusted=True):
     }
 
 
-def _read_document(program, document, fail):
+def strict(report):
+    """The verdict allow_trusted=False would give, from a report without it.
+
+    Without failures, a strict check differs only in failing C5 once for
+    each trusted boundary, in step order, so it needs no second reading of
+    the document. A report with failures returns None: check again instead.
+    """
+    if report['failures']:
+        return None
+    failures = [{'condition': 'C5', 'detail': f"trusted boundary forbidden: {record['kind']}",
+                 'conclusion': record['conclusion']} for record in report['trusted']]
+    conditions = [dict(condition, failed=len(failures)) if condition['id'] == 'C5' else dict(condition)
+                  for condition in report['conditions']]
+    return dict(report, valid=not failures, failures=failures, conditions=conditions,
+                _failure_terms=list(report['_trusted_terms']))
+
+
+def _read_document(program, document, fail, spell):
     """C3: split a document into claims and steps keyed by the goal's text.
     clause/2 records are compared with the source."""
     claims = []
@@ -163,7 +201,7 @@ def _read_document(program, document, fail):
             if bindings is None or uses is None:
                 fail('C3', 'step bindings must be a dictionary and uses a list', goal)
                 continue
-            goal_id = text(goal)
+            goal_id = spell(goal)
             if goal_id in steps:
                 fail('C3', f'duplicate justification for {goal_id}', goal)
                 continue
@@ -173,7 +211,7 @@ def _read_document(program, document, fail):
     return claims, steps
 
 
-def _check_steps(program, steps, allow_trusted, fail):
+def _check_steps(program, steps, allow_trusted, fail, spell):
     """C4, C1, C3 and C5 for each step: every use is justified, and the step is
     an instance of the clause it cites, a recomputed primitive, a control
     composed of its uses, or a trusted boundary the later checks confront."""
@@ -182,7 +220,7 @@ def _check_steps(program, steps, allow_trusted, fail):
     def covered(goal):
         if is_term(goal, ',', 2):
             return all(covered(part) for part in flatten_conjunction(goal))
-        if text(goal) in steps:
+        if spell(goal) in steps:
             return True
         # Source facts are available as leaves, including universal facts.
         if not is_callable(goal):
@@ -229,7 +267,7 @@ def _check_steps(program, steps, allow_trusted, fail):
 
             def composes(candidate):
                 parts = flatten_conjunction(candidate)
-                return len(parts) == len(uses) and all(text(part) == text(use) for part, use in zip(parts, uses))
+                return len(parts) == len(uses) and all(spell(part) == spell(use) for part, use in zip(parts, uses))
             if bindings or not any(composes(candidate) for candidate in candidates):
                 fail('C5', f'control step does not follow from its uses: {text(goal)}', goal)
             else:
@@ -375,7 +413,7 @@ def _check_boundaries(program, steps, boundaries, fail):
     return confronted
 
 
-def _check_relevance(program, claims, steps, goals, fail):
+def _check_relevance(program, claims, steps, goals, fail, spell):
     """C7: the certificate answers the question that was asked and carries
     nothing beside it. A claim is an instance of a goal asked from outside, of
     a query() goal or, for printed conclusions, of a forward head."""
@@ -405,7 +443,7 @@ def _check_relevance(program, claims, steps, goals, fail):
         if not any(instance_of(claim, question) for question in questions):
             fail('C7', f'claim answers no goal: {text(claim)}', claim)
     reached = set()
-    reach = [text(part) for claim in claims for part in flatten_conjunction(claim)]
+    reach = [spell(part) for claim in claims for part in flatten_conjunction(claim)]
     while reach:
         step_id = reach.pop()
         if step_id in reached or step_id not in steps:
@@ -413,13 +451,13 @@ def _check_relevance(program, claims, steps, goals, fail):
         reached.add(step_id)
         for use in steps[step_id]['uses']:
             for part in flatten_conjunction(use):
-                reach.append(text(part))
+                reach.append(spell(part))
     for step_id, step in steps.items():
         if step_id not in reached:
             fail('C7', f'step serves no claim: {step_id}', step['goal'])
 
 
-def _check_well_founded(steps, fail):
+def _check_well_founded(steps, fail, spell):
     """C2: no step depends on itself, walked iteratively."""
     visiting = set()
     visited = set()
@@ -429,7 +467,7 @@ def _check_well_founded(steps, fail):
         step = steps.get(step_id)
         for use in (step['uses'] if step else ()):
             for part in flatten_conjunction(use):
-                part_id = text(part)
+                part_id = spell(part)
                 if part_id in steps:
                     used.append(part_id)
         return used

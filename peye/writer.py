@@ -8,9 +8,10 @@ an open tail, and the operators keep their Python spelling and precedence:
 ``X + 1``, ``X < Y``, ``p(X) & q(X)``, ``a | b``, ``~g``. A compound whose
 name is not a Python identifier is written ``struct('name', Arg, ...)``.
 """
+import functools
 import keyword
 
-from .terms import Env, Struct, Var, deref
+from .terms import Struct, Var, deref
 
 INFIX = {
     ';': ('|', 7), '^': ('^', 8), ',': ('&', 9), '<<': ('<<', 10), '>>': ('>>', 10),
@@ -27,6 +28,7 @@ ATOMIC = 100
 RESERVED_CALLS = frozenset({'struct'})
 
 
+@functools.lru_cache(maxsize=4096)
 def callable_name(name):
     return name.isidentifier() and not keyword.iskeyword(name) and name not in RESERVED_CALLS
 
@@ -54,6 +56,7 @@ def encode_name(name):
     return ''.join(out)
 
 
+@functools.lru_cache(maxsize=4096)
 def variable_text(name):
     return name if valid_variable_name(name) else encode_name(name)
 
@@ -84,8 +87,9 @@ def write(term, env=None, names=None):
     if type(term) not in (str, int, float, Var, Struct):
         from .terms import _term
         term = _term(term)
-    if env is None:
-        env = Env()
+    # Without a substitution there is nothing to dereference.
+    if env is not None and not env.bindings:
+        env = None
     if names is None:
         names = {}
     out = []
@@ -94,7 +98,8 @@ def write(term, env=None, names=None):
 
 
 def _format(term, env, names, out):
-    term = deref(term, env)
+    if env is not None:
+        term = deref(term, env)
     kind = type(term)
     if kind is str:
         out.append(repr(term) if term != '[]' else '[]')
@@ -114,7 +119,7 @@ def _format(term, env, names, out):
                 out.append(', ')
             first = False
             _format(cursor.args[0], env, names, out)
-            cursor = deref(cursor.args[1], env)
+            cursor = cursor.args[1] if env is None else deref(cursor.args[1], env)
         if not (type(cursor) is str and cursor == '[]'):
             out.append(', *')
             _operand(cursor, env, names, out, COMPARISON + 1)
@@ -124,7 +129,8 @@ def _format(term, env, names, out):
 
 
 def _operand(term, env, names, out, minimum):
-    term = deref(term, env)
+    if env is not None:
+        term = deref(term, env)
     if _precedence(term) < minimum:
         out.append('(')
         _format(term, env, names, out)

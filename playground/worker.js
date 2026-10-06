@@ -2,7 +2,7 @@
 // here, in Pyodide, off the page's main thread, so a long search cannot freeze
 // the editor, and stopping a run is a matter of terminating this worker.
 // Starting Python takes a few seconds, so one worker serves run after run.
-const PYODIDE = 'https://cdn.jsdelivr.net/pyodide/v0.26.4/full/';
+const PYODIDE = 'https://cdn.jsdelivr.net/pyodide/v0.29.1/full/';
 const MODULES = ['__init__', 'arith', 'builtins', 'cli', 'common', 'dsl', 'engine', 'functions',
   'program', 'proof', 'reader', 'terms', 'writer'];
 
