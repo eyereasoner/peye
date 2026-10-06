@@ -320,7 +320,7 @@ These are meant to be edited: change a fact, run it, look at what changed.
 Because the artifacts are saved, you can see exactly what your change did:
 
 ```sh
-python -m unittest discover -s tests                         # everything
+python -m unittest discover -s tests -v                      # everything, one line per test as it runs
 python tools/update_examples.py                              # regenerate artifacts after an intended change
 python tools/timings.py --sort                               # load, run, prove and check times, slowest first
 python conformance/run.py                                    # the conformance suite of SPEC.md

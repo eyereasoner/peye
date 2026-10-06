@@ -33,13 +33,6 @@ class Examples(unittest.TestCase):
         decks = sorted([f"{entry['name']}.md" for entry in MANIFEST] + ['README.md'])
         self.assertEqual(sorted(f for f in os.listdir(os.path.join(examples, 'deck')) if f.endswith('.md')), decks)
 
-    def test_every_example(self):
-        for entry in sorted(MANIFEST, key=lambda entry: entry['name']):
-            if ONLY and entry['name'] not in ONLY:
-                continue
-            with self.subTest(entry['name']):
-                with_deep_stack(self.check_example, entry)
-
     def check_example(self, entry):
         program = load_example(entry)
         output = run(program)
@@ -66,6 +59,21 @@ class Examples(unittest.TestCase):
                 checked = cli(['--check-proof', os.path.relpath(artifact_path('proof', entry), ROOT), source])
                 self.assertEqual(checked.returncode, 0, checked.stderr)
                 self.assertEqual(checked.stdout, read(artifact_path('check', entry)))
+
+
+def example_test(entry):
+    def test(self):
+        if ONLY and entry['name'] not in ONLY:
+            self.skipTest('not in PEYE_EXAMPLES')
+        with_deep_stack(self.check_example, entry)
+    test.__doc__ = f"examples/{entry['name']}.py: {entry['description']}"
+    return test
+
+
+# One test per example, so a verbose run shows each as it goes and a failure
+# names the example.
+for entry in MANIFEST:
+    setattr(Examples, 'test_example_' + entry['name'].replace('-', '_'), example_test(entry))
 
 
 if __name__ == '__main__':
