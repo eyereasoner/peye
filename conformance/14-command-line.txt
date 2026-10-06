@@ -1,0 +1,211 @@
+# SPEC 14: the command line.
+
+=== without files the program is read from standard input
+spec: 14
+args:
+--- stdin
+from peye import *
+fact(p(1))
+forward(q(X), p(X))
+--- stdout
+q(1)
+
+=== standard input can be one of several program files
+spec: 14
+args: a.py - --goal "q(X)"
+--- a.py
+from peye import *
+fact(p(1))
+--- stdin
+from peye import *
+backward(q(X), p(X))
+--- stdout
+q(1)
+
+=== goals may be repeated
+spec: 14
+args: program.py --goal "p(X)" --goal "q(X)"
+--- program.py
+from peye import *
+fact(p(1), q(2))
+--- stdout
+p(1)
+q(2)
+
+=== the exit code is 65 when the run halted
+spec: 7.5, 14
+exit: 65
+--- program.py
+from peye import *
+fact(p)
+contradiction(p)
+--- stdout
+'false'
+
+=== an invalid proof exits with 1 and prints its report
+spec: 14
+args: --check-proof proof.py program.py
+exit: 1
+stderr: empty
+--- program.py
+from peye import *
+fact(p(1))
+--- proof.py
+--- stdout
+condition('C1', 'resolution', 'ok', 0)
+condition('C2', 'well_founded', 'ok', 0)
+condition('C3', 'justification', 'ok', 0)
+condition('C4', 'coverage', failed(1), 0)
+condition('C5', 're_decision', 'ok', 0)
+condition('C6', 'boundary_consistency', 'ok', 0)
+condition('C7', 'relevance', 'ok', 0)
+failure('C4', 'proof_document', …)
+steps(0)
+verified(0)
+recomputed(0)
+composed(0)
+trusted(0)
+claims(0)
+verdict(failed(1))
+
+=== errors are printed as peye: message and exit with 1
+spec: 14
+exit: 1
+stderr: prefix peye:
+--- program.py
+from peye import *
+forward(p, ~q)
+forward(q, p)
+--- stdout
+
+=== a missing program file is an error
+spec: 14
+args: missing.py
+exit: 1
+stderr: prefix peye:
+--- stdout
+
+=== a proof document given as a program says how to check it
+spec: 14
+args: proof.py
+exit: 1
+stderr: prefix peye:
+--- proof.py
+p(1)
+
+clause(1, fact(p(1)))
+
+step(p(1), fact(1), {}, [])
+--- stdout
+
+=== --check-proof cannot be combined with --proof
+spec: 14
+args: --proof --check-proof proof.py program.py
+exit: 1
+stderr: prefix peye:
+--- program.py
+from peye import *
+--- proof.py
+--- stdout
+
+=== --unused cannot be combined with --proof
+spec: 14
+args: --unused --proof program.py
+exit: 1
+stderr: prefix peye:
+--- program.py
+from peye import *
+--- stdout
+
+=== --unused cannot be combined with --check-proof
+spec: 14
+args: --unused --check-proof proof.py program.py
+exit: 1
+stderr: prefix peye:
+--- program.py
+from peye import *
+--- proof.py
+--- stdout
+
+=== --json requires --check-proof
+spec: 14
+args: --json program.py
+exit: 1
+stderr: prefix peye:
+--- program.py
+from peye import *
+--- stdout
+
+=== an unknown option is an error
+spec: 14
+args: --frobnicate program.py
+exit: 1
+stderr: prefix peye:
+--- program.py
+from peye import *
+--- stdout
+
+=== an option missing its value is an error
+spec: 14
+args: program.py --goal
+exit: 1
+stderr: prefix peye:
+--- program.py
+from peye import *
+--- stdout
+
+=== a bound must be a positive integer
+spec: 7.3, 14
+args: program.py --max-depth 0
+exit: 1
+stderr: prefix peye:
+--- program.py
+from peye import *
+--- stdout
+
+=== a bound must be an integer
+spec: 7.3, 14
+args: program.py --max-inferences many
+exit: 1
+stderr: prefix peye:
+--- program.py
+from peye import *
+--- stdout
+
+=== standard input can be read only once
+spec: 14
+args: - -
+exit: 1
+stderr: prefix peye:
+--- stdin
+from peye import *
+--- stdout
+
+=== a proof from standard input needs the program in files
+spec: 14
+args: --check-proof -
+exit: 1
+stderr: prefix peye:
+--- stdin
+--- stdout
+
+=== --stats prints statistics as JSON to standard error
+spec: 14
+args: --stats program.py
+stderr: json
+--- program.py
+from peye import *
+fact(p(1))
+forward(q(X), p(X))
+--- stdout
+q(1)
+
+=== --help prints the usage
+spec: 14
+args: --help
+stdout: nonempty
+
+=== --version prints the version
+spec: 14
+args: --version
+stdout: nonempty

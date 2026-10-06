@@ -1,0 +1,397 @@
+# SPEC 5: controls and primitives. Most cases ask goals of a small program.
+
+=== conjunction solves left to right
+spec: 5.1
+args: program.py --goal "p(X) & q(X)"
+--- program.py
+from peye import *
+fact(p(1), p(2), q(2))
+--- stdout
+p(2) & q(2)
+
+=== disjunction gives the solutions of the left side first
+spec: 5.1
+args: program.py --goal "b(X) | a(X)"
+--- program.py
+from peye import *
+fact(a(1), b(2))
+--- stdout
+b(2) | a(2)
+b(1) | a(1)
+
+=== negation succeeds when its goal has no solution
+spec: 5.1
+args: program.py --goal "~p(2)" --goal "~p(1)"
+--- program.py
+from peye import *
+fact(p(1))
+--- stdout
+~p(2)
+
+=== negation needs a ground goal
+spec: 5.1
+args: program.py --goal "~p(X)"
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+fact(p(1))
+--- stdout
+
+=== not_ in a program negates the conjunction of its goals
+spec: 5.1
+--- program.py
+from peye import *
+fact(p(1))
+query(not_(p(1), q(1)))
+query(not_(p(1)))
+--- stdout
+~(p(1) & q(1))
+
+=== call and once in a program join several goals into one
+spec: 5.1
+--- program.py
+from peye import *
+fact(p(1), p(2), q(2))
+query(call(p(X), q(X)))
+query(once(p(Y), Y > 0))
+--- stdout
+call(p(2) & q(2))
+once(p(1) & (1 > 0))
+
+=== in goal text not_ is an ordinary compound
+spec: 5.1, 9
+args: program.py --goal "not_(p(2))"
+--- program.py
+from peye import *
+fact(p(1))
+--- stdout
+
+=== negation of an undefined predicate succeeds
+spec: 5.1, 5.2
+args: --goal "~undefined(1)"
+--- stdin
+from peye import *
+--- stdout
+~undefined(1)
+
+=== call solves its goal
+spec: 5.1
+args: program.py --goal "call(p(X))"
+--- program.py
+from peye import *
+fact(p(1), p(2))
+--- stdout
+call(p(1))
+call(p(2))
+
+=== call solves a variable bound to a goal
+spec: 5.1
+args: program.py --goal "unify(G, p(X)) & call(G)"
+--- program.py
+from peye import *
+fact(p(1))
+--- stdout
+unify(p(1), p(1)) & call(p(1))
+
+=== once keeps the first solution only
+spec: 5.1
+args: program.py --goal "once(p(X))"
+--- program.py
+from peye import *
+fact(p(1), p(2))
+--- stdout
+once(p(1))
+
+=== once commits inside a rule
+spec: 5.1
+args: program.py --goal "first(X)"
+--- program.py
+from peye import *
+fact(p(1), p(2))
+backward(first(X), once(p(X)))
+--- stdout
+first(1)
+
+=== findall collects every solution in order
+spec: 5.1
+args: program.py --goal "findall(X, p(X), L)"
+--- program.py
+from peye import *
+fact(p(3), p(1), p(2))
+--- stdout
+findall(X, p(X), [3, 1, 2])
+
+=== findall collects the empty list when nothing holds
+spec: 5.1
+args: --goal "findall(X, missing(X), L)"
+--- stdin
+from peye import *
+--- stdout
+findall(X, missing(X), [])
+
+=== findall renames each collected instance apart
+spec: 5.1
+args: program.py --goal "distinct()"
+--- program.py
+from peye import *
+fact(item(f(_)), item(f(_)))
+backward(distinct, findall(T, item(T), [A, B]), not_identical(A, B))
+--- stdout
+'distinct'
+
+=== findall fails when its result does not unify
+spec: 5.1
+args: program.py --goal "findall(X, p(X), [1])"
+--- program.py
+from peye import *
+fact(p(1), p(2))
+--- stdout
+
+=== a goal of an undefined predicate fails
+spec: 5.2
+args: --goal "nothing(1)"
+--- stdin
+from peye import *
+--- stdout
+
+=== true succeeds, fail and false fail
+spec: 5.2
+args: --goal "'true'" --goal "'fail'" --goal "'false'"
+--- stdin
+from peye import *
+--- stdout
+'true'
+
+=== unify binds both sides
+spec: 5.2
+args: --goal "unify(f(X, 'b'), f('a', Y))"
+--- stdin
+from peye import *
+--- stdout
+unify(f('a', 'b'), f('a', 'b'))
+
+=== not_unify succeeds without binding
+spec: 5.2
+args: --goal "not_unify(f(X, 'b'), f('a', 'c'))" --goal "not_unify(X, 'a')"
+--- stdin
+from peye import *
+--- stdout
+not_unify(f(X, 'b'), f('a', 'c'))
+
+=== identical compares without binding
+spec: 5.2
+args: --goal "identical(f(X), f(X))" --goal "identical(f(X), f(Y))" --goal "not_identical(X, Y)" --goal "identical(1, 1.0)"
+--- stdin
+from peye import *
+--- stdout
+identical(f(X), f(X))
+not_identical(X, Y)
+
+=== is_ evaluates and unifies
+spec: 5.2
+args: --goal "is_(X, 2 + 3)" --goal "is_(6, 2 + 3)" --goal "is_(Y, 7 // 2)"
+--- stdin
+from peye import *
+--- stdout
+is_(5, 2 + 3)
+is_(3, 7 // 2)
+
+=== an answer is reported once across all goals of a run
+spec: 7.4
+args: --goal "is_(X, 2 + 3)" --goal "is_(5, 2 + 3)" --goal "is_(Y, 2 + 3)"
+--- stdin
+from peye import *
+--- stdout
+is_(5, 2 + 3)
+
+=== eq and ne compare values
+spec: 5.2
+args: --goal "eq(1, 1.0)" --goal "ne(1, 1.0)" --goal "eq(2 * 3, 6)" --goal "ne(1, 2)"
+--- stdin
+from peye import *
+--- stdout
+eq(1, 1.0)
+eq(2 * 3, 6)
+ne(1, 2)
+
+=== comparisons compare values
+spec: 5.2
+args: --goal "1 < 2" --goal "2 <= 2" --goal "3 > 2" --goal "2 >= 3" --goal "1 + 1 > 1.5"
+--- stdin
+from peye import *
+--- stdout
+1 < 2
+2 <= 2
+3 > 2
+1 + 1 > 1.5
+
+=== a comparison of an unbound variable is an error
+spec: 5.2, 6
+args: --goal "X < 1"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== type tests
+spec: 5.2
+args: --goal "is_var(X)" --goal "is_var(1)" --goal "is_nonvar('a')" --goal "is_nonvar(X)" --goal "is_ground(f(1))" --goal "is_ground(f(X))"
+--- stdin
+from peye import *
+--- stdout
+is_var(X)
+is_nonvar('a')
+is_ground(f(1))
+
+=== atom, number, integer, float and compound tests
+spec: 5.2
+args: --goal "is_atom('a')" --goal "is_atom([])" --goal "is_atom(1)" --goal "is_number(1.5)" --goal "is_number('1')" --goal "is_int(1)" --goal "is_int(1.0)" --goal "is_float(1.0)" --goal "is_float(1)" --goal "is_compound([1])" --goal "is_compound('a')"
+--- stdin
+from peye import *
+--- stdout
+is_atom('a')
+is_atom([])
+is_number(1.5)
+is_int(1)
+is_float(1.0)
+is_compound([1])
+
+=== functor takes a term apart
+spec: 5.2
+args: --goal "functor(f('a', 'b'), N, A)" --goal "functor('a', N, A)" --goal "functor(3, N, A)"
+--- stdin
+from peye import *
+--- stdout
+functor(f('a', 'b'), 'f', 2)
+functor('a', 'a', 0)
+functor(3, 3, 0)
+
+=== functor builds a term with fresh arguments
+spec: 5.2
+args: --goal "functor(T, 'g', 2) & arg(1, T, 'x') & arg(2, T, 'y')" --goal "functor(T, 'g', 0)"
+--- stdin
+from peye import *
+--- stdout
+functor(g('x', 'y'), 'g', 2) & arg(1, g('x', 'y'), 'x') & arg(2, g('x', 'y'), 'y')
+functor('g', 'g', 0)
+
+=== functor needs a bound name to build a term
+spec: 5.2
+args: --goal "functor(T, N, 2)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== functor arities are bounded
+spec: 5.2
+args: --goal "functor(T, 'g', 1025)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== arg selects an argument, counting from 1
+spec: 5.2
+args: --goal "arg(2, f('a', 'b', 'c'), X)" --goal "arg(4, f('a'), X)"
+--- stdin
+from peye import *
+--- stdout
+arg(2, f('a', 'b', 'c'), 'b')
+
+=== arg needs a positive position
+spec: 5.2
+args: --goal "arg(0, f('a'), X)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== univ converts between a term and a list
+spec: 5.2
+args: --goal "univ(f('a', 1), L)" --goal "univ('a', L)" --goal "univ(T, ['g', 1])" --goal "univ(T, [5])"
+--- stdin
+from peye import *
+--- stdout
+univ(f('a', 1), ['f', 'a', 1])
+univ('a', ['a'])
+univ(g(1), ['g', 1])
+univ(5, [5])
+
+=== univ needs an atom name to build a compound
+spec: 5.2
+args: --goal "univ(T, [1, 2])"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== atom_chars in both directions
+spec: 5.2
+args: --goal "atom_chars('héllo', L)" --goal "atom_chars(A, ['a', 'b'])"
+--- stdin
+from peye import *
+--- stdout
+atom_chars('héllo', ['h', 'é', 'l', 'l', 'o'])
+atom_chars('ab', ['a', 'b'])
+
+=== atom_codes in both directions
+spec: 5.2
+args: --goal "atom_codes('ab', L)" --goal "atom_codes(A, [104, 105])" --goal "atom_codes('😀', L)"
+--- stdin
+from peye import *
+--- stdout
+atom_codes('ab', [97, 98])
+atom_codes('hi', [104, 105])
+atom_codes('😀', [128512])
+
+=== atom_length counts characters
+spec: 5.2
+args: --goal "atom_length('😀a', N)" --goal "atom_length('', N)"
+--- stdin
+from peye import *
+--- stdout
+atom_length('😀a', 2)
+atom_length('', 0)
+
+=== atom_length needs a bound atom
+spec: 5.2
+args: --goal "atom_length(X, N)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== atom_concat joins two atoms
+spec: 5.2
+args: --goal "atom_concat('ab', 'cd', X)" --goal "atom_concat('ab', 'cd', 'abc')"
+--- stdin
+from peye import *
+--- stdout
+atom_concat('ab', 'cd', 'abcd')
+
+=== atom_concat enumerates every split, shortest first
+spec: 5.2
+args: --goal "atom_concat(A, B, 'ab')"
+--- stdin
+from peye import *
+--- stdout
+atom_concat('', 'ab', 'ab')
+atom_concat('a', 'b', 'ab')
+atom_concat('ab', '', 'ab')
+
+=== atom_concat needs the result or both operands
+spec: 5.2
+args: --goal "atom_concat(A, 'b', C)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout

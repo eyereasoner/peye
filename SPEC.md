@@ -219,14 +219,19 @@ name MAY have different ranks.
 
 ### 5.1 Controls
 
-| Control | Meaning |
-| --- | --- |
-| `A & B` | Conjunction: solve `A`, then `B`. |
-| `A \| B` | Disjunction: the solutions of `A`, then those of `B`. |
-| `~G`, `not_(G1, ...)` | Negation: succeeds once, binding nothing, when `G` has no solution. `G` MUST be ground when the negation is solved. |
-| `call(G1, ...)` | The solutions of the conjunction of its goals. |
-| `once(G1, ...)` | The first solution of the conjunction of its goals. |
-| `findall(T, G, L)` | Unifies `L` with the list of instances of `T`, one per solution of `G`, in order, each renamed apart. |
+| Control | Term | Meaning |
+| --- | --- | --- |
+| `A & B` | `','(A, B)` | Conjunction: solve `A`, then `B`. |
+| `A \| B` | `';'(A, B)` | Disjunction: the solutions of `A`, then those of `B`. |
+| `~G` | `'~'(G)` | Negation: succeeds once, binding nothing, when `G` has no solution. `G` MUST be ground when the negation is solved. |
+| `call(G)` | `call(G)` | The solutions of `G`. |
+| `once(G)` | `once(G)` | The first solution of `G`. |
+| `findall(T, G, L)` | `findall(T, G, L)` | Unifies `L` with the list of instances of `T`, one per solution of `G`, in order, each renamed apart. |
+
+In a program (Section 4), `not_(G1, G2, ...)` builds `~(G1 & G2 & ...)`, and
+`call` and `once` with several goals build `call(G1 & G2 & ...)` and
+`once(G1 & G2 & ...)`. In goal text and documents (Section 9) these are
+ordinary compounds: there `not_(...)` is not a negation.
 
 ### 5.2 Primitives
 
@@ -340,8 +345,9 @@ as complete.
 ### 7.4 Goals
 
 A run MAY be given goals. After forward reasoning, each goal is solved in
-turn; a solution is reported once per distinct instance up to renaming of its
-variables.
+turn, and each solution is reported as the instance of its goal, unless an
+instance identical up to renaming of its variables was already reported for
+this goal or an earlier one of the same run.
 
 ### 7.5 Halting
 
@@ -682,9 +688,12 @@ and checker MUST produce the same conclusions, proof documents and reports
 as peye 0.1.5, byte for byte, except where Python's floating-point library
 functions differ in the last digit.
 
-The repository's examples, with their saved conclusions (`examples/output/`),
-proofs (`examples/proof/`) and reports (`examples/check/`), serve as a
-conformance suite.
+The conformance suite in the repository's `conformance/` directory tests an
+implementation against this document through its command line, case by case,
+each case naming the sections it tests; `conformance/README.md` describes how
+to run it against any implementation. The repository's examples, with their
+saved conclusions (`examples/output/`), proofs (`examples/proof/`) and reports
+(`examples/check/`), test the same on larger programs.
 
 ---
 

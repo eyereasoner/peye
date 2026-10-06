@@ -126,7 +126,8 @@ print(check_proof(socrates, result.proof)['valid'])    # True
   its proof, and share a link to exactly what you see.
 - **[Specification](https://eyereasoner.github.io/peye/SPEC)** — the language, the canonical text, the proof
   format, the C1-C7 checking conditions and the check report, precisely, in the
-  style of an RFC.
+  style of an RFC, with a [conformance suite](https://github.com/eyereasoner/peye/tree/main/conformance)
+  of 298 cases that tests any implementation against it.
 
 ## License
 

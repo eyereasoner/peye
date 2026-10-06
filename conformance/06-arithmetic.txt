@@ -1,0 +1,286 @@
+# SPEC 6: arithmetic means what the same expression means in Python.
+
+=== true division
+spec: 6
+args: --goal "is_(X, 4 / 2)" --goal "is_(Y, 7 / 2)" --goal "is_(Z, 1 / 3)"
+--- stdin
+from peye import *
+--- stdout
+is_(2.0, 4 / 2)
+is_(3.5, 7 / 2)
+is_(0.3333333333333333, 1 / 3)
+
+=== floor division and modulo round towards negative infinity
+spec: 6
+args: --goal "is_(A, -7 // 2)" --goal "is_(B, 7 // -2)" --goal "is_(C, -7 % 3)" --goal "is_(D, 7 % -3)" --goal "is_(E, 7.5 // 2)"
+--- stdin
+from peye import *
+--- stdout
+is_(-4, -7 // 2)
+is_(-4, 7 // -2)
+is_(2, -7 % 3)
+is_(-2, 7 % -3)
+is_(3.0, 7.5 // 2)
+
+=== powers are exact on integers
+spec: 6
+args: --goal "is_(A, 2 ** 100)" --goal "is_(B, 2 ** -1)" --goal "is_(C, 2.0 ** 2)" --goal "is_(D, 2 ** 3 ** 2)" --goal "is_(E, (-2) ** 2)" --goal "is_(F, -2 ** 2)"
+--- stdin
+from peye import *
+--- stdout
+is_(1267650600228229401496703205376, 2 ** 100)
+is_(0.5, 2 ** -1)
+is_(4.0, 2.0 ** 2)
+is_(512, 2 ** 3 ** 2)
+is_(4, (-2) ** 2)
+is_(-4, -2 ** 2)
+
+=== integers never round through a float
+spec: 6
+args: --goal "is_(X, 10 ** 30 + 1 - 10 ** 30)" --goal "is_(Y, 9007199254740993 + 1)"
+--- stdin
+from peye import *
+--- stdout
+is_(1, 10 ** 30 + 1 - 10 ** 30)
+is_(9007199254740994, 9007199254740993 + 1)
+
+=== floats are IEEE-754 doubles
+spec: 6
+args: --goal "is_(X, 0.1 + 0.2)" --goal "eq(0.1 + 0.2, 0.3)"
+--- stdin
+from peye import *
+--- stdout
+is_(0.30000000000000004, 0.1 + 0.2)
+
+=== bitwise operators, in an expression
+spec: 6
+args: --goal "is_(A, 6 & 3)" --goal "is_(B, 6 | 3)" --goal "is_(C, 6 ^ 3)" --goal "is_(D, ~5)" --goal "is_(E, 1 << 70)" --goal "is_(F, -1 >> 1)"
+--- stdin
+from peye import *
+--- stdout
+is_(2, 6 & 3)
+is_(7, 6 | 3)
+is_(5, 6 ^ 3)
+is_(-6, ~5)
+is_(1180591620717411303424, 1 << 70)
+is_(-1, -1 >> 1)
+
+=== unary minus and plus
+spec: 6
+args: --goal "is_(A, -(2 + 3))" --goal "is_(B, +(2 - 3))" --goal "is_(C, --4)"
+--- stdin
+from peye import *
+--- stdout
+is_(-5, -(2 + 3))
+is_(-1, +(2 - 3))
+is_(4, struct('-', -4))
+
+=== Python builtins: abs, min, max, round, int, float, pow
+spec: 6
+args: --goal "is_(A, abs(-3))" --goal "is_(B, min(2, 1.5))" --goal "is_(C, max(1, 3, 2))" --goal "is_(D, round(2.5))" --goal "is_(E, round(3.5))" --goal "is_(F, round(2.675, 2))" --goal "is_(G, int(-2.7))" --goal "is_(H, float(3))" --goal "is_(I, pow(2, 10))"
+--- stdin
+from peye import *
+--- stdout
+is_(3, abs(-3))
+is_(1.5, min(2, 1.5))
+is_(3, max(1, 3, 2))
+is_(2, round(2.5))
+is_(4, round(3.5))
+is_(2.67, round(2.675, 2))
+is_(-2, int(-2.7))
+is_(3.0, float(3))
+is_(1024, pow(2, 10))
+
+=== math functions
+spec: 6
+args: --goal "is_(A, floor(-2.5))" --goal "is_(B, ceil(2.1))" --goal "is_(C, trunc(-2.7))" --goal "is_(D, sqrt(16))" --goal "is_(E, isqrt(17))" --goal "is_(F, exp(0))" --goal "is_(G, log(8, 2))" --goal "is_(H, log2(8))" --goal "is_(I, log10(1000))" --goal "is_(J, hypot(3, 4))" --goal "is_(K, fmod(7, 3))" --goal "is_(L, copysign(1, -0.0))" --goal "is_(M, gcd(12, 18))" --goal "is_(N, lcm(4, 6))" --goal "is_(O, sin(0))" --goal "is_(P, atan2(0, 1))"
+--- stdin
+from peye import *
+--- stdout
+is_(-3, floor(-2.5))
+is_(3, ceil(2.1))
+is_(-2, trunc(-2.7))
+is_(4.0, sqrt(16))
+is_(4, isqrt(17))
+is_(1.0, exp(0))
+is_(3.0, log(8, 2))
+is_(3.0, log2(8))
+is_(3.0, log10(1000))
+is_(5.0, hypot(3, 4))
+is_(1.0, fmod(7, 3))
+is_(-1.0, copysign(1, -0.0))
+is_(6, gcd(12, 18))
+is_(12, lcm(4, 6))
+is_(0.0, sin(0))
+is_(0.0, atan2(0, 1))
+
+=== the constants pi, e and tau
+spec: 6
+args: --goal "is_(A, 'pi')" --goal "is_(B, 'e')" --goal "is_(C, 'tau')" --goal "is_(D, degrees('pi'))"
+--- stdin
+from peye import *
+--- stdout
+is_(3.141592653589793, 'pi')
+is_(2.718281828459045, 'e')
+is_(6.283185307179586, 'tau')
+is_(180.0, degrees('pi'))
+
+=== an expression may be a variable bound to an expression
+spec: 6
+args: --goal "unify(E, 2 * 3) & is_(X, E + 1)"
+--- stdin
+from peye import *
+--- stdout
+unify(2 * 3, 2 * 3) & is_(7, 2 * 3 + 1)
+
+=== comparison is exact across integers and floats
+spec: 6
+args: --goal "9007199254740993 > 9007199254740992.0" --goal "eq(9007199254740993, 9007199254740992.0)" --goal "eq(1, 1.0)"
+--- stdin
+from peye import *
+--- stdout
+9007199254740993 > 9007199254740992.0
+eq(1, 1.0)
+
+=== error: division by zero
+spec: 6
+args: --goal "is_(X, 1 / 0)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== error: floor division by zero
+spec: 6
+args: --goal "is_(X, 1 // 0)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== error: modulo by zero
+spec: 6
+args: --goal "is_(X, 1 % 0)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== error: zero to a negative power
+spec: 6
+args: --goal "is_(X, 0 ** -1)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== error: square root of a negative number
+spec: 6
+args: --goal "is_(X, sqrt(-1))"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== error: logarithm of zero
+spec: 6
+args: --goal "is_(X, log(0))"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== error: a result that is not a real number
+spec: 6
+args: --goal "is_(X, (-8) ** 0.5)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== error: a float overflow
+spec: 6
+args: --goal "is_(X, 1e+308 * 10)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== error: a float power overflow
+spec: 6
+args: --goal "is_(X, 10.0 ** 400)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== error: a power too large to hold
+spec: 6
+args: --goal "is_(X, 2 ** (10 ** 10))"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== error: a shift too large to hold
+spec: 6
+args: --goal "is_(X, 1 << (2 ** 30))"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== error: an atom that is not a constant
+spec: 6
+args: --goal "is_(X, 'foo' + 1)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== error: an unbound variable
+spec: 6
+args: --goal "is_(X, Y + 1)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== error: an unknown function
+spec: 6
+args: --goal "is_(X, foo(1))"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== error: a bitwise operator on a float
+spec: 6
+args: --goal "is_(X, 1.5 & 1)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== in a program, arithmetic on numbers alone is computed by Python
+spec: 4.4, 6
+--- program.py
+from peye import *
+query(unify(Y, 3 + 4), is_(X, Y * 2))
+--- stdout
+unify(7, 7) & is_(14, 7 * 2)

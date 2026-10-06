@@ -150,10 +150,11 @@ def _format_struct(term, env, names, out):
             out.append(f' {symbol} ')
             _operand(args[1], env, names, out, level + 1)
         elif level == POWER:
-            # Right associative, and binds tighter than a unary minus on its left.
+            # Right associative, and binds tighter than a unary minus on its
+            # left; on its right Python reads a unary operator as it is: 2 ** -1.
             _operand(args[0], env, names, out, level + 1)
             out.append(' ** ')
-            _operand(args[1], env, names, out, level)
+            _operand(args[1], env, names, out, UNARY)
         else:
             _operand(args[0], env, names, out, level)
             out.append(f' {symbol} ')

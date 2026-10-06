@@ -1,0 +1,418 @@
+# SPEC 9: reading documents. Accepted forms are read through facts_from and
+# printed back; rejected forms are given as goals and must stop the run.
+
+=== canonical text reads back as the same term
+spec: 8, 9
+--- program.py
+from peye import *
+facts_from('data.py')
+query(d(X))
+--- data.py
+d('plain')
+d("it's")
+d([1, [2, 3], *T])
+d(struct('hello world', 1))
+d(1 + 2 * 3)
+d((1 + 2) * 3)
+d(2 ** -1)
+d(-2 ** 2)
+d((-2) ** 2)
+d(struct('-', 1))
+d(--'x')
+d('a' | 'b' & 'c')
+d((1 < 2) & (3 >= 4))
+d(1e+22)
+d(-0.5)
+--- stdout
+d('plain')
+d("it's")
+d([1, [2, 3], *…])
+d(struct('hello world', 1))
+d(1 + 2 * 3)
+d((1 + 2) * 3)
+d(2 ** -1)
+d(-2 ** 2)
+d((-2) ** 2)
+d(struct('-', 1))
+d(--'x')
+d('a' | 'b' & 'c')
+d((1 < 2) & (3 >= 4))
+d(1e+22)
+d(-0.5)
+
+=== other spellings read as the same terms
+spec: 9
+--- program.py
+from peye import *
+facts_from('data.py')
+query(d(X))
+--- data.py
+d("double")
+d(r'raw\n')
+d(u'unicode')
+d('adjacent' ' literals')
+d(1_000)
+d(0x10)
+d(1e3)
+d(-(5))
+d(-((6)))
+d(+5)
+d(p())
+d(struct('x'))
+d((1))
+d([1, 2,])
+d(
+    'over several lines'
+)
+# a comment line
+
+d(  'spaces'  ,  )
+--- stdout
+d('double')
+d('raw\\n')
+d('unicode')
+d('adjacent literals')
+d(1000)
+d(16)
+d(1000.0)
+d(-5)
+d(-6)
+d(+5)
+d('p')
+d('x')
+d(1)
+d([1, 2])
+d('over several lines')
+d('spaces')
+
+=== a dictionary display reads as a list of = pairs
+spec: 9
+--- program.py
+from peye import *
+facts_from('data.py')
+query(d(X))
+--- data.py
+d({'X': 1, 'Y': f(2)})
+--- stdout
+d([struct('=', 'X', 1), struct('=', 'Y', f(2))])
+
+=== a name reads as a variable, and each _ as a new one
+spec: 9
+args: program.py --goal "same(1, 1)" --goal "same(1, 2)" --goal "any(1, 2)"
+--- program.py
+from peye import *
+facts_from('data.py')
+--- data.py
+same(X, X)
+any(_, _)
+--- stdout
+same(1, 1)
+any(1, 2)
+
+=== a document is not executed
+spec: 9, 15
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+facts_from('data.py')
+--- data.py
+__import__('os').system('echo executed > executed.txt')
+--- stdout
+
+=== a statement that is not an expression is rejected
+spec: 9
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+facts_from('data.py')
+--- data.py
+x = 1
+--- stdout
+
+=== an import statement is rejected
+spec: 9
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+facts_from('data.py')
+--- data.py
+import os
+--- stdout
+
+=== an indented line is rejected
+spec: 9
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+facts_from('data.py')
+--- data.py
+d(1)
+    d(2)
+--- stdout
+
+=== a syntax error is rejected
+spec: 9
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+facts_from('data.py')
+--- data.py
+d(1
+--- stdout
+
+=== goal text rejects an attribute
+spec: 9
+args: --goal "os.path"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects a subscript
+spec: 9
+args: --goal "x[0]"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects a keyword argument
+spec: 9
+args: --goal "f(x=1)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects a call of an attribute
+spec: 9
+args: --goal "os.system('true')"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects a call of a call
+spec: 9
+args: --goal "f()()"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects a starred call argument
+spec: 9
+args: --goal "f(*X)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects a tuple
+spec: 9
+args: --goal "(1, 2)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects a set
+spec: 9
+args: --goal "{1, 2}"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects True
+spec: 9
+args: --goal "p(True)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects None
+spec: 9
+args: --goal "p(None)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects a bytes literal
+spec: 9
+args: --goal "p(b'x')"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects a formatted string
+spec: 9
+args: --goal "p(f'{X}')"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects an imaginary number
+spec: 9
+args: --goal "p(1j)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects ==
+spec: 9
+args: --goal "X == Y"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects !=
+spec: 9
+args: --goal "X != Y"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects in
+spec: 9
+args: --goal "X in Y"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects is
+spec: 9
+args: --goal "X is Y"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects not
+spec: 9
+args: --goal "not X"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects and
+spec: 9
+args: --goal "X and Y"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects or
+spec: 9
+args: --goal "X or Y"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects the matrix operator
+spec: 9
+args: --goal "X @ Y"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects a chained comparison
+spec: 9
+args: --goal "1 < 2 < 3"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects a starred item before the end of a list
+spec: 9
+args: --goal "[*X, 1]"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects a dictionary unpacking
+spec: 9
+args: --goal "{**X}"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects a conditional expression
+spec: 9
+args: --goal "X if Y else Z"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects a lambda
+spec: 9
+args: --goal "lambda: 1"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects struct without a name
+spec: 9
+args: --goal "struct()"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== goal text rejects struct with a name that is not a string
+spec: 9
+args: --goal "struct(1, 2)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout

@@ -1,0 +1,96 @@
+# SPEC 13: unused clauses, reported with the line their statement begins on.
+
+=== clauses no conclusion rests on are unused
+spec: 13
+args: --unused program.py
+--- program.py
+from peye import *
+
+fact(p('a'))
+fact(q('b'))
+backward(s(X), q(X))
+fact(z('c'))
+forward('ok', p('a'), ~s('a'))
+--- stdout
+unused(line(4), fact(q('b')))
+unused(line(5), backward(s(X), q(X)))
+unused(line(6), fact(z('c')))
+
+=== a program whose every clause is used lists nothing
+spec: 13
+args: --unused program.py
+--- program.py
+from peye import *
+fact(type('socrates', 'human'))
+fact(subclass_of('human', 'mortal'))
+forward(type(S, B), type(S, A), subclass_of(A, B))
+query(type(X, Y))
+--- stdout
+
+=== a clause a negation consults is used when leaving it out changes the conclusions
+spec: 13
+args: --unused program.py
+--- program.py
+from peye import *
+fact(p('a'), p('b'))
+fact(blocked('b'))
+forward(ok(X), p(X), ~blocked(X))
+--- stdout
+unused(line(2), fact(p('b')))
+
+=== a clause a negation consults is unused when leaving it out changes nothing
+spec: 13
+args: --unused program.py
+--- program.py
+from peye import *
+fact(p('a'))
+fact(blocked('b'))
+forward(ok(X), p(X), ~blocked(X))
+--- stdout
+unused(line(3), fact(blocked('b')))
+
+=== a clause a collection consults is used when leaving it out changes the conclusions
+spec: 13
+args: --unused program.py
+--- program.py
+from peye import *
+fact(p(1), p(2))
+forward(count(N), findall(X, p(X), L), length(L, N))
+fact(length([], 0))
+backward(length([_, *T], N), length(T, M), is_(N, M + 1))
+--- stdout
+
+=== a multi-line clause is reported with its first line
+spec: 13
+args: --unused program.py
+--- program.py
+from peye import *
+fact(p(1))
+backward(
+    never(X),
+    q(X),
+)
+query(p(X))
+--- stdout
+unused(line(3), backward(never(X), q(X)))
+
+=== unused clauses are relative to the goals asked
+spec: 13
+args: --unused --goal "a(X)" program.py
+--- program.py
+from peye import *
+fact(a(1))
+fact(b(2))
+--- stdout
+unused(line(3), fact(b(2)))
+
+=== a forward rule that concludes nothing is unused
+spec: 13
+args: --unused program.py
+--- program.py
+from peye import *
+fact(p(1))
+forward(q(X), p(X))
+forward(r(X), s(X))
+--- stdout
+unused(line(4), forward(r(X), s(X)))

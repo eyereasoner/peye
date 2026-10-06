@@ -1,0 +1,259 @@
+# SPEC 7: search order, forward reasoning, bounds, halting and conclusions.
+
+=== derived facts are tried before program clauses
+spec: 7.1
+args: program.py --goal "p(X)"
+--- program.py
+from peye import *
+fact(p('source'))
+fact(q)
+forward(p('derived'), q)
+--- stdout
+p('derived')
+p('source')
+
+=== program clauses are tried in clause order
+spec: 7.1
+args: program.py --goal "p(X)"
+--- program.py
+from peye import *
+fact(p(1))
+backward(p(X), q(X))
+fact(p(3))
+fact(q(2))
+--- stdout
+p(1)
+p(2)
+p(3)
+
+=== a forward rule's conclusions feed rules in later rounds
+spec: 7.2
+--- program.py
+from peye import *
+fact(a(1))
+forward(c(X), b(X))
+forward(b(X), a(X))
+--- stdout
+b(1)
+c(1)
+
+=== forward rules close over cycles
+spec: 7.2
+--- program.py
+from peye import *
+fact(edge('a', 'b'), edge('b', 'a'))
+forward(path(X, Y), edge(X, Y))
+forward(path(X, Z), path(X, Y), edge(Y, Z))
+--- stdout
+path('a', 'b')
+path('b', 'a')
+path('a', 'a')
+path('b', 'b')
+
+=== a conclusion identical to a program fact is not derived again
+spec: 7.2
+--- program.py
+from peye import *
+fact(p(1))
+forward(p(X), p(X))
+--- stdout
+
+=== an unbound head variable becomes sk_0
+spec: 7.2
+--- program.py
+from peye import *
+fact(person('ann'), person('bob'))
+forward(has_parent(X, Y), person(X))
+--- stdout
+has_parent('ann', 'sk_0')
+has_parent('bob', 'sk_0')
+
+=== Skolem names are numbered by first occurrence and shared across heads
+spec: 7.2
+--- program.py
+from peye import *
+fact(person('ann'))
+forward(r(X, Y, Z, Y) & s(Z), person(X))
+--- stdout
+r('ann', 'sk_0', 'sk_1', 'sk_0')
+s('sk_1')
+
+=== query reports each instance once
+spec: 7.2, 7.6
+--- program.py
+from peye import *
+fact(p(1), p(1), p(2))
+query(p(X))
+--- stdout
+p(1)
+p(2)
+
+=== query reports in order of first report
+spec: 7.6
+--- program.py
+from peye import *
+fact(p(1), q(2))
+query(q(X))
+query(p(Y))
+--- stdout
+q(2)
+p(1)
+
+=== without query output, the derived facts are the conclusions
+spec: 7.6
+--- program.py
+from peye import *
+fact(p(1))
+forward(q(X), p(X))
+query(r(X))
+--- stdout
+q(1)
+
+=== query output replaces the derived facts
+spec: 7.6
+--- program.py
+from peye import *
+fact(p(1))
+forward(q(X), p(X))
+query(p(X))
+--- stdout
+p(1)
+
+=== goals replace the program's own queries
+spec: 7.2, 7.6
+args: program.py --goal "q(Y)"
+--- program.py
+from peye import *
+fact(p(1))
+forward(q(X), p(X))
+query(p(X))
+--- stdout
+q(1)
+
+=== several goals are answered in turn
+spec: 7.4
+args: program.py --goal "q(X)" --goal "p(X)"
+--- program.py
+from peye import *
+fact(p(1), q(2))
+--- stdout
+q(2)
+p(1)
+
+=== a goal with no solution has no conclusion
+spec: 7.4, 7.6
+args: program.py --goal "p(2)"
+--- program.py
+from peye import *
+fact(p(1))
+--- stdout
+
+=== a contradiction stops reasoning and prints what was derived
+spec: 7.2, 7.5, 7.6
+exit: 65
+--- program.py
+from peye import *
+fact(p(1))
+forward(q(X), p(X))
+contradiction(q(X))
+query(p(X))
+--- stdout
+q(1)
+'false'
+
+=== a contradiction overrides goals
+spec: 7.5, 7.6
+args: program.py --goal "p(X)"
+exit: 65
+--- program.py
+from peye import *
+fact(p(1))
+forward(q(X), p(X))
+contradiction(q(X))
+--- stdout
+q(1)
+'false'
+
+=== a contradiction stops the rules after it
+spec: 7.2
+exit: 65
+--- program.py
+from peye import *
+fact(p(1))
+contradiction(p(1))
+forward(q(X), p(X))
+--- stdout
+'false'
+
+=== a contradiction that never holds changes nothing
+spec: 7.5
+--- program.py
+from peye import *
+fact(p(1))
+forward(q(X), p(X))
+contradiction(q(2))
+--- stdout
+q(1)
+
+=== exceeding max-depth is an error
+spec: 7.3
+args: program.py --goal "p()" --max-depth 10
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+backward(p, p)
+--- stdout
+
+=== exceeding max-iterations is an error
+spec: 7.3
+args: program.py --max-iterations 3
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+fact(n(0))
+forward(n(M), n(N), is_(M, N + 1))
+--- stdout
+
+=== exceeding max-inferences is an error
+spec: 7.3
+args: program.py --max-inferences 1
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+fact(p(1))
+forward(q(X), p(X))
+--- stdout
+
+=== bounds large enough change nothing
+spec: 7.3
+args: program.py --max-depth 5 --max-iterations 5 --max-inferences 100
+--- program.py
+from peye import *
+fact(n(0))
+forward(n(M), n(N), N < 3, is_(M, N + 1))
+--- stdout
+n(1)
+n(2)
+n(3)
+
+=== a run without a proof may use a mode test
+spec: 7.7
+args: program.py --goal "p(X)"
+--- program.py
+from peye import *
+backward(p(X), is_var(X), unify(X, 'a'))
+--- stdout
+p('a')
+
+=== a proof that cannot be recorded faithfully is refused
+spec: 7.7
+args: --proof program.py --goal "p(X)"
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+backward(p(X), is_var(X), unify(X, 'a'))
+--- stdout

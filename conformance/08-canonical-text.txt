@@ -1,0 +1,225 @@
+# SPEC 8: every term has one canonical text. The programs state terms and
+# print them back as conclusions.
+
+=== atoms are written as Python's repr of the string
+spec: 8.1
+--- program.py
+from peye import *
+fact(d('plain'), d("it's"), d('say "hi"'), d('both \' and "'), d('tab\there'), d('new\nline'))
+fact(d('back\\slash'), d('café'), d('😀'), d('bell\x07'), d('zero\u200bwidth'), d(''))
+query(d(X))
+--- stdout
+d('plain')
+d("it's")
+d('say "hi"')
+d('both \' and "')
+d('tab\there')
+d('new\nline')
+d('back\\slash')
+d('café')
+d('😀')
+d('bell\x07')
+d('zero\u200bwidth')
+d('')
+
+=== the empty list is written []
+spec: 8.1
+--- program.py
+from peye import *
+fact(d([]), d('[]'), d(struct('[]')))
+query(d(X))
+--- stdout
+d([])
+
+=== integers are written in decimal
+spec: 8.1
+--- program.py
+from peye import *
+fact(d(0), d(-7), d(10 ** 40))
+query(d(X))
+--- stdout
+d(0)
+d(-7)
+d(10000000000000000000000000000000000000000)
+
+=== floats are written as Python's repr
+spec: 8.1
+--- program.py
+from peye import *
+fact(d(0.1), d(2.0), d(-0.5), d(1e22), d(0.00001), d(1e17), d(123456789.0), d(1.7976931348623157e308), d(-0.0))
+query(d(X))
+--- stdout
+d(0.1)
+d(2.0)
+d(-0.5)
+d(1e+22)
+d(1e-05)
+d(1e+17)
+d(123456789.0)
+d(1.7976931348623157e+308)
+d(-0.0)
+
+=== a variable is written as its name
+spec: 8.1
+args: --goal "unify(Some_Var1, Some_Var1)" --goal "unify(f(lowercase), f(lowercase))" --goal "unify(g(struct), g(struct))"
+--- stdin
+from peye import *
+--- stdout
+unify(Some_Var1, Some_Var1)
+unify(f(lowercase), f(lowercase))
+unify(g(struct), g(struct))
+
+=== a variable name starting with EYE_ is encoded
+spec: 8.1
+args: --goal "unify(EYE_X, EYE_X)"
+--- stdin
+from peye import *
+--- stdout
+unify(EYE_EYE__X, EYE_EYE__X)
+
+=== lists and open lists
+spec: 8.1
+args: --goal "unify(L, [1, [2, 3], []])" --goal "unify(M, [1, *T])" --goal "unify(N, struct('.', 1, 'b'))"
+--- stdin
+from peye import *
+--- stdout
+unify([1, [2, 3], []], [1, [2, 3], []])
+unify([1, *T], [1, *T])
+unify([1, *'b'], [1, *'b'])
+
+=== a compound named by an identifier is written as a call
+spec: 8.2
+--- program.py
+from peye import *
+fact(d(struct('Upper', 1)), d(struct('café', 'x')), d(struct('_hidden', 2)))
+query(d(X))
+--- stdout
+d(Upper(1))
+d(café('x'))
+d(_hidden(2))
+
+=== any other compound is written with struct
+spec: 8.2
+--- program.py
+from peye import *
+fact(d(struct('hello world', 1)), d(struct('from', 1)), d(struct('struct', 1)), d(struct('=', 1, 2)))
+fact(d(struct('+', 1, 2, 3)), d(struct('.', 1)), d(struct('9lives', 0)))
+query(d(X))
+--- stdout
+d(struct('hello world', 1))
+d(struct('from', 1))
+d(struct('struct', 1))
+d(struct('=', 1, 2))
+d(struct('+', 1, 2, 3))
+d(struct('.', 1))
+d(struct('9lives', 0))
+
+=== binary operators and left associativity
+spec: 8.2
+--- program.py
+from peye import *
+fact(d(struct('+', 1, 2)), d(struct('-', struct('-', 1, 2), 3)), d(struct('-', 1, struct('-', 2, 3))))
+fact(d(struct('*', struct('+', 1, 2), 3)), d(struct('+', 1, struct('*', 2, 3))), d(struct('%', 7, 2)))
+fact(d(struct('//', 7, 2)), d(struct('/', 7, 2)), d(struct('<<', 1, 2)), d(struct('>>', 8, 1)), d(struct('^', 1, 2)))
+query(d(X))
+--- stdout
+d(1 + 2)
+d(1 - 2 - 3)
+d(1 - (2 - 3))
+d((1 + 2) * 3)
+d(1 + 2 * 3)
+d(7 % 2)
+d(7 // 2)
+d(7 / 2)
+d(1 << 2)
+d(8 >> 1)
+d(1 ^ 2)
+
+=== power is right associative and binds tighter than unary minus
+spec: 8.2
+--- program.py
+from peye import *
+fact(d(struct('**', 2, struct('**', 3, 2))), d(struct('**', struct('**', 2, 3), 2)))
+fact(d(struct('-', struct('**', 2, 2))), d(struct('**', -2, 2)), d(struct('**', 2, -1)), d(struct('**', 2, struct('-', 'x'))))
+query(d(X))
+--- stdout
+d(2 ** 3 ** 2)
+d((2 ** 3) ** 2)
+d(-2 ** 2)
+d((-2) ** 2)
+d(2 ** -1)
+d(2 ** -'x')
+
+=== unary operators
+spec: 8.2
+--- program.py
+from peye import *
+fact(d(struct('-', 'x')), d(struct('+', 1)), d(struct('~', 'g')), d(struct('-', struct('-', 'x'))), d(struct('-', struct('+', 1, 2))))
+query(d(X))
+--- stdout
+d(-'x')
+d(+1)
+d(~'g')
+d(--'x')
+d(-(1 + 2))
+
+=== minus applied to a number is written with struct
+spec: 8.2
+--- program.py
+from peye import *
+fact(d(struct('-', 1)), d(struct('-', -1)), d(struct('-', 2.5)))
+query(d(X))
+--- stdout
+d(struct('-', 1))
+d(struct('-', -1))
+d(struct('-', 2.5))
+
+=== conjunction, disjunction and negation
+spec: 8.2
+--- program.py
+from peye import *
+fact(d(struct(',', struct(',', 'a', 'b'), 'c')), d(struct(',', 'a', struct(',', 'b', 'c'))))
+fact(d(struct(';', 'a', struct(',', 'b', 'c'))), d(struct(',', struct(';', 'a', 'b'), 'c')))
+fact(d(struct('~', struct(',', 'a', 'b'))), d(struct(',', struct('~', 'a'), 'b')))
+query(d(X))
+--- stdout
+d('a' & 'b' & 'c')
+d('a' & ('b' & 'c'))
+d('a' | 'b' & 'c')
+d(('a' | 'b') & 'c')
+d(~('a' & 'b'))
+d(~'a' & 'b')
+
+=== comparisons do not chain and bind looser than every other operator
+spec: 8.2
+--- program.py
+from peye import *
+fact(d(struct('<', struct('<', 1, 2), 3)), d(struct(',', struct('<', 1, 2), struct('>=', 3, 4))))
+fact(d(struct('<=', struct('+', 1, 2), struct('|', 1, 2))), d(struct('<', 1, struct(';', 2, 3))))
+query(d(X))
+--- stdout
+d((1 < 2) < 3)
+d((1 < 2) & (3 >= 4))
+d(1 + 2 <= struct('|', 1, 2))
+d(1 < 2 | 3)
+
+=== an open list's tail is parenthesized only when Python needs it
+spec: 8.1, 8.2
+--- program.py
+from peye import *
+fact(d(struct('.', 1, struct('<', 1, 2))), d(struct('.', 1, struct(';', 'a', 'b'))))
+query(d(X))
+--- stdout
+d([1, *(1 < 2)])
+d([1, *'a' | 'b'])
+
+=== a negative number is parenthesized like a unary minus
+spec: 8.2
+--- program.py
+from peye import *
+fact(d(struct('-', 1, -1)), d(struct('-', -1, 1)), d(struct('*', -2, 3)))
+query(d(X))
+--- stdout
+d(1 - -1)
+d(-1 - 1)
+d(-2 * 3)

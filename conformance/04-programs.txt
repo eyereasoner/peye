@@ -1,0 +1,419 @@
+# SPEC 4: programs, statements, names, rejected clauses and stratification.
+
+=== fact states one fact per argument, numbered in order
+spec: 4.2
+args: --proof program.py
+--- program.py
+from peye import *
+fact(p(1), p(2))
+forward(q(X), p(X))
+--- stdout
+q(1)
+q(2)
+
+clause(1, fact(p(1)))
+clause(2, fact(p(2)))
+clause(3, forward(q(X), p(X)))
+
+step(q(1), rule(3), {'X': 1}, [p(1)])
+step(p(1), fact(1), {}, [])
+step(q(2), rule(3), {'X': 2}, [p(2)])
+step(p(2), fact(2), {}, [])
+
+=== a forward rule may conclude several heads joined with &
+spec: 4.2
+args: --proof program.py
+--- program.py
+from peye import *
+fact(p(1))
+forward(a(X) & b(X), p(X))
+--- stdout
+a(1)
+b(1)
+
+clause(1, fact(p(1)))
+clause(2, forward(a(X) & b(X), p(X)))
+
+step(a(1), rule(2), {'X': 1}, [p(1)])
+step(p(1), fact(1), {}, [])
+step(b(1), rule(2), {'X': 1}, [p(1)])
+
+=== a backward rule without a body is a fact
+spec: 4.2
+args: --proof --goal "p(X)" program.py
+--- program.py
+from peye import *
+backward(p(1))
+--- stdout
+p(1)
+
+clause(1, fact(p(1)))
+
+step(p(1), fact(1), {}, [])
+
+=== a body conjunction is split into its goals
+spec: 4.2
+args: --proof --goal "r(X)" program.py
+--- program.py
+from peye import *
+fact(p(1), q(1))
+backward(r(X), p(X) & q(X))
+--- stdout
+r(1)
+
+clause(1, fact(p(1)))
+clause(2, fact(q(1)))
+clause(3, backward(r(X), p(X), q(X)))
+
+step(r(1), rule(3), {'X': 1}, [p(1), q(1)])
+step(p(1), fact(1), {}, [])
+step(q(1), fact(2), {}, [])
+
+=== query publishes each instance of its body
+spec: 4.2
+args: program.py
+--- program.py
+from peye import *
+fact(p(1), p(2), q(2))
+query(p(X), q(X))
+--- stdout
+p(2) & q(2)
+
+=== contradiction stops with exit code 65
+spec: 4.2, 7.5
+exit: 65
+--- program.py
+from peye import *
+fact(account('bob', -5))
+contradiction(account(Owner, Balance), Balance < 0)
+--- stdout
+'false'
+
+=== facts_from states every expression of a document as a fact
+spec: 4.2, 9
+--- program.py
+from peye import *
+facts_from('data.py')
+query(edge('a', X))
+--- data.py
+edge('a', 'b')
+edge('b', 'c')
+
+edge('a', [1, 2.5, -3])
+--- stdout
+edge('a', 'b')
+edge('a', [1, 2.5, -3])
+
+=== facts_from reads text too
+spec: 4.2
+--- program.py
+from peye import *
+facts_from(text="score('ann', 3)\nscore('bob', 5)\n")
+query(score(Who, S), S > 4)
+--- stdout
+score('bob', 5) & (5 > 4)
+
+=== several program files form one program, numbered in order
+spec: 4.1
+args: --proof a.py b.py
+--- a.py
+from peye import *
+fact(p(1))
+--- b.py
+from peye import *
+forward(q(X), p(X))
+--- stdout
+q(1)
+
+clause(1, fact(p(1)))
+clause(2, forward(q(X), p(X)))
+
+step(q(1), rule(2), {'X': 1}, [p(1)])
+step(p(1), fact(1), {}, [])
+
+=== undefined lowercase names are predicates, even Python builtins
+spec: 4.3
+--- program.py
+from peye import *
+fact(type('socrates', 'human'))
+fact(sum(1, 2), id(7), max('x'))
+query(type(X, Y), sum(1, Z), id(I), max(M))
+--- stdout
+type('socrates', 'human') & sum(1, 2) & id(7) & max('x')
+
+=== undefined names starting with a capital or _ are variables
+spec: 4.3
+--- program.py
+from peye import *
+fact(pair(1, 2))
+query(pair(First, _Second))
+--- stdout
+pair(1, 2)
+
+=== kept builtins keep their Python meaning
+spec: 4.3
+--- program.py
+from peye import *
+for i in range(3):
+    fact(n(i, len(str(i * 10))))
+query(n(I, L))
+--- stdout
+n(0, 1)
+n(1, 2)
+n(2, 2)
+
+=== a program may name a kept builtin as a predicate
+spec: 4.3
+--- program.py
+from peye import *
+range = preds('range')
+fact(range('parent_of', 'person'))
+query(range(P, C))
+--- stdout
+range('parent_of', 'person')
+
+=== preds and vars name predicates and variables explicitly
+spec: 4.3
+--- program.py
+from peye import *
+p, q = preds('p q')
+A = vars('A')
+fact(p(1))
+forward(q(A), p(A))
+--- stdout
+q(1)
+
+=== helper functions see the names a program leaves undefined
+spec: 4.3
+--- program.py
+from peye import *
+
+def chain(n):
+    for i in range(n):
+        fact(edge(i, i + 1))
+
+chain(3)
+forward(path(X, Y), edge(X, Y))
+forward(path(X, Z), path(X, Y), edge(Y, Z))
+query(path(0, W))
+--- stdout
+path(0, 1)
+path(0, 2)
+path(0, 3)
+
+=== a predicate called on its own states nothing and is an error
+spec: 4.3
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+fact(p(1))
+fcat(p(2))
+--- stdout
+
+=== a predicate name used uncalled is its atom
+spec: 4.3
+--- program.py
+from peye import *
+fact(ready)
+query(ready, ~blocked)
+--- stdout
+'ready' & ~'blocked'
+
+=== every _ in a clause is a variable of its own
+spec: 4.4
+args: program.py --goal "pair(1, 2)"
+--- program.py
+from peye import *
+fact(pair(_, _))
+--- stdout
+pair(1, 2)
+
+=== struct builds a compound with any name
+spec: 4.4
+args: program.py --goal "struct('hello world', X)" --goal "struct('from', Y)"
+--- program.py
+from peye import *
+fact(struct('hello world', 1))
+fact(struct('from', 'here'))
+--- stdout
+struct('hello world', 1)
+struct('from', 'here')
+
+=== struct with only a name is the atom
+spec: 4.4
+args: program.py --goal "p(X)"
+--- program.py
+from peye import *
+fact(p(struct('lonely')))
+--- stdout
+p('lonely')
+
+=== Python operators on terms build compound terms
+spec: 4.4
+--- program.py
+from peye import *
+query(unify(T, X * 2 + 1), unify(X, 3))
+--- stdout
+unify(3 * 2 + 1, 3 * 2 + 1) & unify(3, 3)
+
+=== [H, *T] is a list with head H and tail T
+spec: 4.4
+args: program.py --goal "split([1, 2, 3], H, T)"
+--- program.py
+from peye import *
+fact(split([H, *T], H, T))
+--- stdout
+split([1, 2, 3], 1, [2, 3])
+
+=== a term used as a truth value is an error
+spec: 4.4
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+forward(p(X), q(X), X > 1 & X < 2)
+--- stdout
+
+=== a head of step/4 is reserved
+spec: 4.2
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+fact(struct('step', 1, 2, 3, 4))
+--- stdout
+
+=== a head of clause/2 is reserved
+spec: 4.2
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+fact(struct('clause', 1, 2))
+--- stdout
+
+=== a primitive cannot be a head
+spec: 4.2
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+fact(unify(1, 1))
+--- stdout
+
+=== a control cannot be a head
+spec: 4.2
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+backward(call('a'), 'true')
+--- stdout
+
+=== true and false are heads of forward rules only
+spec: 4.2
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+backward('true', p(1))
+--- stdout
+
+=== a number cannot be a head
+spec: 4.2
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+fact(42)
+--- stdout
+
+=== a list is not a goal
+spec: 4.2
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+backward(p, ['a'])
+--- stdout
+
+=== a number is not a goal
+spec: 4.2
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+backward(p, 1)
+--- stdout
+
+=== a forward rule needs a body
+spec: 4.2
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+forward(p(1))
+--- stdout
+
+=== negation through a cycle is unstratified
+spec: 4.5
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+forward(p, ~q)
+forward(q, p)
+--- stdout
+
+=== collection through a cycle is unstratified
+spec: 4.5
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+forward(p(L), findall(Y, p(Y), L))
+--- stdout
+
+=== a forward rule cannot reach a call of a variable
+spec: 4.5
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+fact(p('a'))
+backward(apply(G), call(G))
+forward(q, apply(p('a')))
+--- stdout
+
+=== a backward rule may call a variable goal when asked from outside
+spec: 4.5
+args: program.py --goal "apply(p('a'))"
+--- program.py
+from peye import *
+fact(p('a'))
+backward(apply(G), call(G))
+--- stdout
+apply(p('a'))
+
+=== negation runs after the closure it inspects
+spec: 4.5, 7.2
+--- program.py
+from peye import *
+fact(seed('a'), seed('b'))
+forward(clear(X), seed(X), ~blocked(X))
+forward(blocked(X), seed(X), danger(X))
+fact(danger('b'))
+--- stdout
+blocked('b')
+clear('a')
+
+=== strata compare whole terms, not just names
+spec: 4.5
+--- program.py
+from peye import *
+fact(t('a', 'seed', 'true'))
+forward(t(X, 'allowed', 'true'), t(X, 'seed', 'true'), ~t(X, 'blocked', 'true'))
+forward(t(X, 'blocked', 'true'), t(X, 'seed', 'true'))
+--- stdout
+t('a', 'blocked', 'true')

@@ -1,0 +1,174 @@
+# SPEC 3: terms, unification and the standard order.
+
+=== integers and floats do not unify
+spec: 3
+args: program.py --goal "p(1.0)"
+--- program.py
+from peye import *
+fact(p(1))
+--- stdout
+
+=== equal integers unify
+spec: 3
+args: program.py --goal "p(1)"
+--- program.py
+from peye import *
+fact(p(1))
+--- stdout
+p(1)
+
+=== equal floats unify
+spec: 3
+args: program.py --goal "p(0.5)"
+--- program.py
+from peye import *
+fact(p(0.5))
+--- stdout
+p(0.5)
+
+=== the occurs check rejects a cyclic binding
+spec: 3
+args: --goal "unify(X, f(X))"
+--- stdin
+from peye import *
+--- stdout
+
+=== the occurs check looks through bindings
+spec: 3
+args: --goal "unify(X, Y) & unify(Y, f(X))"
+--- stdin
+from peye import *
+--- stdout
+
+=== the atom [] is the empty list
+spec: 3
+args: program.py --goal "p('[]')"
+--- program.py
+from peye import *
+fact(p([]))
+--- stdout
+p([])
+
+=== a list unifies with an open list
+spec: 3
+args: program.py --goal "p([H, *T])"
+--- program.py
+from peye import *
+fact(p([1, 2, 3]))
+--- stdout
+p([1, 2, 3])
+
+=== a list is a chain of '.' cells
+spec: 3
+args: program.py --goal "p(struct('.', H, T))"
+--- program.py
+from peye import *
+fact(p(['a', 'b']))
+--- stdout
+p(['a', 'b'])
+
+=== compound terms unify argument by argument
+spec: 3
+args: --goal "unify(f(X, 'b'), f('a', Y))"
+--- stdin
+from peye import *
+--- stdout
+unify(f('a', 'b'), f('a', 'b'))
+
+=== compound terms of different arity do not unify
+spec: 3
+args: --goal "unify(f(X), f(X, Y))"
+--- stdin
+from peye import *
+--- stdout
+
+=== compound terms of different name do not unify
+spec: 3
+args: --goal "unify(f(X), g(X))"
+--- stdin
+from peye import *
+--- stdout
+
+=== atoms unify by their text
+spec: 3
+args: --goal "unify('a b', 'a b')" --goal "unify('a', 'A')"
+--- stdin
+from peye import *
+--- stdout
+unify('a b', 'a b')
+
+=== an atom does not unify with a number
+spec: 3
+args: --goal "unify('1', 1)"
+--- stdin
+from peye import *
+--- stdout
+
+=== standard order: a float precedes an integer of equal value
+spec: 3
+args: --goal "compare(O, 1.0, 1)" --goal "compare(O, 1, 1.0)" --goal "compare(O, 1, 1)"
+--- stdin
+from peye import *
+--- stdout
+compare('<', 1.0, 1)
+compare('>', 1, 1.0)
+compare('=', 1, 1)
+
+=== standard order: numbers by value, exactly
+spec: 3
+args: --goal "compare(O, 2, 1.5)" --goal "compare(O, -1.5, -2)" --goal "compare(O, 9007199254740993, 9007199254740992.0)"
+--- stdin
+from peye import *
+--- stdout
+compare('>', 2, 1.5)
+compare('>', -1.5, -2)
+compare('>', 9007199254740993, 9007199254740992.0)
+
+=== standard order: variables, numbers, atoms, compounds
+spec: 3
+args: --goal "compare(O, X, 1)" --goal "compare(O, 99, 'a')" --goal "compare(O, 'zzz', f('a'))"
+--- stdin
+from peye import *
+--- stdout
+compare('<', X, 1)
+compare('<', 99, 'a')
+compare('<', 'zzz', f('a'))
+
+=== standard order: atoms by code point
+spec: 3
+args: --goal "compare(O, 'B', 'a')" --goal "compare(O, 'ab', 'b')" --goal "compare(O, 'a', 'ab')" --goal "compare(O, 'é', 'z')"
+--- stdin
+from peye import *
+--- stdout
+compare('<', 'B', 'a')
+compare('<', 'ab', 'b')
+compare('<', 'a', 'ab')
+compare('>', 'é', 'z')
+
+=== standard order: compounds by arity, then name, then arguments
+spec: 3
+args: --goal "compare(O, g('a', 'b'), f('a'))" --goal "compare(O, f('b'), g('a'))" --goal "compare(O, f('a', 'b'), f('a', 'c'))"
+--- stdin
+from peye import *
+--- stdout
+compare('>', g('a', 'b'), f('a'))
+compare('<', f('b'), g('a'))
+compare('<', f('a', 'b'), f('a', 'c'))
+
+=== standard order: distinct variables by first occurrence
+spec: 3
+args: --goal "compare(O, f(X), f(Y))" --goal "compare(O, X, X)"
+--- stdin
+from peye import *
+--- stdout
+compare('<', f(X), f(Y))
+compare('=', X, X)
+
+=== integers are unbounded
+spec: 3
+args: program.py --goal "p(N)"
+--- program.py
+from peye import *
+fact(p(123456789012345678901234567890123456789))
+--- stdout
+p(123456789012345678901234567890123456789)

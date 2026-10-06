@@ -1,0 +1,260 @@
+# SPEC 10: proof documents, exactly as a reasoner writes them.
+
+=== fact and rule steps, with bindings in the clause's variable order
+spec: 10.1, 10.2, 10.3
+args: --proof program.py
+--- program.py
+from peye import *
+fact(type('socrates', 'human'))
+fact(subclass_of('human', 'mortal'))
+forward(type(S, B), type(S, A), subclass_of(A, B))
+query(type(X, Y))
+--- stdout
+type('socrates', 'mortal')
+type('socrates', 'human')
+
+clause(1, fact(type('socrates', 'human')))
+clause(2, fact(subclass_of('human', 'mortal')))
+clause(3, forward(type(S, B), type(S, A), subclass_of(A, B)))
+
+step(type('socrates', 'mortal'), rule(3), {'S': 'socrates', 'B': 'mortal', 'A': 'human'}, [type('socrates', 'human'), subclass_of('human', 'mortal')])
+step(type('socrates', 'human'), fact(1), {}, [])
+step(subclass_of('human', 'mortal'), fact(2), {}, [])
+
+=== a proof of a goal claims the goal's answers
+spec: 10.1
+args: --proof --goal "p(X)" program.py
+--- program.py
+from peye import *
+fact(p(1))
+--- stdout
+p(1)
+
+clause(1, fact(p(1)))
+
+step(p(1), fact(1), {}, [])
+
+=== a fact with variables binds them
+spec: 10.3
+args: --proof --goal "same(1, 1)" program.py
+--- program.py
+from peye import *
+fact(same(X, X))
+--- stdout
+same(1, 1)
+
+clause(1, fact(same(X, X)))
+
+step(same(1, 1), fact(1), {'X': 1}, [])
+
+=== only the clauses a proof cites are displayed, by number
+spec: 10.1
+args: --proof --goal "big(X)" program.py
+--- program.py
+from peye import *
+fact(n(1), n(3))
+backward(big(X), n(X), X > 2)
+--- stdout
+big(3)
+
+clause(2, fact(n(3)))
+clause(3, backward(big(X), n(X), X > 2))
+
+step(big(3), rule(3), {'X': 3}, [n(3), 3 > 2])
+step(n(3), fact(2), {}, [])
+step(3 > 2, 'builtin', {}, [])
+
+=== call and once are control steps
+spec: 10.3
+args: --proof --goal "call(p(1))" --goal "once(q(Y))" program.py
+--- program.py
+from peye import *
+fact(p(1), q(2), q(3))
+--- stdout
+call(p(1))
+once(q(2))
+
+clause(1, fact(p(1)))
+clause(2, fact(q(2)))
+
+step(call(p(1)), 'control', {}, [p(1)])
+step(p(1), fact(1), {}, [])
+step(once(q(2)), 'control', {}, [q(2)])
+step(q(2), fact(2), {}, [])
+
+=== a disjunction is a control step with the side that held
+spec: 10.3
+args: --proof --goal "p(2) | p(1)" program.py
+--- program.py
+from peye import *
+fact(p(1))
+--- stdout
+p(2) | p(1)
+
+clause(1, fact(p(1)))
+
+step(p(2) | p(1), 'control', {}, [p(1)])
+step(p(1), fact(1), {}, [])
+
+=== a conjunction inside a control step is split into uses
+spec: 10.3
+args: --proof --goal "call(p(1) & q(1))" program.py
+--- program.py
+from peye import *
+fact(p(1), q(1))
+--- stdout
+call(p(1) & q(1))
+
+clause(1, fact(p(1)))
+clause(2, fact(q(1)))
+
+step(call(p(1) & q(1)), 'control', {}, [p(1), q(1)])
+step(p(1), fact(1), {}, [])
+step(q(1), fact(2), {}, [])
+
+=== a negation is an absent step
+spec: 10.3
+args: --proof program.py
+--- program.py
+from peye import *
+fact(p(1))
+forward(ok(X), p(X), ~q(X))
+--- stdout
+ok(1)
+
+clause(1, fact(p(1)))
+clause(2, forward(ok(X), p(X), ~q(X)))
+
+step(ok(1), rule(2), {'X': 1}, [p(1), ~q(1)])
+step(p(1), fact(1), {}, [])
+step(~q(1), 'absent', {}, [])
+
+=== a findall is a collected step
+spec: 10.3
+args: --proof program.py
+--- program.py
+from peye import *
+fact(p(1), p(2))
+forward(all_of(L), findall(X, p(X), L))
+--- stdout
+all_of([1, 2])
+
+clause(3, forward(all_of(L), findall(X, p(X), L)))
+
+step(all_of([1, 2]), rule(3), {'L': [1, 2], 'X': …}, [findall(…, p(…), [1, 2])])
+step(findall(…, p(…), [1, 2]), 'collected', {}, [])
+
+=== a query's claims are the instances of its body
+spec: 10.1
+args: --proof program.py
+--- program.py
+from peye import *
+fact(p(1), q(1))
+query(p(X), q(X))
+--- stdout
+p(1) & q(1)
+
+clause(1, fact(p(1)))
+clause(2, fact(q(1)))
+
+step(p(1), fact(1), {}, [])
+step(q(1), fact(2), {}, [])
+
+=== a goal used twice has one step
+spec: 10.3
+args: --proof program.py
+--- program.py
+from peye import *
+fact(p(1))
+forward(a, p(1))
+forward(b, p(1))
+--- stdout
+'a'
+'b'
+
+clause(1, fact(p(1)))
+clause(2, forward('a', p(1)))
+clause(3, forward('b', p(1)))
+
+step('a', rule(2), {}, [p(1)])
+step(p(1), fact(1), {}, [])
+step('b', rule(3), {}, [p(1)])
+
+=== steps follow a depth-first walk from the claims
+spec: 10.3
+args: --proof program.py
+--- program.py
+from peye import *
+fact(a(1))
+forward(b(X), a(X))
+forward(c(X), b(X), a(X))
+query(c(X))
+--- stdout
+c(1)
+
+clause(1, fact(a(1)))
+clause(2, forward(b(X), a(X)))
+clause(3, forward(c(X), b(X), a(X)))
+
+step(c(1), rule(3), {'X': 1}, [b(1), a(1)])
+step(b(1), rule(2), {'X': 1}, [a(1)])
+step(a(1), fact(1), {}, [])
+
+=== a derived fact used by a backward rule cites its forward rule
+spec: 10.3
+args: --proof --goal "r(X)" program.py
+--- program.py
+from peye import *
+fact(p(1))
+forward(q(X), p(X))
+backward(r(X), q(X))
+--- stdout
+r(1)
+
+clause(1, fact(p(1)))
+clause(2, forward(q(X), p(X)))
+clause(3, backward(r(X), q(X)))
+
+step(r(1), rule(3), {'X': 1}, [q(1)])
+step(q(1), rule(2), {'X': 1}, [p(1)])
+step(p(1), fact(1), {}, [])
+
+=== a halted run's proof claims what it derived and false
+spec: 10.1
+args: --proof program.py
+exit: 65
+--- program.py
+from peye import *
+fact(account('bob', -5))
+contradiction(account(O, B), B < 0)
+--- stdout
+'false'
+
+clause(1, fact(account('bob', -5)))
+clause(2, forward('false', account(O, B), B < 0))
+
+step('false', rule(2), {'O': 'bob', 'B': -5}, [account('bob', -5), -5 < 0])
+step(account('bob', -5), fact(1), {}, [])
+step(-5 < 0, 'builtin', {}, [])
+
+=== arithmetic in a step is the instance of the clause
+spec: 10.3
+args: --proof --goal "double(4, Y)" program.py
+--- program.py
+from peye import *
+backward(double(X, Y), is_(Y, X * 2))
+--- stdout
+double(4, 8)
+
+clause(1, backward(double(X, Y), is_(Y, X * 2)))
+
+step(double(4, 8), rule(1), {'X': 4, 'Y': 8}, [is_(8, 4 * 2)])
+step(is_(8, 4 * 2), 'builtin', {}, [])
+
+=== a run with no conclusions has a proof of two empty lines
+spec: 10.1
+args: --proof program.py
+stdout-literal: '\n\n'
+--- program.py
+from peye import *
+fact(p(1))
