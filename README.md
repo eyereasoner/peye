@@ -1,5 +1,8 @@
 # peye
 
+[![PyPI version](https://img.shields.io/pypi/v/peye.svg)](https://pypi.org/project/peye/)
+[![DOI](https://zenodo.org/badge/1407206403.svg)](https://zenodo.org/badge/latestdoi/1407206403)
+
 ![EYE](https://josd.github.io/images/eye.png)
 
 *peye — reasoning you can see.*
