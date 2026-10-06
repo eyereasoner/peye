@@ -37,7 +37,8 @@ git pull --ff-only
 # Test before anything is changed, so a failing build is never tagged.
 python3 -m unittest discover -s tests
 
-# Bump the version in pyproject.toml and peye/__init__.py, which must agree.
+# Bump the version in pyproject.toml, peye/__init__.py and the README's PyPI
+# badge, which must agree.
 NEW_VERSION="$(python3 - "$RELEASE_TYPE" <<'PY'
 import re, sys
 kind = sys.argv[1]
@@ -53,6 +54,13 @@ new = f'{major}.{minor}.{patch}'
 open('pyproject.toml', 'w', encoding='utf-8').write(project.replace(old.group(0), f'version = "{new}"'))
 open('peye/__init__.py', 'w', encoding='utf-8').write(
     init.replace(f"__version__ = '{'.'.join(old.groups())}'", f"__version__ = '{new}'"))
+# The README's PyPI badge names the version itself: a badge that looks it up
+# is cached for hours, so it would show an older release after this one.
+readme = open('README.md', encoding='utf-8').read()
+badge = f"badge/pypi-v{'.'.join(old.groups())}-blue.svg"
+if badge not in readme:
+    sys.exit('README.md has no PyPI badge for the current version')
+open('README.md', 'w', encoding='utf-8').write(readme.replace(badge, f'badge/pypi-v{new}-blue.svg'))
 print(new)
 PY
 )"

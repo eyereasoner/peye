@@ -1,6 +1,6 @@
 # peye
 
-[![PyPI version](https://img.shields.io/pypi/v/peye.svg)](https://pypi.org/project/peye/)
+[![PyPI version](https://img.shields.io/badge/pypi-v0.1.4-blue.svg)](https://pypi.org/project/peye/)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.23191223-blue.svg)](https://doi.org/10.5281/zenodo.23191223)
 
 ![EYE](https://josd.github.io/images/eye.png)
