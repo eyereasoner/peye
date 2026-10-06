@@ -2,7 +2,7 @@
 
 ```text
 Title:      The peye Rule Language and Proof Format
-Version:    peye 0.1.12
+Version:    peye 0.1.13
 Status:     Informational
 Author:     Jos De Roo, KNoWS office of IDLab, Ghent University - imec
 Repository: https://github.com/eyereasoner/peye
@@ -21,7 +21,7 @@ reports are written and read back, the proof document, the seven conditions
 ## Status of This Memo
 
 This document is not an Internet Standards Track specification. It describes
-the language and formats as implemented by peye 0.1.12, for readers who want
+the language and formats as implemented by peye 0.1.13, for readers who want
 to write programs, produce or consume proofs and reports, or implement a
 compatible reasoner or checker. Where this document and the implementation
 disagree, that is a defect in one of them.
@@ -686,7 +686,7 @@ conclusions and proof documents in the canonical text, and checks every proof
 it produces. A conforming **checker** implements Sections 9, 11 and 12 and
 does not depend on a reasoner. For the same program, a conforming reasoner
 and checker MUST produce the same conclusions, proof documents and reports
-as peye 0.1.12, byte for byte, except where Python's floating-point library
+as peye 0.1.13, byte for byte, except where Python's floating-point library
 functions differ in the last digit.
 
 The conformance suite in the repository's `conformance/` directory tests an
