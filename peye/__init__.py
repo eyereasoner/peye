@@ -25,7 +25,7 @@ from .writer import write
 if hasattr(sys, 'set_int_max_str_digits'):
     sys.set_int_max_str_digits(0)
 
-__version__ = '0.1.13'
+__version__ = '0.1.14'
 
 # What `from peye import *` gives a program: the names it states clauses
 # with. The library API (load, run, check_proof, ...) is imported by name.
