@@ -81,25 +81,6 @@ class CheckReports(unittest.TestCase):
         self.assertEqual(strict['conditions'][4]['failed'], 1)
         self.assertIn("condition('C5', 're_decision', failed(1), 0)\n", check_report(strict))
 
-    def test_a_strict_verdict_follows_from_the_report_on_every_example(self):
-        import os
-        import sys
-        from peye import load
-        from peye.proof import public_report, strict
-        from helpers import ROOT
-        sys.path.insert(0, os.path.join(ROOT, 'tools'))
-        from corpus import read_manifest, source_path
-        for entry in read_manifest():
-            if entry['name'] in ('deep-taxonomy-10000', 'path-discovery'):
-                continue  # large, and nothing a smaller one does not show
-            with self.subTest(entry['name']):
-                program = load(source_path(entry))
-                proved = run(program, proof=True)
-                derived = strict(proved.proof_report)
-                checked = check_proof(program, proved.proof, allow_trusted=False)
-                self.assertEqual(check_report(derived), check_report(checked))
-                self.assertEqual(public_report(derived), public_report(checked))
-
     def test_reports_can_be_loaded_and_queried_as_ordinary_data(self):
         source = program("p, q = preds('p q')\nX = vars('X')\nfact(p('a'))\nforward(q(X), p(X))")
         data = check_report(check_proof(source, run(source, proof=True).proof))

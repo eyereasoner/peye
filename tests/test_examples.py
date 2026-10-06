@@ -4,7 +4,8 @@ import os
 import sys
 import unittest
 
-from peye import check_proof, check_report, run
+from peye import check_proof, check_report, public_report, run
+from peye.proof import strict
 from peye.cli import with_deep_stack
 
 from helpers import ROOT, cli
@@ -41,8 +42,15 @@ class Examples(unittest.TestCase):
         self.assertEqual(output.stdout, saved['output'], CHANGED.format('output'))
         self.assertEqual(proved.proof, saved['proof'], CHANGED.format('proof'))
         self.assertEqual(check_report(proved.proof_report), saved['check'], CHANGED.format('check'))
-        # The saved certificate, checked from scratch.
-        self.assertEqual(check_report(check_proof(program, saved['proof'])), saved['check'])
+        # The saved certificate, checked from scratch and strictly. A strict
+        # check of a valid proof differs from the normal one only by a C5
+        # failure for each trusted boundary, which is the verdict strict()
+        # derives from the normal report without checking again; the two must
+        # agree, and so the saved proof checks from scratch too.
+        strictly = check_proof(program, saved['proof'], allow_trusted=False)
+        derived = strict(proved.proof_report)
+        self.assertEqual(public_report(strictly), public_report(derived))
+        self.assertEqual(check_report(strictly), check_report(derived))
         tampered = saved['proof'] + "\nunjustified_example_claim()\n"
         self.assertFalse(check_proof(program, tampered)['valid'])
 
