@@ -2,33 +2,12 @@
 // here, in Pyodide, off the page's main thread, so a long search cannot freeze
 // the editor, and stopping a run is a matter of terminating this worker.
 // Starting Python takes a few seconds, so one worker serves run after run.
-// Pyodide 0.27 runs Python 3.12. From 0.28 on, Python 3.13 frees a long
-// chain of objects, such as a deep search's frames, recursively, and in a
-// browser that overflows the stack before code is optimized: a first run of
-// deep-taxonomy-10000 fails there.
-const PYODIDE = 'https://cdn.jsdelivr.net/pyodide/v0.27.7/full/';
-const MODULES = ['__init__', 'arith', 'builtins', 'cli', 'common', 'dsl', 'engine', 'functions',
-  'program', 'proof', 'reader', 'terms', 'writer'];
+importScripts('peye-python.js');
 
-importScripts(`${PYODIDE}pyodide.js`);
-
-async function fetchText(url) {
-  const response = await fetch(url, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`${url}: ${response.status} ${response.statusText}`);
-  return response.text();
-}
-
-const ready = (async () => {
-  const pyodide = await loadPyodide({ indexURL: PYODIDE });
-  pyodide.FS.mkdirTree('/peye/peye');
-  const base = new URL('../peye/', self.location.href);
-  await Promise.all(MODULES.map(async (name) => {
-    pyodide.FS.writeFile(`/peye/peye/${name}.py`, await fetchText(new URL(`${name}.py`, base)));
-  }));
-  pyodide.FS.writeFile('/peye/runner.py', await fetchText(new URL('runner.py', self.location.href)));
-  pyodide.runPython("import sys; sys.path.insert(0, '/peye'); import runner");
+const ready = startPeye({ '/peye/runner.py': 'runner.py' }).then((pyodide) => {
+  pyodide.runPython('import runner');
   return pyodide.globals.get('runner').playground_run;
-})();
+});
 
 ready.then((playgroundRun) => {
   self.postMessage({ type: 'ready' });

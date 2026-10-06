@@ -10,6 +10,13 @@ from run import load_cases, run_case  # noqa: E402
 
 
 class Conformance(unittest.TestCase):
+    def test_the_manifest_lists_every_case_file(self):
+        from run import HERE, read_manifest
+        listed = [entry['file'] for entry in read_manifest()]
+        self.assertEqual(listed, sorted(name for name in os.listdir(HERE) if name.endswith('.txt')))
+        for entry in read_manifest():
+            self.assertTrue(entry['spec'] and entry['topic'], entry)
+
     def test_every_case(self):
         cases = load_cases()
         self.assertGreater(len(cases), 0)

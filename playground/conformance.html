@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>peye Conformance</title>
+  <link rel="icon" href="https://josd.github.io/images/eye.png">
+  <link rel="stylesheet" href="python-highlight.css">
+  <link rel="stylesheet" href="playground.css">
+  <style>
+    #filter { flex: 1 1 18em; }
+    .progress { height: 4px; background: var(--panel-2); }
+    .progress > div { height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
+    .group > summary { display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+    .group > summary .hint { font-weight: 400; }
+    .group .counts { margin-left: auto; font-weight: 600; }
+    .cases { list-style: none; margin: 0; padding: 0 0 6px; }
+    .cases details { border-top: 1px solid var(--border); }
+    .cases details > summary {
+      display: flex; gap: 10px; align-items: baseline; padding: 6px 14px; font-weight: 400;
+    }
+    .cases details[open] > summary { border-bottom: 0; }
+    .mark { flex: none; width: 1.2em; text-align: center; font-weight: 700; color: var(--muted); }
+    .mark.pass { color: var(--ok); }
+    .mark.fail { color: var(--danger); }
+    .case-name { flex: 1 1 auto; }
+    .spec, .time { flex: none; color: var(--muted); font-size: 13px; }
+    .case-body { padding: 0 14px 12px 44px; display: grid; gap: 8px; }
+    .case-body h4 { margin: 6px 0 0; font-size: 13px; color: var(--muted); font-weight: 600; }
+    .case-body pre {
+      margin: 0; padding: 8px 10px; background: var(--panel-2); border: 1px solid var(--border);
+      border-radius: 8px; font: 13px/1.5 var(--mono); white-space: pre-wrap; word-break: break-word;
+      max-height: 320px; overflow: auto;
+    }
+    .problems { margin: 0; padding-left: 1.2em; color: var(--danger); font: 13px/1.5 var(--mono); white-space: pre-wrap; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="https://josd.github.io/images/eye.png" alt="" width="64" height="64">
+    <div>
+      <h1>The peye Conformance Suite</h1>
+      <p class="tagline">peye — reasoning you can see.</p>
+      <p>Every case of the <a href="https://github.com/eyereasoner/peye/tree/main/conformance">conformance suite</a>,
+        run against peye in your browser and checked against the
+        <a href="https://eyereasoner.github.io/peye/SPEC">specification</a>.
+        <a href="./">Back to the playground</a></p>
+    </div>
+  </header>
+  <main>
+    <section aria-label="Run the suite">
+      <div class="toolbar">
+        <button id="run" type="button" class="primary" disabled>Run the cases</button>
+        <button id="stop" type="button" disabled>Stop</button>
+        <input id="filter" type="search" placeholder="Filter by name, file or SPEC section" autocomplete="off">
+        <label class="option"><input id="failures" type="checkbox"> Failures only</label>
+      </div>
+      <div class="progress"><div id="bar"></div></div>
+      <div class="status">
+        <span id="status">Starting Python…</span>
+        <span id="version">peye</span>
+      </div>
+    </section>
+    <div id="groups" style="display: grid; gap: 16px;"></div>
+    <section>
+      <div class="panel-body">
+        <p class="hint">Each case runs peye's command line on the files it names, in a directory of its own, and
+          compares what peye prints and its exit code with what the specification requires. In an expected
+          line, <code>…</code> stands for text the specification leaves to the implementation. Run the same
+          cases against any implementation with <code>python conformance/run.py --command "…"</code>.</p>
+      </div>
+    </section>
+  </main>
+  <footer>
+    Powered by <a href="https://github.com/eyereasoner/peye">peye</a>, a dependency-free Python rule language
+    with forward and backward reasoning and checkable proofs.
+  </footer>
+  <script type="module">
+    import { colorize, escapeHtml } from './python-highlight.js';
+    import { pack } from './share.js';
+
+    const $ = (selector) => document.querySelector(selector);
+    const runButton = $('#run');
+    const stopButton = $('#stop');
+    const filter = $('#filter');
+    const failuresOnly = $('#failures');
+    const status = $('#status');
+    const bar = $('#bar');
+    const groups = $('#groups');
+
+    let cases = [];
+    let results = [];
+    let queue = [];
+    let running = false;
+    let started = 0;
+    const worker = new Worker('conformance-worker.js');
+
+    worker.onmessage = ({ data }) => {
+      if (data.type === 'ready') loadCases();
+      else if (data.type === 'loaded') showCases(data);
+      else if (data.type === 'result') showResult(data);
+      else if (data.type === 'failed') { setStatus(`Python could not run the suite: ${data.error}`, true); running = false; }
+    };
+    worker.onerror = (event) => {
+      event.preventDefault();
+      setStatus(`${event.message || 'The worker failed to start'}. Serve the checkout over HTTP; file:// is not supported.`, true);
+    };
+    runButton.addEventListener('click', runCases);
+    stopButton.addEventListener('click', () => { queue = []; });
+    filter.addEventListener('input', applyFilter);
+    failuresOnly.addEventListener('change', applyFilter);
+
+    async function fetchText(url) {
+      const response = await fetch(url, { cache: 'no-store' });
+      if (!response.ok) throw new Error(`${url}: ${response.status} ${response.statusText}`);
+      return response.text();
+    }
+
+    async function loadCases() {
+      try {
+        setStatus('Loading the cases…');
+        const manifest = JSON.parse(await fetchText('../conformance/manifest.json'));
+        const files = await Promise.all(manifest.map(async (entry) =>
+          ({ ...entry, text: await fetchText(`../conformance/${entry.file}`) })));
+        groups.dataset.manifest = JSON.stringify(manifest);
+        worker.postMessage({ type: 'load', files: files.map(({ file, text }) => ({ file, text })) });
+      } catch (error) {
+        setStatus(`Could not load the cases: ${error.message}`, true);
+      }
+    }
+
+    // ----- the list of cases ----------------------------------------------
+
+    function showCases(data) {
+      cases = data.cases;
+      results = cases.map(() => null);
+      $('#version').textContent = `peye v${data.version}`;
+      const manifest = JSON.parse(groups.dataset.manifest);
+      groups.replaceChildren(...manifest.map((entry) => groupElement(entry)));
+      cases.forEach((item, index) => {
+        $(`[data-file="${CSS.escape(item.file)}"] .cases`).append(caseElement(item, index));
+      });
+      updateCounts();
+      const params = new URLSearchParams(location.hash.slice(1));
+      if (params.has('filter')) filter.value = params.get('filter');
+      applyFilter();
+      runButton.disabled = false;
+      setStatus(`${cases.length} cases ready.`);
+      if (params.has('run')) runCases();
+    }
+
+    function groupElement(entry) {
+      const group = document.createElement('section');
+      group.dataset.file = entry.file;
+      group.innerHTML = `<details class="group" open>
+        <summary><span>${escapeHtml(entry.file)}</span>
+          <span class="hint">SPEC ${escapeHtml(entry.spec)} · ${escapeHtml(entry.topic)}</span>
+          <span class="counts"></span></summary>
+        <ul class="cases"></ul></details>`;
+      return group;
+    }
+
+    function caseElement(item, index) {
+      const row = document.createElement('li');
+      row.id = `case-${index}`;
+      row.innerHTML = `<details>
+        <summary><span class="mark">•</span><span class="case-name">${escapeHtml(item.name)}</span>
+          <span class="spec">SPEC ${escapeHtml(item.spec)}</span><span class="time"></span></summary>
+        <div class="case-body"></div></details>`;
+      row.querySelector('details').addEventListener('toggle', (event) => {
+        if (event.target.open) renderBody(index);
+      }, { once: false });
+      return row;
+    }
+
+    function renderBody(index) {
+      const item = cases[index];
+      const result = results[index];
+      const body = document.querySelector(`#case-${index} .case-body`);
+      const parts = [`<h4>Command line</h4><pre>peye ${escapeHtml(item.args)}</pre>`];
+      for (const [name, text] of Object.entries(item.files)) {
+        parts.push(`<h4>${escapeHtml(name)}</h4><pre>${name.endsWith('.py') ? colorize(text) : escapeHtml(text)}</pre>`);
+      }
+      if (item.stdin != null) parts.push(`<h4>Standard input</h4><pre>${colorize(item.stdin)}</pre>`);
+      parts.push(`<h4>Expected: exit code ${item.exit}${item.stderr ? `, standard error ${escapeHtml(item.stderr)}` : ''}</h4>`);
+      parts.push(`<pre>${expectedText(item)}</pre>`);
+      if (result) {
+        parts.push(`<h4>peye: exit code ${result.code ?? '—'} · ${result.milliseconds.toFixed(0)} ms</h4>`);
+        parts.push(`<pre>${result.stdout ? colorize(result.stdout) : '(no output)'}</pre>`);
+        if (result.stderr) parts.push(`<h4>Standard error</h4><pre>${escapeHtml(result.stderr)}</pre>`);
+        if (result.problems.length) {
+          parts.push(`<ul class="problems">${result.problems.map((p) => `<li>${escapeHtml(p)}</li>`).join('')}</ul>`);
+        }
+      }
+      parts.push('<p class="hint playground-link"></p>');
+      body.innerHTML = parts.join('');
+      playgroundLink(item).then((link) => {
+        if (link) body.querySelector('.playground-link').innerHTML = `<a href="${link}">Open this program in the playground</a>`;
+      });
+    }
+
+    function expectedText(item) {
+      if (item.stdoutMode === 'nonempty') return '(any output)';
+      if (item.stdout == null) return '(output not checked)';
+      if (item.stdout === '') return '(no output)';
+      return item.stdoutMode === 'json' ? escapeHtml(item.stdout) : colorize(item.stdout);
+    }
+
+    // A case that runs one program with at most a goal and --proof can be
+    // opened in the playground, whose options are the same.
+    async function playgroundLink(item) {
+      const tokens = splitArgs(item.args);
+      const names = Object.keys(item.files);
+      let source = null;
+      const params = new URLSearchParams();
+      let goals = 0;
+      for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i];
+        if (token === '--goal' && i + 1 < tokens.length) { params.set('goal', tokens[++i]); goals++; }
+        else if (token === '--proof') params.set('proof', '1');
+        else if (token === 'program.py' && names.length === 1 && names[0] === 'program.py') source = item.files['program.py'];
+        else if (token === '-' && item.stdin != null && !names.length) source = item.stdin;
+        else return null;
+      }
+      if (source == null && !tokens.length && item.stdin != null && !names.length) source = item.stdin;
+      if (source == null || goals > 1) return null;
+      params.set('source', await pack(source));
+      return `./#${params}`;
+    }
+
+    // Split command-line arguments as a POSIX shell would, for simple quoting.
+    function splitArgs(text) {
+      const tokens = [];
+      const pattern = /"((?:[^"\\]|\\.)*)"|'([^']*)'|(\S+)/g;
+      let match;
+      while ((match = pattern.exec(text))) {
+        tokens.push(match[1] != null ? match[1].replace(/\\(["\\$`])/g, '$1') : match[2] ?? match[3]);
+      }
+      return tokens;
+    }
+
+    function applyFilter() {
+      const needle = filter.value.trim().toLowerCase();
+      cases.forEach((item, index) => {
+        const result = results[index];
+        const matches = !needle || item.name.toLowerCase().includes(needle) ||
+          item.file.toLowerCase().includes(needle) || `spec ${item.spec}`.toLowerCase().includes(needle);
+        const failing = result && result.problems.length;
+        $(`#case-${index}`).classList.toggle('hidden', !matches || (failuresOnly.checked && !failing));
+      });
+      for (const group of groups.children) {
+        group.classList.toggle('hidden', !group.querySelector('.cases > li:not(.hidden)'));
+      }
+    }
+
+    // ----- running --------------------------------------------------------
+
+    function runCases() {
+      queue = cases.map((_, index) => index).filter((index) => !$(`#case-${index}`).classList.contains('hidden'));
+      if (!queue.length) return;
+      for (const index of queue) {
+        results[index] = null;
+        const mark = $(`#case-${index} .mark`);
+        mark.className = 'mark';
+        mark.textContent = '•';
+        $(`#case-${index} .time`).textContent = '';
+      }
+      running = true;
+      started = performance.now();
+      runButton.disabled = true;
+      stopButton.disabled = false;
+      updateCounts();
+      next();
+    }
+
+    function next() {
+      const index = queue.shift();
+      if (index === undefined) { finish(); return; }
+      $(`#case-${index} .mark`).textContent = '…';
+      worker.postMessage({ type: 'run', index });
+    }
+
+    function showResult(data) {
+      const { index } = data;
+      results[index] = data;
+      const passed = !data.problems.length;
+      const mark = $(`#case-${index} .mark`);
+      mark.className = `mark ${passed ? 'pass' : 'fail'}`;
+      mark.textContent = passed ? '✓' : '✗';
+      $(`#case-${index} .time`).textContent = `${data.milliseconds.toFixed(0)} ms`;
+      if (!passed) $(`#case-${index} details`).open = true;
+      if ($(`#case-${index} details`).open) renderBody(index);
+      updateCounts();
+      if (running) next();
+    }
+
+    function finish() {
+      running = false;
+      runButton.disabled = false;
+      stopButton.disabled = true;
+      const done = results.filter(Boolean);
+      const failed = done.filter((result) => result.problems.length).length;
+      const seconds = ((performance.now() - started) / 1000).toFixed(1);
+      status.classList.remove('error');
+      status.innerHTML = failed
+        ? `<span class="badge bad">${failed} of ${done.length} cases failed</span> · ${seconds} s`
+        : `<span class="badge ok">${done.length} of ${done.length} cases passed</span> · ${seconds} s`;
+      applyFilter();
+    }
+
+    function updateCounts() {
+      const done = results.filter(Boolean).length;
+      const failed = results.filter((result) => result && result.problems.length).length;
+      bar.style.width = `${cases.length ? (100 * done) / cases.length : 0}%`;
+      if (running) setStatus(`Running: ${done} of ${cases.length} done${failed ? `, ${failed} failed` : ''}…`);
+      for (const group of groups.children) {
+        const indexes = cases.map((item, index) => (item.file === group.dataset.file ? index : -1)).filter((i) => i >= 0);
+        const finished = indexes.filter((i) => results[i]);
+        const passed = finished.filter((i) => !results[i].problems.length).length;
+        const counts = group.querySelector('.counts');
+        counts.textContent = finished.length ? `${passed} / ${indexes.length}` : `${indexes.length} cases`;
+        counts.className = `counts${finished.length ? (passed === finished.length ? ' badge ok' : ' badge bad') : ''}`;
+      }
+    }
+
+    function setStatus(message, isError = false) {
+      status.textContent = message;
+      status.classList.toggle('error', isError);
+    }
+  </script>
+</body>
+</html>

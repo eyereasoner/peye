@@ -14,7 +14,12 @@ python conformance/run.py 11-checking.txt -v           # one file, listing every
 python conformance/run.py --in-process                 # peye from this checkout, without a process per case
 ```
 
-The suite also runs with peye's own tests, as `tests/test_conformance.py`.
+The suite also runs with peye's own tests, as `tests/test_conformance.py`,
+and in the browser, against the playground's peye, at
+[eyereasoner.github.io/peye/playground/conformance.html](https://eyereasoner.github.io/peye/playground/conformance.html),
+where each case's files, expected output and peye's output can be inspected.
+`manifest.json` lists the case files in order, with the SPEC sections and
+the topic of each.
 
 ## Coverage
 

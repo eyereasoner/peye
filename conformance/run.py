@@ -183,7 +183,8 @@ def run_subprocess(case, command, directory):
 
 
 def run_in_process(case, directory):
-    sys.path.insert(0, ROOT)
+    if ROOT not in sys.path:
+        sys.path.insert(0, ROOT)
     from peye.cli import main, with_deep_stack
     out = io.StringIO()
     err = io.StringIO()
@@ -193,15 +194,21 @@ def run_in_process(case, directory):
     sys.stdin = io.StringIO(case.stdin or '')
     try:
         with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
-            code = with_deep_stack(main, shlex.split(case.args), stdout=out, stderr=err)
+            if sys.platform == 'emscripten':
+                # In a browser there are no threads, and so no deeper stack.
+                code = main(shlex.split(case.args), stdout=out, stderr=err)
+            else:
+                code = with_deep_stack(main, shlex.split(case.args), stdout=out, stderr=err)
     finally:
         os.chdir(previous)
         sys.stdin = stdin
     return code, out.getvalue(), err.getvalue()
 
 
-def run_case(case, command=None):
-    """The problems a case found, empty when it passed."""
+def execute(case, command=None):
+    """Run a case in a directory of its own: its exit code, stdout and stderr.
+
+    Without a command, peye runs in this process."""
     with tempfile.TemporaryDirectory(prefix='peye-conformance-') as directory:
         for name, text in case.files.items():
             path = os.path.join(directory, name)
@@ -209,17 +216,26 @@ def run_case(case, command=None):
             with open(path, 'w', encoding='utf-8', newline='\n') as handle:
                 handle.write(text)
         if command is None:
-            code, stdout, stderr = run_in_process(case, directory)
-        else:
-            code, stdout, stderr = run_subprocess(case, command, directory)
-    return check(case, code, stdout, stderr)
+            return run_in_process(case, directory)
+        return run_subprocess(case, command, directory)
+
+
+def run_case(case, command=None):
+    """The problems a case found, empty when it passed."""
+    return check(case, *execute(case, command))
+
+
+def read_manifest():
+    """The case files, in order, with the SPEC sections and topic of each."""
+    with open(os.path.join(HERE, 'manifest.json'), encoding='utf-8') as handle:
+        return json.load(handle)
 
 
 def case_files(names=()):
     if names:
         return [name if os.path.isabs(name) or os.path.exists(name) else os.path.join(HERE, name)
                 for name in names]
-    return sorted(os.path.join(HERE, name) for name in os.listdir(HERE) if name.endswith('.txt'))
+    return [os.path.join(HERE, entry['file']) for entry in read_manifest()]
 
 
 def load_cases(names=(), pattern=None):
