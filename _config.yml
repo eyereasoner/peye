@@ -1,0 +1,5 @@
+# Jekyll leaves out files whose names start with an underscore, but the
+# playground loads the whole peye package, __init__.py included.
+include:
+  - __init__.py
+  - __main__.py
