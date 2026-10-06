@@ -71,8 +71,20 @@ git add -A
 git commit -m "$MESSAGE"
 git tag -a "$VERSION" -m "$MESSAGE"
 
-# Push the main branch and the new release tag.
+# Push the main branch and the new release tag. GitHub sometimes refuses a
+# tag pushed right after the branch with a bare "(failed)", and accepts the
+# same push moments later, so the tag push is retried a few times.
 git push origin main
-git push origin "$VERSION"
+for attempt in 1 2 3 4 5; do
+  if git push origin "$VERSION"; then
+    break
+  fi
+  if [[ $attempt -eq 5 ]]; then
+    echo "Error: could not push tag $VERSION; push it with: git push origin $VERSION" >&2
+    exit 1
+  fi
+  echo "Pushing tag $VERSION failed; retrying in $((attempt * 5)) seconds." >&2
+  sleep $((attempt * 5))
+done
 
 echo "Released $VERSION: $MESSAGE"
