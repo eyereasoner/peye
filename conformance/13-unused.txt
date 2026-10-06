@@ -94,3 +94,15 @@ forward(q(X), p(X))
 forward(r(X), s(X))
 --- stdout
 unused(line(4), forward(r(X), s(X)))
+
+=== facts stated by facts_from record the line of the call
+spec: 4.2, 13
+args: --unused program.py
+--- program.py
+from peye import *
+fact(p(1))
+facts_from(text="q(1)\nq(2)\n")
+forward(r(X), p(X))
+--- stdout
+unused(line(3), fact(q(1)))
+unused(line(3), fact(q(2)))

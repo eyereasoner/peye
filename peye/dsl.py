@@ -300,9 +300,11 @@ def facts_from(path=None, text=None):
     if text is None:
         with open(path, encoding='utf-8') as handle:
             text = handle.read()
+    # Each fact is stated by this call, so it records the call's line, as
+    # every clause records the line of the statement that states it.
     builder = _builder()
-    for term, line in read_terms(text):
-        builder.add('fact', term, [], line=line, file=path)
+    for term, _line in read_terms(text):
+        builder.add('fact', term, [])
 
 
 def load(*paths):
@@ -351,9 +353,11 @@ def implicit_names(source, filename='<program>'):
     """The names a program uses but never defines, which load() supplies.
 
     A name starting with an uppercase letter or an underscore is a variable,
-    any other a predicate. Names peye exports, the KEPT_BUILTINS, the
-    capitalized builtins such as ValueError, and names the program binds
-    anywhere are left alone.
+    any other a predicate. Names peye exports, names starting with __, and
+    names the program binds anywhere are left alone. So is the name of a
+    Python builtin, unless the program uses it inside a peye statement, as
+    in fact(type('socrates', 'human')), where it is a predicate; even there
+    the KEPT_BUILTINS and the capitalized builtins keep their meaning.
     """
     import builtins
     import symtable
@@ -369,14 +373,30 @@ def implicit_names(source, filename='<program>'):
             if symbol.is_referenced() and (scope is table or symbol.is_global()):
                 used.add(symbol.get_name())
         pending.extend(scope.get_children())
+    undefined = sorted(name for name in used - bound if name not in exported and not name.startswith('__'))
+    shadowing = [name for name in undefined if hasattr(builtins, name)]
+    in_statements = _names_in_statements(source, filename, exported) if shadowing else set()
     names = {}
-    for name in sorted(used - bound):
-        if name in exported or name in KEPT_BUILTINS or name.startswith('__'):
-            continue
-        if name[0].isupper() and hasattr(builtins, name):
+    for name in undefined:
+        if hasattr(builtins, name) and (name not in in_statements or name in KEPT_BUILTINS
+                                        or name[0].isupper()):
             continue
         names[name] = Var(name) if name[0].isupper() or name[0] == '_' else Pred(name)
     return names
+
+
+def _names_in_statements(source, filename, exported):
+    """The names used anywhere inside the arguments of a call of a name peye
+    exports, such as fact(...), forward(...) or findall(...)."""
+    import ast
+    found = set()
+    for node in ast.walk(ast.parse(source, filename)):
+        if type(node) is ast.Call and type(node.func) is ast.Name and node.func.id in exported:
+            for argument in [*node.args, *(keyword.value for keyword in node.keywords)]:
+                for inner in ast.walk(argument):
+                    if type(inner) is ast.Name:
+                        found.add(inner.id)
+    return found
 
 
 def _statements_nothing(source, filename, names):
@@ -412,7 +432,17 @@ def _exec(source, filename):
     _statements_nothing(source, filename, names)
     namespace = {'__name__': '__peye__', '__file__': filename, '__builtins__': __builtins__}
     namespace.update(names)
-    exec(code, namespace)
+    try:
+        exec(code, namespace)
+    except PeyeError:
+        raise
+    except Exception as error:
+        # An error in the program's own Python code is reported at its line.
+        import traceback
+        lines = [frame.lineno for frame in traceback.extract_tb(error.__traceback__)
+                 if frame.filename == filename]
+        where = f'line {lines[-1]}: ' if lines else ''
+        raise PeyeError(f'{where}{type(error).__name__}: {error}') from None
 
 
 def _imports_everything(source, filename):

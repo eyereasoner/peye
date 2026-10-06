@@ -81,6 +81,16 @@ expressions, one per line. The names match the source: `lists.py` has
 | [gps.py](https://github.com/eyereasoner/peye/blob/main/examples/gps.py) | Goal-driven parallel sequences: routes to a goal state within duration, cost, belief and comfort limits |
 | [superdense-coding.py](https://github.com/eyereasoner/peye/blob/main/examples/superdense-coding.py) | Superdense coding in discrete quantum theory, with interference as odd path counts |
 | [teleportation.py](https://github.com/eyereasoner/peye/blob/main/examples/teleportation.py) | Quantum teleportation in discrete quantum theory, checked for every state and outcome |
+| [audited-grants.py](https://github.com/eyereasoner/peye/blob/main/examples/audited-grants.py) | A grant policy whose own proof and check report are read back as facts and audited, in the same language |
+
+`audited-grants.py` shows what one language makes possible. It states an
+energy grant policy as a program of its own, has peye prove the decisions,
+and then reads that proof and its check report back as ordinary facts, with
+`read_terms` and `facts_from`, to audit the reasoning: the data each decision
+rests on, the assumptions it took on trust, and the decisions at risk because
+they rest on self-declared income. Rules, data, conclusions, proof and report
+are all the same terms, so the audit needs no export format, no parser and no
+second tool, and its own conclusions come with a checked proof too.
 
 `integrity.py` intentionally exits with code 65 because it concludes `false`.
 Its proof-check report is valid: the certificate explains why the constraint was

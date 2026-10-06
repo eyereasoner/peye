@@ -11,6 +11,7 @@ Each example comes with a short card deck that explains it for a wide audience: 
 | [ackermann](https://eyereasoner.github.io/peye/examples/deck/ackermann) | The Ackermann function through the hyperoperation sequence, exactly |
 | [age](https://eyereasoner.github.io/peye/examples/deck/age) | Calendar-year and elapsed-day age checks at an explicit reference date |
 | [alternatives](https://eyereasoner.github.io/peye/examples/deck/alternatives) | Alternative routes, disjunction and once |
+| [audited-grants](https://eyereasoner.github.io/peye/examples/deck/audited-grants) | A grant policy whose own proof and check report are read back as facts and audited, in the same language |
 | [aunt-agatha](https://eyereasoner.github.io/peye/examples/deck/aunt-agatha) | Who killed Aunt Agatha? A conclusion entailed by holding in every model of the premises |
 | [backward](https://eyereasoner.github.io/peye/examples/deck/backward) | Backward definitions inside forward bodies |
 | [bayes-diagnosis](https://eyereasoner.github.io/peye/examples/deck/bayes-diagnosis) | Normalized probabilities for illustrative printer faults |

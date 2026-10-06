@@ -162,6 +162,32 @@ n(0, 1)
 n(1, 2)
 n(2, 2)
 
+=== a builtin keeps its Python meaning outside the statements of a program
+spec: 4.3
+--- program.py
+from peye import *
+for name, value in [('a', '10'), ('b', '255')]:
+    number = int(value)
+    label = hex(number)
+    fact(score(name, number, label))
+fact(type('x', 'y'))
+query(score(N, V, H))
+query(type(A, B))
+--- stdout
+score('a', 10, '0xa')
+score('b', 255, '0xff')
+type('x', 'y')
+
+=== an error in a program's own Python code is reported at its line
+spec: 4.1, 14
+exit: 1
+stderr: prefix peye: line 3:
+--- program.py
+from peye import *
+fact(p(1))
+x = 1 / 0
+--- stdout
+
 === a program may name a kept builtin as a predicate
 spec: 4.3
 --- program.py

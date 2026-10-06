@@ -335,5 +335,12 @@
     "trusted": [
       "collected"
     ]
+  },
+  {
+    "name": "audited-grants",
+    "description": "A grant policy whose own proof and check report are read back as facts and audited, in the same language",
+    "trusted": [
+      "collected"
+    ]
   }
 ]

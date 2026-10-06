@@ -140,12 +140,14 @@ program's own questions, and `--goal "Goal"` asks from outside instead.
 
 **Nothing to declare.** A name the program uses without defining it is a
 variable when it starts with a capital or an underscore, like `X` or `_Rest`,
-and a predicate otherwise, like `parent`, even when Python has a builtin of
-that name, such as `type` or `sum`. A few builtins a program uses to compute
-its clauses keep their meaning: `print`, `range`, `len`, `list`, `dict`, `set`,
-`tuple`, `str`, `enumerate`, `zip`, `sorted`, `reversed`, `isinstance`, `open`,
-`repr`, `chr`, `ord`, `iter`, `any`, `all`, `map` and `filter`. A program that
-wants one of those as a predicate says so, `range = preds('range')`. A call of
+and a predicate otherwise, like `parent`. Python's builtins keep their meaning
+in ordinary Python code, so a program can compute with `int`, `getattr` or
+`sorted`; inside a statement such as `fact(type('socrates', 'human'))` a
+builtin name is a predicate, except for the few a program computes with there:
+`print`, `range`, `len`, `list`, `dict`, `set`, `tuple`, `str`, `enumerate`,
+`zip`, `sorted`, `reversed`, `isinstance`, `open`, `repr`, `chr`, `ord`,
+`iter`, `any`, `all`, `map` and `filter`. A program that wants one of those as
+a predicate says so, `range = preds('range')`. A call of
 an undeclared predicate on its own, such as a misspelled `fcat(p(1))`, states
 nothing, so peye stops with an error instead of ignoring it.
 
@@ -293,7 +295,7 @@ a variable, so a goal with no arguments is written `p()` or `'p'`.
 
 ## The examples
 
-The [example collection](https://eyereasoner.github.io/peye/examples/) is 59
+The [example collection](https://eyereasoner.github.io/peye/examples/) is 60
 complete programs, each with its conclusions, proof and C1-C7 report saved
 beside it (`examples/output/`, `examples/proof/`, `examples/check/`), and a
 [card deck](https://eyereasoner.github.io/peye/examples/deck/) that explains it
@@ -302,6 +304,7 @@ for a wide audience.
 | Examples | What they demonstrate |
 | --- | --- |
 | `socrates`, `backward` | Basic inference and mixed chaining |
+| `audited-grants` | One language all the way down: a policy's own proof and check report read back as facts and audited |
 | `deep-taxonomy-10` through `deep-taxonomy-10000` | A subclass chain whose branches lead nowhere, at four sizes |
 | `reachability`, `shortest-path`, `path-discovery` | Cyclic graph closure, weighted paths and airport routes with bounded stopovers |
 | `fibonacci`, `lists`, `strings`, `unification`, `alternatives` | Exact recursion, lists, Unicode, structural matching and choices |

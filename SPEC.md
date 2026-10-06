@@ -148,7 +148,8 @@ A body goal that is a conjunction (`&`, Section 5.1) is split into its
 conjuncts; the clause body is the resulting sequence of goals.
 
 Clauses are numbered from 1 in the order they are stated. Each clause records
-the line of the program on which the statement stating it begins.
+the line of the program on which the statement stating it begins; the facts
+of `facts_from` record the line of that call.
 
 A clause MUST be rejected when:
 
@@ -170,12 +171,15 @@ parameter, at any scope) is supplied:
    builds the compound with that name, and using it uncalled stands for the
    atom of that name.
 
-Names `from peye import *` provides, names beginning with `__`, the Python
-builtins `print`, `range`, `len`, `list`, `dict`, `set`, `tuple`, `str`,
-`enumerate`, `zip`, `sorted`, `reversed`, `isinstance`, `open`, `repr`, `chr`,
-`ord`, `iter`, `any`, `all`, `map` and `filter`, and Python builtins
-beginning with an uppercase letter keep their meaning. Every other Python
-builtin name, such as `type`, `sum` or `max`, is a predicate.
+Names `from peye import *` provides and names beginning with `__` keep their
+meaning. So does the name of a Python builtin, such as `getattr` or `int`,
+unless the program uses it somewhere inside the arguments of a call of a name
+`from peye import *` provides, as `type` in `fact(type('socrates', 'human'))`:
+then it is a predicate. Even there, the builtins `print`, `range`, `len`,
+`list`, `dict`, `set`, `tuple`, `str`, `enumerate`, `zip`, `sorted`,
+`reversed`, `isinstance`, `open`, `repr`, `chr`, `ord`, `iter`, `any`, `all`,
+`map` and `filter`, and builtins beginning with an uppercase letter, keep their
+meaning.
 
 A program MAY name predicates and variables explicitly:
 `p, q = preds('p q')` and `X, Y = vars('X Y')`. A program that wants a
