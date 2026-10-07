@@ -31,6 +31,7 @@ separate checker verifies against your program.
 - [From Python](#from-python)
 - [The examples](#the-examples)
 - [What is deliberately absent](#what-is-deliberately-absent)
+- [The name](#the-name)
 
 ## The idea in a few lines
 
@@ -327,6 +328,13 @@ Begin with one question and a few facts. Give the relationships names, write
 the rules you already believe, and let the program show you what they imply.
 The first *unexpected* answer is often worth the most, because it points at a
 specific rule or assumption to revisit.
+
+## The name
+
+**peye** joins a *p*, from the Prolog its reasoning comes from, to *eye*, after
+the [EYE](https://github.com/eyereasoner/eye) family of reasoners it belongs
+to. And said aloud it sounds like *py*: in peye everything, from the rules and
+the data to the proofs and the check reports, is done in Python.
 
 ## License
 
