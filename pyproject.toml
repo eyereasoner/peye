@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "peye"
-version = "0.1.14"
+version = "0.1.15"
 description = "A dependency-free Python rule language with forward and backward reasoning and checkable proofs."
 readme = "README.md"
 license = { file = "LICENSE.md" }
