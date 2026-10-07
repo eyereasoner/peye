@@ -301,24 +301,6 @@ beside it (`examples/output/`, `examples/proof/`, `examples/check/`), and a
 [card deck](https://eyereasoner.github.io/peye/examples/deck/) that explains it
 for a wide audience.
 
-| Examples | What they demonstrate |
-| --- | --- |
-| `socrates`, `backward` | Basic inference and mixed chaining |
-| `audited-grants` | One language all the way down: a policy's own proof and check report read back as facts and audited |
-| `deep-taxonomy-10` through `deep-taxonomy-10000` | A subclass chain whose branches lead nowhere, at four sizes |
-| `reachability`, `shortest-path`, `path-discovery` | Cyclic graph closure, weighted paths and airport routes with bounded stopovers |
-| `fibonacci`, `lists`, `strings`, `unification`, `alternatives` | Exact recursion, lists, Unicode, structural matching and choices |
-| `graphs`, `terms`, `witnesses`, `flat-map`, `variable-predicates` | Graph views, quoted data, witnesses, mapping and relation renaming |
-| `inventory`, `dog-license`, `permissions`, `state-transitions`, `integrity` | Aggregation, counted policies, policy checks, event logs and constraints |
-| `schema-inference`, `family-cousins`, `paraconsistent-animals`, `scoped-audit` | Schema rules, family branches, conflicting observations and scoped checks |
-| `hanoi`, `collatz`, `control-system`, `lldm`, `age` | Recursive puzzles, actuator control, a leg length measurement and age checks |
-| `good-cobbler`, `peano`, `expression-eval`, `complex`, `polynomial` | Descriptions, symbolic arithmetic, expression graphs, complex numbers and roots |
-| `queens`, `interval-relations`, `bayes-diagnosis`, `policy-risk` | Constraint search, interval relations, fault scores and ranked findings |
-| `research-portal`, `package-holiday` | ODRL policies under two versions of EU rules, compared |
-| `ackermann`, `peasant`, `sieve`, `goldbach`, `kaprekar`, `easter`, `turing` | Exact hyperoperations, number theory, calendar arithmetic and a Turing machine |
-| `superdense-coding`, `teleportation` | Discrete quantum protocols |
-| `zebra`, `four-color`, `wolf-goat-cabbage`, `monkey-bananas`, `gps`, `aunt-agatha` | Classic puzzles, planning, and a conclusion that holds in every model |
-
 These are meant to be edited: change a fact, run it, look at what changed.
 Because the artifacts are saved, you can see exactly what your change did:
 

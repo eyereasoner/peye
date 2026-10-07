@@ -22,66 +22,66 @@ expressions, one per line. The names match the source: `lists.py` has
 
 | Program | Demonstrates |
 | --- | --- |
-| [socrates.py](https://github.com/eyereasoner/peye/blob/main/examples/socrates.py) | Class membership derived through a subclass rule |
+| [ackermann.py](https://github.com/eyereasoner/peye/blob/main/examples/ackermann.py) | The Ackermann function through the hyperoperation sequence, exactly |
+| [age.py](https://github.com/eyereasoner/peye/blob/main/examples/age.py) | Calendar-year and elapsed-day age checks at an explicit reference date |
+| [alternatives.py](https://github.com/eyereasoner/peye/blob/main/examples/alternatives.py) | Alternative routes, disjunction and once |
+| [audited-grants.py](https://github.com/eyereasoner/peye/blob/main/examples/audited-grants.py) | A grant policy whose own proof and check report are read back as facts and audited, in the same language |
+| [aunt-agatha.py](https://github.com/eyereasoner/peye/blob/main/examples/aunt-agatha.py) | Who killed Aunt Agatha? A conclusion entailed by holding in every model of the premises |
+| [backward.py](https://github.com/eyereasoner/peye/blob/main/examples/backward.py) | Backward definitions inside forward bodies |
+| [bayes-diagnosis.py](https://github.com/eyereasoner/peye/blob/main/examples/bayes-diagnosis.py) | Normalized probabilities for illustrative printer faults |
+| [collatz.py](https://github.com/eyereasoner/peye/blob/main/examples/collatz.py) | Parity-based recursive trajectories over a range of starts |
+| [complex.py](https://github.com/eyereasoner/peye/blob/main/examples/complex.py) | Complex arithmetic, exact over Gaussian integers and polar beyond them |
+| [control-system.py](https://github.com/eyereasoner/peye/blob/main/examples/control-system.py) | Feedforward and nonlinear feedback commands for two actuators |
 | [deep-taxonomy-10.py](https://github.com/eyereasoner/peye/blob/main/examples/deep-taxonomy-10.py) | A ten-level subclass chain with branches that lead nowhere |
 | [deep-taxonomy-100.py](https://github.com/eyereasoner/peye/blob/main/examples/deep-taxonomy-100.py) | The same taxonomy benchmark at a hundred levels |
 | [deep-taxonomy-1000.py](https://github.com/eyereasoner/peye/blob/main/examples/deep-taxonomy-1000.py) | The same taxonomy benchmark at a thousand levels |
 | [deep-taxonomy-10000.py](https://github.com/eyereasoner/peye/blob/main/examples/deep-taxonomy-10000.py) | The same taxonomy benchmark at ten thousand levels |
-| [backward.py](https://github.com/eyereasoner/peye/blob/main/examples/backward.py) | Backward definitions inside forward bodies |
-| [fibonacci.py](https://github.com/eyereasoner/peye/blob/main/examples/fibonacci.py) | Fast doubling for exact Fibonacci numbers, and the golden ratio |
-| [graphs.py](https://github.com/eyereasoner/peye/blob/main/examples/graphs.py) | Base data, negation and collection |
-| [terms.py](https://github.com/eyereasoner/peye/blob/main/examples/terms.py) | Quoted graphs, triple terms and residual witnesses |
-| [reachability.py](https://github.com/eyereasoner/peye/blob/main/examples/reachability.py) | Finite closure in a graph containing a cycle |
-| [shortest-path.py](https://github.com/eyereasoner/peye/blob/main/examples/shortest-path.py) | Weighted paths and stratified minimum selection |
-| [path-discovery.py](https://github.com/eyereasoner/peye/blob/main/examples/path-discovery.py) | Full airport network with configurable endpoints and maximum stopovers |
-| [lists.py](https://github.com/eyereasoner/peye/blob/main/examples/lists.py) | Concatenation, mapping and summation |
-| [strings.py](https://github.com/eyereasoner/peye/blob/main/examples/strings.py) | Text construction and Unicode inspection |
-| [inventory.py](https://github.com/eyereasoner/peye/blob/main/examples/inventory.py) | An invoice from collected line totals |
 | [dog-license.py](https://github.com/eyereasoner/peye/blob/main/examples/dog-license.py) | A licensing threshold based on collected dog counts |
-| [permissions.py](https://github.com/eyereasoner/peye/blob/main/examples/permissions.py) | Role permissions with exclusions |
-| [witnesses.py](https://github.com/eyereasoner/peye/blob/main/examples/witnesses.py) | Structured witnesses and shared multi-head conclusions |
-| [state-transitions.py](https://github.com/eyereasoner/peye/blob/main/examples/state-transitions.py) | Account balances from an ordered event log |
-| [integrity.py](https://github.com/eyereasoner/peye/blob/main/examples/integrity.py) | A provable integrity violation |
-| [alternatives.py](https://github.com/eyereasoner/peye/blob/main/examples/alternatives.py) | Alternative routes, disjunction and once |
-| [unification.py](https://github.com/eyereasoner/peye/blob/main/examples/unification.py) | Open lists and repeated-variable constraints |
-| [schema-inference.py](https://github.com/eyereasoner/peye/blob/main/examples/schema-inference.py) | Subclasses, subproperties, domains and ranges |
-| [family-cousins.py](https://github.com/eyereasoner/peye/blob/main/examples/family-cousins.py) | Generations, family branches and cousin relationships |
-| [hanoi.py](https://github.com/eyereasoner/peye/blob/main/examples/hanoi.py) | Recursive construction of a disk-move sequence |
-| [collatz.py](https://github.com/eyereasoner/peye/blob/main/examples/collatz.py) | Parity-based recursive trajectories over a range of starts |
-| [flat-map.py](https://github.com/eyereasoner/peye/blob/main/examples/flat-map.py) | Predicate-based mapping with multiple or missing values |
-| [paraconsistent-animals.py](https://github.com/eyereasoner/peye/blob/main/examples/paraconsistent-animals.py) | Local summaries of conflicting observations |
-| [scoped-audit.py](https://github.com/eyereasoner/peye/blob/main/examples/scoped-audit.py) | Presence and absence within separate quoted graphs |
-| [control-system.py](https://github.com/eyereasoner/peye/blob/main/examples/control-system.py) | Feedforward and nonlinear feedback commands for two actuators |
-| [lldm.py](https://github.com/eyereasoner/peye/blob/main/examples/lldm.py) | Leg length discrepancy measured from radiograph landmarks, with an alarm and its reason |
-| [variable-predicates.py](https://github.com/eyereasoner/peye/blob/main/examples/variable-predicates.py) | Relations selected and renamed through data bindings |
-| [good-cobbler.py](https://github.com/eyereasoner/peye/blob/main/examples/good-cobbler.py) | Trade-specific classification from structured descriptions |
-| [peano.py](https://github.com/eyereasoner/peye/blob/main/examples/peano.py) | Symbolic arithmetic, relational addition and a chained derivation |
-| [expression-eval.py](https://github.com/eyereasoner/peye/blob/main/examples/expression-eval.py) | Recursive expression graphs used in forward inference |
-| [complex.py](https://github.com/eyereasoner/peye/blob/main/examples/complex.py) | Complex arithmetic, exact over Gaussian integers and polar beyond them |
-| [polynomial.py](https://github.com/eyereasoner/peye/blob/main/examples/polynomial.py) | Complex roots of polynomials up to degree 4 by Cardan and Lagrange |
-| [interval-relations.py](https://github.com/eyereasoner/peye/blob/main/examples/interval-relations.py) | All thirteen interval relations and endpoint completion |
-| [bayes-diagnosis.py](https://github.com/eyereasoner/peye/blob/main/examples/bayes-diagnosis.py) | Normalized probabilities for illustrative printer faults |
-| [policy-risk.py](https://github.com/eyereasoner/peye/blob/main/examples/policy-risk.py) | Ranked findings with explanations and suggested mitigations |
-| [research-portal.py](https://github.com/eyereasoner/peye/blob/main/examples/research-portal.py) | A hospital research portal combines ODRL/DPV policy decisions with Digital Omnibus device consent and breach plans |
-| [package-holiday.py](https://github.com/eyereasoner/peye/blob/main/examples/package-holiday.py) | Package holiday cancellations under the tour operator's ODRL terms and the 2015 and revised EU Package Travel Directive |
-| [queens.py](https://github.com/eyereasoner/peye/blob/main/examples/queens.py) | Configurable N-queens search with diagonal constraints |
-| [age.py](https://github.com/eyereasoner/peye/blob/main/examples/age.py) | Calendar-year and elapsed-day age checks at an explicit reference date |
-| [ackermann.py](https://github.com/eyereasoner/peye/blob/main/examples/ackermann.py) | The Ackermann function through the hyperoperation sequence, exactly |
-| [peasant.py](https://github.com/eyereasoner/peye/blob/main/examples/peasant.py) | Peasant multiplication and exponentiation by halving and doubling |
-| [sieve.py](https://github.com/eyereasoner/peye/blob/main/examples/sieve.py) | The sieve of Eratosthenes over an explicit list of integers |
-| [goldbach.py](https://github.com/eyereasoner/peye/blob/main/examples/goldbach.py) | Goldbach splits of every power of two up to 2^25 |
-| [kaprekar.py](https://github.com/eyereasoner/peye/blob/main/examples/kaprekar.py) | Every four-digit Kaprekar routine reaches 6174 within seven steps |
 | [easter.py](https://github.com/eyereasoner/peye/blob/main/examples/easter.py) | Easter Sunday by the anonymous Gregorian algorithm, 2021 to 2050 |
-| [turing.py](https://github.com/eyereasoner/peye/blob/main/examples/turing.py) | A Turing machine interpreter running a binary incrementer |
-| [zebra.py](https://github.com/eyereasoner/peye/blob/main/examples/zebra.py) | The zebra puzzle solved by narrowing five partially known houses |
-| [aunt-agatha.py](https://github.com/eyereasoner/peye/blob/main/examples/aunt-agatha.py) | Who killed Aunt Agatha? A conclusion entailed by holding in every model of the premises |
+| [expression-eval.py](https://github.com/eyereasoner/peye/blob/main/examples/expression-eval.py) | Recursive expression graphs used in forward inference |
+| [family-cousins.py](https://github.com/eyereasoner/peye/blob/main/examples/family-cousins.py) | Generations, family branches and cousin relationships |
+| [fibonacci.py](https://github.com/eyereasoner/peye/blob/main/examples/fibonacci.py) | Fast doubling for exact Fibonacci numbers, and the golden ratio |
+| [flat-map.py](https://github.com/eyereasoner/peye/blob/main/examples/flat-map.py) | Predicate-based mapping with multiple or missing values |
 | [four-color.py](https://github.com/eyereasoner/peye/blob/main/examples/four-color.py) | Four-colouring the map of the European Union |
-| [wolf-goat-cabbage.py](https://github.com/eyereasoner/peye/blob/main/examples/wolf-goat-cabbage.py) | The river crossing, with seven crossings shown to be minimal |
-| [monkey-bananas.py](https://github.com/eyereasoner/peye/blob/main/examples/monkey-bananas.py) | Every plan of up to five moves that gets the monkey the bananas |
+| [goldbach.py](https://github.com/eyereasoner/peye/blob/main/examples/goldbach.py) | Goldbach splits of every power of two up to 2^25 |
+| [good-cobbler.py](https://github.com/eyereasoner/peye/blob/main/examples/good-cobbler.py) | Trade-specific classification from structured descriptions |
 | [gps.py](https://github.com/eyereasoner/peye/blob/main/examples/gps.py) | Goal-driven parallel sequences: routes to a goal state within duration, cost, belief and comfort limits |
+| [graphs.py](https://github.com/eyereasoner/peye/blob/main/examples/graphs.py) | Base data, negation and collection |
+| [hanoi.py](https://github.com/eyereasoner/peye/blob/main/examples/hanoi.py) | Recursive construction of a disk-move sequence |
+| [integrity.py](https://github.com/eyereasoner/peye/blob/main/examples/integrity.py) | A provable integrity violation |
+| [interval-relations.py](https://github.com/eyereasoner/peye/blob/main/examples/interval-relations.py) | All thirteen interval relations and endpoint completion |
+| [inventory.py](https://github.com/eyereasoner/peye/blob/main/examples/inventory.py) | An invoice from collected line totals |
+| [kaprekar.py](https://github.com/eyereasoner/peye/blob/main/examples/kaprekar.py) | Every four-digit Kaprekar routine reaches 6174 within seven steps |
+| [lists.py](https://github.com/eyereasoner/peye/blob/main/examples/lists.py) | Concatenation, mapping and summation |
+| [lldm.py](https://github.com/eyereasoner/peye/blob/main/examples/lldm.py) | Leg length discrepancy measured from radiograph landmarks, with an alarm and its reason |
+| [monkey-bananas.py](https://github.com/eyereasoner/peye/blob/main/examples/monkey-bananas.py) | Every plan of up to five moves that gets the monkey the bananas |
+| [package-holiday.py](https://github.com/eyereasoner/peye/blob/main/examples/package-holiday.py) | Package holiday cancellations under the tour operator's ODRL terms and the 2015 and revised EU Package Travel Directive |
+| [paraconsistent-animals.py](https://github.com/eyereasoner/peye/blob/main/examples/paraconsistent-animals.py) | Local summaries of conflicting observations |
+| [path-discovery.py](https://github.com/eyereasoner/peye/blob/main/examples/path-discovery.py) | Full airport network with configurable endpoints and maximum stopovers |
+| [peano.py](https://github.com/eyereasoner/peye/blob/main/examples/peano.py) | Symbolic arithmetic, relational addition and a chained derivation |
+| [peasant.py](https://github.com/eyereasoner/peye/blob/main/examples/peasant.py) | Peasant multiplication and exponentiation by halving and doubling |
+| [permissions.py](https://github.com/eyereasoner/peye/blob/main/examples/permissions.py) | Role permissions with exclusions |
+| [policy-risk.py](https://github.com/eyereasoner/peye/blob/main/examples/policy-risk.py) | Ranked findings with explanations and suggested mitigations |
+| [polynomial.py](https://github.com/eyereasoner/peye/blob/main/examples/polynomial.py) | Complex roots of polynomials up to degree 4 by Cardan and Lagrange |
+| [queens.py](https://github.com/eyereasoner/peye/blob/main/examples/queens.py) | Configurable N-queens search with diagonal constraints |
+| [reachability.py](https://github.com/eyereasoner/peye/blob/main/examples/reachability.py) | Finite closure in a graph containing a cycle |
+| [research-portal.py](https://github.com/eyereasoner/peye/blob/main/examples/research-portal.py) | A hospital research portal combines ODRL/DPV policy decisions with Digital Omnibus device consent and breach plans |
+| [schema-inference.py](https://github.com/eyereasoner/peye/blob/main/examples/schema-inference.py) | Subclasses, subproperties, domains and ranges |
+| [scoped-audit.py](https://github.com/eyereasoner/peye/blob/main/examples/scoped-audit.py) | Presence and absence within separate quoted graphs |
+| [shortest-path.py](https://github.com/eyereasoner/peye/blob/main/examples/shortest-path.py) | Weighted paths and stratified minimum selection |
+| [sieve.py](https://github.com/eyereasoner/peye/blob/main/examples/sieve.py) | The sieve of Eratosthenes over an explicit list of integers |
+| [socrates.py](https://github.com/eyereasoner/peye/blob/main/examples/socrates.py) | Class membership derived through a subclass rule |
+| [state-transitions.py](https://github.com/eyereasoner/peye/blob/main/examples/state-transitions.py) | Account balances from an ordered event log |
+| [strings.py](https://github.com/eyereasoner/peye/blob/main/examples/strings.py) | Text construction and Unicode inspection |
 | [superdense-coding.py](https://github.com/eyereasoner/peye/blob/main/examples/superdense-coding.py) | Superdense coding in discrete quantum theory, with interference as odd path counts |
 | [teleportation.py](https://github.com/eyereasoner/peye/blob/main/examples/teleportation.py) | Quantum teleportation in discrete quantum theory, checked for every state and outcome |
-| [audited-grants.py](https://github.com/eyereasoner/peye/blob/main/examples/audited-grants.py) | A grant policy whose own proof and check report are read back as facts and audited, in the same language |
+| [terms.py](https://github.com/eyereasoner/peye/blob/main/examples/terms.py) | Quoted graphs, triple terms and residual witnesses |
+| [turing.py](https://github.com/eyereasoner/peye/blob/main/examples/turing.py) | A Turing machine interpreter running a binary incrementer |
+| [unification.py](https://github.com/eyereasoner/peye/blob/main/examples/unification.py) | Open lists and repeated-variable constraints |
+| [variable-predicates.py](https://github.com/eyereasoner/peye/blob/main/examples/variable-predicates.py) | Relations selected and renamed through data bindings |
+| [witnesses.py](https://github.com/eyereasoner/peye/blob/main/examples/witnesses.py) | Structured witnesses and shared multi-head conclusions |
+| [wolf-goat-cabbage.py](https://github.com/eyereasoner/peye/blob/main/examples/wolf-goat-cabbage.py) | The river crossing, with seven crossings shown to be minimal |
+| [zebra.py](https://github.com/eyereasoner/peye/blob/main/examples/zebra.py) | The zebra puzzle solved by narrowing five partially known houses |
 
 `audited-grants.py` shows what one language makes possible. It states an
 energy grant policy as a program of its own, has peye prove the decisions,
