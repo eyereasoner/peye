@@ -18,6 +18,7 @@ Each example comes with a short card deck that explains it for a wide audience: 
 | [collatz](https://eyereasoner.github.io/peye/examples/deck/collatz) | Parity-based recursive trajectories over a range of starts |
 | [complex](https://eyereasoner.github.io/peye/examples/deck/complex) | Complex arithmetic, exact over Gaussian integers and polar beyond them |
 | [control-system](https://eyereasoner.github.io/peye/examples/deck/control-system) | Feedforward and nonlinear feedback commands for two actuators |
+| [data-value-right](https://eyereasoner.github.io/peye/examples/deck/data-value-right) | A right to the value of personal data in the age of AI: how it fits existing EU law, and how it could become an autonomous right |
 | [deep-taxonomy-10](https://eyereasoner.github.io/peye/examples/deck/deep-taxonomy-10) | A ten-level subclass chain with branches that lead nowhere |
 | [deep-taxonomy-100](https://eyereasoner.github.io/peye/examples/deck/deep-taxonomy-100) | The same taxonomy benchmark at a hundred levels |
 | [deep-taxonomy-1000](https://eyereasoner.github.io/peye/examples/deck/deep-taxonomy-1000) | The same taxonomy benchmark at a thousand levels |

@@ -32,6 +32,7 @@ expressions, one per line. The names match the source: `lists.py` has
 | [collatz.py](https://github.com/eyereasoner/peye/blob/main/examples/collatz.py) | Parity-based recursive trajectories over a range of starts |
 | [complex.py](https://github.com/eyereasoner/peye/blob/main/examples/complex.py) | Complex arithmetic, exact over Gaussian integers and polar beyond them |
 | [control-system.py](https://github.com/eyereasoner/peye/blob/main/examples/control-system.py) | Feedforward and nonlinear feedback commands for two actuators |
+| [data-value-right.py](https://github.com/eyereasoner/peye/blob/main/examples/data-value-right.py) | A right to the value of personal data in the age of AI: how it fits existing EU law, and how it could become an autonomous right |
 | [deep-taxonomy-10.py](https://github.com/eyereasoner/peye/blob/main/examples/deep-taxonomy-10.py) | A ten-level subclass chain with branches that lead nowhere |
 | [deep-taxonomy-100.py](https://github.com/eyereasoner/peye/blob/main/examples/deep-taxonomy-100.py) | The same taxonomy benchmark at a hundred levels |
 | [deep-taxonomy-1000.py](https://github.com/eyereasoner/peye/blob/main/examples/deep-taxonomy-1000.py) | The same taxonomy benchmark at a thousand levels |

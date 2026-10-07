@@ -342,5 +342,13 @@
     "trusted": [
       "collected"
     ]
+  },
+  {
+    "name": "data-value-right",
+    "description": "A right to the value of personal data in the age of AI: how it fits existing EU law, and how it could become an autonomous right",
+    "trusted": [
+      "absent",
+      "collected"
+    ]
   }
 ]
