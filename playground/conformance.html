@@ -215,6 +215,7 @@
       let source = null;
       const params = new URLSearchParams();
       let goals = 0;
+      params.set('proof', '0');
       for (let i = 0; i < tokens.length; i++) {
         const token = tokens[i];
         if (token === '--goal' && i + 1 < tokens.length) { params.set('goal', tokens[++i]); goals++; }

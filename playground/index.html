@@ -71,7 +71,7 @@
       <div class="toolbar" aria-label="Run options">
         <label for="goal">Goal</label>
         <input id="goal" type="text" placeholder="optional, e.g. ancestor('alice', Who)" aria-label="Goal to ask after forward reasoning">
-        <label class="option"><input id="proof" type="checkbox"> Show proof</label>
+        <label class="option"><input id="proof" type="checkbox" checked> Show proof</label>
         <label class="option"><input id="check" type="checkbox" checked> Check proof (C1–C7)</label>
         <label class="option"><input id="strict" type="checkbox"> Strict</label>
         <label class="option"><input id="stats" type="checkbox"> Stats</label>
@@ -347,7 +347,11 @@ query(ancestor('alice', Who))
         return;
       }
 
-      let text = result.output || (flags.proof.checked ? '' : '# no conclusions\n');
+      // Each part of the output is introduced by a comment line, which the
+      // reader of a document skips, so a copied proof still checks.
+      let text = flags.proof.checked
+        ? (result.output.trim() ? `# proof certificate\n${result.output}` : '')
+        : (result.output ? `# answers\n${result.output}` : '# no answers\n');
       if (result.report) text += `${text.endsWith('\n') || !text ? '' : '\n'}\n# C1-C7 check report\n${result.report.text}`;
       if (flags.stats.checked) text += `\n# stats\n${JSON.stringify(result.stats)}\n`;
       // Conclusions, proofs and check reports are all Python text, so they are
@@ -383,7 +387,8 @@ query(ancestor('alice', Who))
       else params.set('source', await pack(source.value));
       if (goal.value.trim()) params.set('goal', goal.value.trim());
       for (const [name, input] of Object.entries(flags)) if (input.checked) params.set(name, '1');
-      if (!flags.check.checked) params.set('check', '0');
+      // Proof and check are on unless a link says otherwise.
+      for (const name of ['proof', 'check']) if (!flags[name].checked) params.set(name, '0');
       const link = `${location.origin}${location.pathname}#${params}`;
       history.replaceState(null, '', `#${params}`);
       await copyText(link, link.length > 8000
@@ -396,7 +401,7 @@ query(ancestor('alice', Who))
       // A link describes its options completely: anything it leaves out is at
       // its default, so opening one link after another does not carry over.
       for (const [name, input] of Object.entries(flags)) {
-        input.checked = params.has(name) ? params.get(name) === '1' : name === 'check';
+        input.checked = params.has(name) ? params.get(name) === '1' : name === 'check' || name === 'proof';
       }
       goal.value = params.get('goal') ?? '';
       try {
