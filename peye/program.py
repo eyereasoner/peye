@@ -10,7 +10,7 @@ RESERVED_KEYS = frozenset({('step', 4), ('clause', 2)})
 
 
 class Clause:
-    __slots__ = ('id', 'head', 'heads', 'body', 'forward', 'line')
+    __slots__ = ('id', 'head', 'heads', 'body', 'forward', 'line', 'renaming')
 
     def __init__(self, id, head, heads, body, forward, line):
         self.id = id
@@ -20,6 +20,7 @@ class Clause:
         self.body = body
         self.forward = forward
         self.line = line
+        self.renaming = None  # how to rename it apart, worked out when first needed
 
 
 class Source:

@@ -2,7 +2,7 @@
 import json
 
 from .builtins import PRIMITIVE_KEYS, primitive
-from .common import fresh_clause, text, variant
+from .common import fresh_clause, renaming, text, variant
 from .program import CONTROL_KEYS, Program
 from .terms import (
     Env, PeyeError, Struct, Var, conjunction, copy_resolved, deref, flatten_conjunction,
@@ -350,13 +350,20 @@ class Solver:
                 continue
             clause = point.clauses[position - len(facts)]
             self.serial += 1
-            head, body, names = fresh_clause(clause, self.serial)
-            if not unify(point.goal, head, env):
+            # The body is renamed only once the head unifies: many candidate
+            # clauses of a goal fail on their head.
+            renamed = clause.renaming or renaming(clause)
+            suffix = str(self.serial)
+            prefixes = renamed.prefixes
+            values = [Var(prefixes[i] + suffix) for i in range(renamed.head_count)]
+            if not unify(point.goal, renamed.head(values), env):
                 env.undo(point.mark)
                 continue
+            values.extend([Var(prefixes[i] + suffix) for i in range(renamed.head_count, len(prefixes))])
+            body = renamed.body(values)
             if recording:
                 pending = Pending(point.goal, Struct('clause', (clause.id,)),
-                                  list(names.items()), None)
+                                  list(zip(renamed.names, values)), None)
             else:
                 pending = QUIET
             return self.child_frame(point.frame, body, pending, point.frame.depth + 1)

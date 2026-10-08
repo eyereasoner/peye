@@ -374,8 +374,8 @@ def implicit_names(source, filename='<program>'):
                 used.add(symbol.get_name())
         pending.extend(scope.get_children())
     undefined = sorted(name for name in used - bound if name not in exported and not name.startswith('__'))
-    shadowing = [name for name in undefined if hasattr(builtins, name)]
-    in_statements = _names_in_statements(source, filename, exported) if shadowing else set()
+    shadowing = {name for name in undefined if hasattr(builtins, name)}
+    in_statements = _names_in_statements(source, filename, exported, shadowing) if shadowing else set()
     names = {}
     for name in undefined:
         if hasattr(builtins, name) and (name not in in_statements or name in KEPT_BUILTINS
@@ -385,9 +385,64 @@ def implicit_names(source, filename='<program>'):
     return names
 
 
-def _names_in_statements(source, filename, exported):
-    """The names used anywhere inside the arguments of a call of a name peye
-    exports, such as fact(...), forward(...) or findall(...)."""
+def _names_in_statements(source, filename, exported, wanted):
+    """Which of the wanted names are used anywhere inside the arguments of a
+    call of a name peye exports, such as fact(...), forward(...) or findall(...).
+
+    A syntax tree of a long program is slow to build, so the source is
+    scanned token by token instead; a construct the scan does not model, an
+    f-string or a lambda, sends it to the syntax tree after all.
+    """
+    found = _scan_names_in_statements(source, exported, wanted)
+    if found is None:
+        found = _ast_names_in_statements(source, filename, exported) & wanted
+    return found
+
+
+_SCAN = re.compile(r'''
+    (?P<fstring>(?:[rR][fFtT]|[fFtT][rR]?)['"])
+  | (?:[rRbBuU]|[rR][bB]|[bB][rR])?(?:\'\'\'(?:[^\\]|\\.)*?\'\'\'|"""(?:[^\\]|\\.)*?"""
+                                      |'(?:[^'\\\n]|\\.)*'|"(?:[^"\\\n]|\\.)*")
+  | \#[^\n]*
+  | (?P<open>[(\[{]) | (?P<close>[)\]}])
+  | (?P<dot>\.\s*)?(?P<name>[^\W\d]\w*)(?P<after>[ \t]*(?:\(|=(?!=)))?
+''', re.VERBOSE | re.DOTALL)
+
+
+def _scan_names_in_statements(source, exported, wanted):
+    """_names_in_statements by scanning tokens, or None when the source has a
+    construct the scan does not model. Only called on source that compiles."""
+    found = set()
+    inside = [False]  # per open bracket: whether it lies in a statement's arguments
+    for match in _SCAN.finditer(source):
+        kind = match.lastgroup
+        if kind == 'name' or kind == 'after':
+            name = match.group('name')
+            if name == 'lambda':
+                return None
+            if match.group('dot'):
+                after = match.group('after')
+                if after and after.endswith('('):
+                    inside.append(inside[-1])
+                continue
+            after = match.group('after')
+            if after and after.endswith('='):
+                continue  # a keyword argument
+            if inside[-1] and name in wanted:
+                found.add(name)
+            if after:
+                inside.append(inside[-1] or name in exported)
+        elif kind == 'open':
+            inside.append(inside[-1])
+        elif kind == 'close':
+            if len(inside) > 1:
+                inside.pop()
+        elif kind == 'fstring':
+            return None
+    return found
+
+
+def _ast_names_in_statements(source, filename, exported):
     import ast
     found = set()
     for node in ast.walk(ast.parse(source, filename)):

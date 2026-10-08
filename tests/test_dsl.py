@@ -73,6 +73,32 @@ query(path(0, W))
         self.assertEqual(clauses[2000].line, 4)  # stated inside state()
         self.assertEqual(clauses[2001].line, 2007)
 
+    def test_the_token_scan_finds_the_names_the_syntax_tree_finds(self):
+        import builtins
+        import glob
+        from peye import __all__ as exported
+        from peye.dsl import _ast_names_in_statements, _scan_names_in_statements
+        wanted = {name for name in dir(builtins) if not name.startswith('_')}
+        # The examples, except the few generated ones too long to say more.
+        sources = []
+        for path in glob.glob(os.path.join(ROOT, 'examples', '*.py')):
+            if os.path.getsize(path) < 100_000:
+                with open(path, encoding='utf-8') as handle:
+                    sources.append(handle.read())
+        sources += [
+            "fact(p(type))", "x = type(1)\nfact(p(sum([1])))", "fact(p(x.type))", "fact(p(type=1))",
+            "fact(p([type for type in xs]))", "fact(p('type'))", 'fact(p("""type\n"""))', "# fact(type)\n",
+            "fact(p(X)) if type(1) else 0", "fact\n(p(type))", "y = x.fact(type(1))", "fact(p(min))\nmax(1)",
+            "fact(p(type == 1))", "fact(p(sum != 1))", "fact(p(1 if type else 2))", "fact(p(rb'x', type))",
+            "fact(p(r'\\'', type))", "fact(p(\nsum\n))\nzip(1)", "forward(q, findall(X, p(X), L) & ~abs)",
+        ]
+        for source in sources:
+            with self.subTest(source[:60]):
+                scanned = _scan_names_in_statements(source, exported, wanted)
+                self.assertEqual(scanned, _ast_names_in_statements(source, '<program>', exported) & wanted)
+        for source in ["fact(p(f'{sum(1)}'))", "fact(p(lambda type: 1))"]:
+            self.assertIsNone(_scan_names_in_statements(source, exported, wanted))
+
     def test_a_misspelled_statement_is_an_error(self):
         with self.assertRaisesRegex(PeyeError, r'line 3: fcat\(\.\.\.\) on its own states nothing'):
             program("fact(p(1))\nfcat(p(2))")

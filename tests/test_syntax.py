@@ -1,6 +1,8 @@
 """Every term has one Python spelling, and reading it back gives the term."""
+import functools
 import glob
 import os
+import re
 import unittest
 
 from peye import PeyeError, Struct, Var, read_term, read_terms, write
@@ -30,6 +32,31 @@ def ast_terms(text):
         return read_terms(text)
     finally:
         reader._read_lines = saved
+
+
+def _shape(line):
+    """A line with its atoms, numbers (all but their order of length) and
+    repetitions collapsed: lines of one shape exercise a reader in the same way."""
+    line = re.sub(r"'[^'\\\n]*'", "'a'", line)
+    line = re.sub(r'"[^"\\\n]*"', '"a"', line)
+    line = re.sub(r'\d+', lambda number: '0' * len(number.group()).bit_length(), line)
+    line = re.sub(r'(\w+\()\1+', r'\1\1', line)
+    line = re.sub(r'\)\)+', '))', line)
+    # A run of list items becomes the kinds of item in it.
+    return re.sub(r"(?:, (?:0+|'a'|\"a\")){2,}", lambda run: ' '.join(sorted(set(run.group().split(', ')))), line)
+
+
+@functools.lru_cache(maxsize=None)
+def saved_lines():
+    """One line of the saved documents per shape. Reading all of them, over
+    a megabyte of deep proofs, would test the same paths many times over."""
+    lines = {}
+    for path in sorted(glob.glob(os.path.join(ROOT, 'examples', '*', '*.py'))):
+        with open(path, encoding='utf-8') as handle:
+            for line in handle.read().split('\n'):
+                if line:
+                    lines.setdefault(_shape(line), line)
+    return '\n'.join(lines.values())
 
 
 class Syntax(unittest.TestCase):
@@ -68,16 +95,12 @@ class Syntax(unittest.TestCase):
         with self.assertRaises(PeyeError):
             read_terms('import os\n')
 
-    def test_the_direct_reading_agrees_with_ast_on_every_saved_document(self):
+    def test_the_direct_reading_agrees_with_ast_on_saved_documents(self):
         from peye.reader import _read_lines
-        for path in sorted(glob.glob(os.path.join(ROOT, 'examples', '*', '*.py'))):
-            with self.subTest(os.path.relpath(path, ROOT)), open(path, encoding='utf-8') as handle:
-                text = handle.read()
-                direct = _read_lines(text)
-                expected = ast_terms(text)
-                if direct is None:
-                    continue  # read with ast as a whole
-                self.assertEqual([(write(t), n) for t, n in direct], [(write(t), n) for t, n in expected])
+        text = saved_lines()
+        direct = _read_lines(text)
+        self.assertIsNotNone(direct, 'every saved line can be read directly')
+        self.assertEqual([(write(t), n) for t, n in direct], [(write(t), n) for t, n in ast_terms(text)])
 
     def test_the_direct_reading_agrees_with_ast_or_steps_aside(self):
         from peye.reader import _read_lines
@@ -107,14 +130,11 @@ class Syntax(unittest.TestCase):
                 if direct is not None:
                     self.assertEqual([(write(t), n) for t, n in direct], expected)
 
-    def test_every_saved_document_reads_back_to_its_own_spelling(self):
-        for path in sorted(glob.glob(os.path.join(ROOT, 'examples', '*', '*.py'))):
-            with self.subTest(os.path.relpath(path, ROOT)), open(path, encoding='utf-8') as handle:
-                lines = [line for line in handle.read().split('\n') if line]
-                for line, (term, _) in zip(lines, read_terms('\n'.join(lines))):
-                    if line.startswith('step('):
-                        continue  # bindings are written as a dictionary
-                    self.assertEqual(write(term), line)
+    def test_saved_documents_read_back_to_their_own_spelling(self):
+        lines = saved_lines().split('\n')
+        for line, (term, _) in zip(lines, read_terms('\n'.join(lines))):
+            if not line.startswith('step('):  # bindings are written as a dictionary
+                self.assertEqual(write(term), line)
 
 
 if __name__ == '__main__':
