@@ -227,15 +227,53 @@ and `--json` gives the same report as JSON. Proofs are read with Python's `ast`
 module and never executed, so checking a proof from someone else runs none of
 their code. Every proof peye generates is checked before it is returned.
 
-**Honesty about absence.** A negation (`~`) says a search found nothing, and a
-collection (`findall`) that it found exactly these answers. Neither can be
-proved the way a derivation can, so each becomes an explicit `'absent'` or
-`'collected'` obligation in the report, and `--strict-proof` rejects any proof
-that leans on one. What the checker can do is refute one: an absence fails C6
-when a fact of the program, a step of the proof or a recomputed primitive is a
-solution after all, and a collection fails when such a solution is missing
-from its list. A valid proof with obligations is valid *conditional on* them,
-and the report says where.
+### Why negation and aggregation are safe
+
+A negation (`~G`) concludes something from what is *not* there, and a
+collection (`findall(T, G, L)`) from *everything* that is there. Both are only
+right once nothing more can be derived: a fact added later would make an
+earlier absence false, or a collected list incomplete. peye guards them in
+four ways.
+
+**Ask only once the answer is final.** When it loads a program, peye works
+out which clauses each body goal depends on. A dependency is *closed* when the
+goal sits inside `~` or `findall`. Every clause gets a rank, at least that of
+everything it depends on, plus one across a closed dependency, and forward
+rules run rank by rank, each to its fixpoint. By the time a rule asks
+`~already_received(P)` or collects `findall(X, p(X), L)`, every rule that
+could still produce such a fact has finished. A program with no such ranking
+is rejected with "unstratified negation or collection dependency":
+
+```python
+forward(p, ~q)
+forward(q, p)     # p needs q to be absent, yet p yields q: rejected
+```
+
+Positive cycles, such as transitive closure, are fine. Ranks compare whole
+terms rather than predicate names, so `t(X, 'type', Y)` and
+`t(X, 'status', Y)` can sit at different ranks, which matters when
+everything is a triple. A goal that is a variable, reachable from a forward
+rule, is rejected, because nobody can tell what it depends on.
+
+**Negate only ground goals.** `~G` must be ground when it is solved. With a
+variable, as in `~p(X)`, the question would quietly become "is there no `X`
+at all?", so peye stops with an error instead. Bind the variables first:
+`applicant(P), income(P, I), I < 2500, ~already_received(P)`.
+
+**Say what was taken on trust.** A search that found nothing cannot be proved
+the way a derivation can. So a proof records each negation as an `'absent'`
+step and each collection as a `'collected'` step, the report lists them as
+`obligation('absent', 'theory_scoped', Goal)`, and the verdict is
+`checked_with_obligations` rather than `checked`. *Theory-scoped* says what
+the claim is: absent according to this program, a closed-world assumption
+made visible. `--strict-proof` rejects any proof that leans on one.
+
+**Refute them when the evidence allows.** The checker cannot prove an
+obligation, but it can catch one out (C6). An absence fails when a fact of
+the program, a step of the proof or a recomputed primitive is a solution
+after all, and a collection fails when such a solution is missing from its
+list. A valid proof with obligations is valid *conditional on* them, and the
+report says which they are.
 
 ## Checking the translation
 
