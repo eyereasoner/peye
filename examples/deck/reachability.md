@@ -31,8 +31,8 @@ fact(edge('a', 'b'))
 fact(edge('b', 'c'))
 fact(edge('c', 'a'))
 fact(edge('c', 'd'))
-forward(reachable(X, Y), edge(X, Y))
-forward(reachable(X, Z), reachable(X, Y), edge(Y, Z))
+implies(edge(X, Y), reachable(X, Y))
+implies(reachable(X, Y) & edge(Y, Z), reachable(X, Z))
 ```
 
 Four roads, and two rules:
@@ -41,7 +41,7 @@ Four roads, and two rules:
 - if you can reach Y from X, and there is a road from Y to Z, you can reach
   Z from X.
 
-`forward` means "keep applying these until nothing new follows".
+`implies` means "keep applying these until nothing new follows".
 
 ---
 

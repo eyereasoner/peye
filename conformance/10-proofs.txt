@@ -7,7 +7,7 @@ args: --proof program.py
 from peye import *
 fact(type('socrates', 'human'))
 fact(subclass_of('human', 'mortal'))
-forward(type(S, B), type(S, A), subclass_of(A, B))
+implies(type(S, A) & subclass_of(A, B), type(S, B))
 query(type(X, Y))
 --- stdout
 type('socrates', 'mortal')
@@ -15,7 +15,7 @@ type('socrates', 'human')
 
 clause(1, fact(type('socrates', 'human')))
 clause(2, fact(subclass_of('human', 'mortal')))
-clause(3, forward(type(S, B), type(S, A), subclass_of(A, B)))
+clause(3, implies(type(S, A) & subclass_of(A, B), type(S, B)))
 
 step(type('socrates', 'mortal'), clause(3), {'S': 'socrates', 'B': 'mortal', 'A': 'human'}, [type('socrates', 'human'), subclass_of('human', 'mortal')])
 step(type('socrates', 'human'), clause(1), {}, [])
@@ -53,12 +53,12 @@ args: --proof --goal "big(X)" program.py
 --- program.py
 from peye import *
 fact(n(1), n(3))
-backward(big(X), n(X), X > 2)
+implied_by(big(X), n(X) & (X > 2))
 --- stdout
 big(3)
 
 clause(2, fact(n(3)))
-clause(3, backward(big(X), n(X), X > 2))
+clause(3, implied_by(big(X), n(X) & (X > 2)))
 
 step(big(3), clause(3), {'X': 3}, [n(3), 3 > 2])
 step(n(3), clause(2), {}, [])
@@ -118,12 +118,12 @@ args: --proof program.py
 --- program.py
 from peye import *
 fact(p(1))
-forward(ok(X), p(X), ~q(X))
+implies(p(X) & ~q(X), ok(X))
 --- stdout
 ok(1)
 
 clause(1, fact(p(1)))
-clause(2, forward(ok(X), p(X), ~q(X)))
+clause(2, implies(p(X) & ~q(X), ok(X)))
 
 step(ok(1), clause(2), {'X': 1}, [p(1), ~q(1)])
 step(p(1), clause(1), {}, [])
@@ -135,11 +135,11 @@ args: --proof program.py
 --- program.py
 from peye import *
 fact(p(1), p(2))
-forward(all_of(L), findall(X, p(X), L))
+implies(findall(X, p(X), L), all_of(L))
 --- stdout
 all_of([1, 2])
 
-clause(3, forward(all_of(L), findall(X, p(X), L)))
+clause(3, implies(findall(X, p(X), L), all_of(L)))
 
 step(all_of([1, 2]), clause(3), {'L': [1, 2], 'X': …}, [findall(…, p(…), [1, 2])])
 step(findall(…, p(…), [1, 2]), 'collected', {}, [])
@@ -166,15 +166,15 @@ args: --proof program.py
 --- program.py
 from peye import *
 fact(p(1))
-forward(a, p(1))
-forward(b, p(1))
+implies(p(1), a)
+implies(p(1), b)
 --- stdout
 'a'
 'b'
 
 clause(1, fact(p(1)))
-clause(2, forward('a', p(1)))
-clause(3, forward('b', p(1)))
+clause(2, implies(p(1), 'a'))
+clause(3, implies(p(1), 'b'))
 
 step('a', clause(2), {}, [p(1)])
 step(p(1), clause(1), {}, [])
@@ -186,15 +186,15 @@ args: --proof program.py
 --- program.py
 from peye import *
 fact(a(1))
-forward(b(X), a(X))
-forward(c(X), b(X), a(X))
+implies(a(X), b(X))
+implies(b(X) & a(X), c(X))
 query(c(X))
 --- stdout
 c(1)
 
 clause(1, fact(a(1)))
-clause(2, forward(b(X), a(X)))
-clause(3, forward(c(X), b(X), a(X)))
+clause(2, implies(a(X), b(X)))
+clause(3, implies(b(X) & a(X), c(X)))
 
 step(c(1), clause(3), {'X': 1}, [b(1), a(1)])
 step(b(1), clause(2), {'X': 1}, [a(1)])
@@ -206,14 +206,14 @@ args: --proof --goal "r(X)" program.py
 --- program.py
 from peye import *
 fact(p(1))
-forward(q(X), p(X))
-backward(r(X), q(X))
+implies(p(X), q(X))
+implied_by(r(X), q(X))
 --- stdout
 r(1)
 
 clause(1, fact(p(1)))
-clause(2, forward(q(X), p(X)))
-clause(3, backward(r(X), q(X)))
+clause(2, implies(p(X), q(X)))
+clause(3, implied_by(r(X), q(X)))
 
 step(r(1), clause(3), {'X': 1}, [q(1)])
 step(q(1), clause(2), {'X': 1}, [p(1)])
@@ -231,7 +231,7 @@ contradiction(account(O, B), B < 0)
 'false'
 
 clause(1, fact(account('bob', -5)))
-clause(2, forward('false', account(O, B), B < 0))
+clause(2, implies(account(O, B) & (B < 0), 'false'))
 
 step('false', clause(2), {'O': 'bob', 'B': -5}, [account('bob', -5), -5 < 0])
 step(account('bob', -5), clause(1), {}, [])
@@ -242,11 +242,11 @@ spec: 10.3
 args: --proof --goal "double(4, Y)" program.py
 --- program.py
 from peye import *
-backward(double(X, Y), is_(Y, X * 2))
+implied_by(double(X, Y), is_(Y, X * 2))
 --- stdout
 double(4, 8)
 
-clause(1, backward(double(X, Y), is_(Y, X * 2)))
+clause(1, implied_by(double(X, Y), is_(Y, X * 2)))
 
 step(double(4, 8), clause(1), {'X': 4, 'Y': 8}, [is_(8, 4 * 2)])
 step(is_(8, 4 * 2), 'builtin', {}, [])

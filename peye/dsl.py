@@ -4,12 +4,9 @@ A program is a Python module that states facts and rules:
 
     from peye import *
 
-    type, subclass_of = preds('type subclass_of')
-    S, A, B, X, Y = vars('S A B X Y')
-
     fact(type('socrates', 'human'))
     fact(subclass_of('human', 'mortal'))
-    forward(type(S, B), type(S, A), subclass_of(A, B))
+    implies(type(S, A) & subclass_of(A, B), type(S, B))
     query(type(X, Y))
 
 Atoms are strings, numbers are ints and floats, lists are lists, and
@@ -224,17 +221,16 @@ def fact(*terms):
         builder.add('fact', term, [])
 
 
-def forward(head, *body):
-    """head is concluded whenever body holds, until nothing new follows.
-
-    head can join several conclusions with &.
-    """
-    _builder().add('forward', head, list(body))
+def implies(premise, conclusion):
+    """A forward rule, N3's =>: whenever premise holds, conclude conclusion,
+    until nothing new follows. Both may join several goals with &."""
+    _builder().add('forward', conclusion, [premise])
 
 
-def backward(head, *body):
-    """head holds when body does, decided when a goal asks for it."""
-    _builder().add('backward', head, list(body))
+def implied_by(conclusion, premise):
+    """A backward rule, N3's <=: conclusion holds when premise does, decided
+    when a goal asks for it. premise may join several goals with &."""
+    _builder().add('backward', conclusion, [premise])
 
 
 def query(*body):
@@ -413,7 +409,7 @@ def implicit_names(source, filename='<program>'):
 
 def _names_in_statements(source, filename, exported, wanted):
     """Which of the wanted names are used anywhere inside the arguments of a
-    call of a name peye exports, such as fact(...), forward(...) or findall(...).
+    call of a name peye exports, such as fact(...), implies(...) or findall(...).
 
     A syntax tree of a long program is slow to build, so the source is
     scanned token by token instead; a construct the scan does not model, an
@@ -488,9 +484,18 @@ def _statements_nothing(source, filename, names):
     """
     import ast
     suspects = {match.group(1) for match in _LEADING_CALL.finditer(source)}
-    if not any(isinstance(names.get(name), Pred) for name in suspects):
+    renamed = {match.group(1) for match in _RENAMED_CALL.finditer(source)}
+    if not any(isinstance(names.get(name), Pred) for name in suspects | renamed):
         return
-    for statement in ast.parse(source, filename).body:
+    tree = ast.parse(source, filename)
+    # A statement of an earlier version states nothing wherever it is, as
+    # inside a function that states a program's rules.
+    for node in ast.walk(tree):
+        if (type(node) is ast.Expr and type(node.value) is ast.Call and type(node.value.func) is ast.Name
+                and node.value.func.id in _RENAMED and isinstance(names.get(node.value.func.id), Pred)):
+            name = node.value.func.id
+            raise PeyeError(f'line {node.lineno}: {name}(Head, *Body) is now {_RENAMED[name]}')
+    for statement in tree.body:
         value = statement.value if type(statement) is ast.Expr else None
         if (type(value) is ast.Call and type(value.func) is ast.Name and
                 isinstance(names.get(value.func.id), Pred)):
@@ -499,6 +504,11 @@ def _statements_nothing(source, filename, names):
                             f'write fact({name}(...)) to state it, or check the spelling')
 
 
+# Statements of earlier versions, and what states the same clause now.
+_RENAMED = {'forward': 'implies(Premise, Conclusion), premise first as in N3\'s =>',
+            'backward': 'implied_by(Conclusion, Premise), as in N3\'s <='}
+
+_RENAMED_CALL = re.compile(r'^[ \t]*(forward|backward)[ \t]*\(', re.MULTILINE)
 _LEADING_CALL = re.compile(r'^([^\W\d]\w*)[ \t]*\(', re.MULTILINE)
 
 

@@ -26,9 +26,9 @@ def policy():
     for name, money, size, evidence in APPLICATIONS:
         fact(applicant(name), income(name, money), household(name, size))
     fact(already_received('eve'))
-    forward(grant(P), applicant(P), income(P, I), I < 2500, ~already_received(P))
-    forward(top_up(P), grant(P), household(P, N), N >= 3)
-    forward(refused(P, 'income above 2500'), applicant(P), income(P, I), I >= 2500)
+    implies(applicant(P) & income(P, I) & (I < 2500) & ~already_received(P), grant(P))
+    implies(grant(P) & household(P, N) & (N >= 3), top_up(P))
+    implies(applicant(P) & income(P, I) & (I >= 2500), refused(P, 'income above 2500'))
 
 
 # Prove the policy's decisions; run() checks the proof before returning it.
@@ -51,30 +51,30 @@ for name, money, size, evidence in APPLICATIONS:
     fact(evidence_of(income(name, money), evidence))
 
 fact(member(X, [X, *_]))
-backward(member(X, [_, *T]), member(X, T))
+implied_by(member(X, [_, *T]), member(X, T))
 
 # A goal depends on the goals its step used, and on everything they used.
-forward(depends(G, U), step_of(G, By, Uses), member(U, Uses))
-forward(depends(G, W), depends(G, U), depends(U, W))
+implies(step_of(G, By, Uses) & member(U, Uses), depends(G, U))
+implies(depends(G, U) & depends(U, W), depends(G, W))
 
 # The data a decision rests on are the policy's facts in its support: the
 # steps justified by a clause that used nothing. Its assumptions are the
 # absences the proof could only take on trust.
-forward(rests_on(D, F), decision(D), depends(D, F), step_of(F, clause(_), []))
-forward(assumes(D, A), decision(D), depends(D, A), step_of(A, 'absent', []))
+implies(decision(D) & depends(D, F) & step_of(F, clause(_), []), rests_on(D, F))
+implies(decision(D) & depends(D, A) & step_of(A, 'absent', []), assumes(D, A))
 
 # Was the policy's own reasoning certified, and on what conditions?
 query(verdict(V))
 
 # A decision is at risk when it rests on an income nobody has verified.
-forward(at_risk(D, F), rests_on(D, F), evidence_of(F, 'self_declared'))
+implies(rests_on(D, F) & evidence_of(F, 'self_declared'), at_risk(D, F))
 query(at_risk(D, F))
 
 # For each decision: the data it rests on and the assumptions it makes.
-forward(
+implies(
+    decision(D)
+    & findall(F, rests_on(D, F), Data)
+    & findall(A, assumes(D, A), Assumptions),
     explanation(D, Data, Assumptions),
-    decision(D),
-    findall(F, rests_on(D, F), Data),
-    findall(A, assumes(D, A), Assumptions),
 )
 query(explanation(D, Data, Assumptions))

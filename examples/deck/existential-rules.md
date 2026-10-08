@@ -25,9 +25,9 @@ A variable that appears in a rule's conclusion but not in its body is such an
 unknown, an *existential*:
 
 ```python
-forward(has_parent(X, P), person(X))          # P: some parent of X
-forward(invoice_for(C, I), ordered(C, Item))  # I: some invoice for C
-forward(meeting(M) & attends(M, X) & attends(M, Y), colleagues(X, Y))
+implies(person(X), has_parent(X, P))          # P: some parent of X
+implies(ordered(C, Item), invoice_for(C, I))  # I: some invoice for C
+implies(colleagues(X, Y), meeting(M) & attends(M, X) & attends(M, Y))
 ```
 
 Around them: Ann and Bob are persons, Dan and Fay have a parent the data

@@ -5,7 +5,7 @@ matching_pair(pair('same', 'same'))
 head_tail(['a', 'b', 'c'], 'a', ['b', 'c'])
 
 clause(1, fact(append([], Ys, Ys)))
-clause(2, backward(append([X, *Xs], Ys, [X, *Zs]), append(Xs, Ys, Zs)))
+clause(2, implied_by(append([X, *Xs], Ys, [X, *Zs]), append(Xs, Ys, Zs)))
 clause(3, fact(matching_pair(pair(X, X))))
 clause(4, fact(head_tail([Head, *Tail], Head, Tail)))
 

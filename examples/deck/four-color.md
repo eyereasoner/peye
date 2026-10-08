@@ -37,12 +37,12 @@ Islands such as Ireland, Cyprus and Malta have an empty list `[]`.
 ## How it colours
 
 ```python
-backward(
+implied_by(
     places([[Place, Color], *Tail]),
-    places(Tail),
-    neighbours(Place, Neighbours),
-    member(Color, ['red', 'green', 'blue', 'yellow']),
-    ~conflict(Color, Tail, Neighbours),
+    places(Tail)
+    & neighbours(Place, Neighbours)
+    & member(Color, ['red', 'green', 'blue', 'yellow'])
+    & ~conflict(Color, Tail, Neighbours),
 )
 ```
 

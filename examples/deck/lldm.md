@@ -48,8 +48,8 @@ Then one rule per intermediate value — 37 in all — such as the final leg
 length and the difference:
 
 ```python
-backward(val(M, 'd53Cm', Z), measurement(M), val(M, 'ssd53Cm2', X), is_(Z, X ** 0.5))
-backward(val(M, 'dCm', Z), measurement(M), val(M, 'd53Cm', X), val(M, 'd64Cm', Y), is_(Z, X - Y))
+implied_by(val(M, 'd53Cm', Z), measurement(M) & val(M, 'ssd53Cm2', X) & is_(Z, X ** 0.5))
+implied_by(val(M, 'dCm', Z), measurement(M) & val(M, 'd53Cm', X) & val(M, 'd64Cm', Y) & is_(Z, X - Y))
 ```
 
 ---
@@ -57,20 +57,20 @@ backward(val(M, 'dCm', Z), measurement(M), val(M, 'd53Cm', X), val(M, 'd64Cm', Y
 ## The alarm and its reason
 
 ```python
-backward(
+implied_by(
     alarm(M, 'discrepancy below negative threshold'),
-    measurement(M),
-    val(M, 'dCm', D),
-    threshold(M, 'lld_alarm_threshold_cm', T),
-    is_(Negt, 0 - T),
-    D < Negt,
+    measurement(M)
+    & val(M, 'dCm', D)
+    & threshold(M, 'lld_alarm_threshold_cm', T)
+    & is_(Negt, 0 - T)
+    & (D < Negt),
 )
-backward(
+implied_by(
     alarm(M, 'discrepancy above threshold'),
-    measurement(M),
-    val(M, 'dCm', D),
-    threshold(M, 'lld_alarm_threshold_cm', T),
-    D > T,
+    measurement(M)
+    & val(M, 'dCm', D)
+    & threshold(M, 'lld_alarm_threshold_cm', T)
+    & (D > T),
 )
 ```
 

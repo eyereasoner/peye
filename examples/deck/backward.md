@@ -24,13 +24,13 @@ This example uses both, one inside the other.
 One definition and one rule:
 
 ```python
-backward(more_interesting(X, Y), X > Y)
-forward(indeed_more_interesting(5, 3), more_interesting(5, 3))
+implied_by(more_interesting(X, Y), X > Y)
+implies(more_interesting(5, 3), indeed_more_interesting(5, 3))
 ```
 
-- `backward` is a **backward definition**: X is more interesting than Y *if*
-  X > Y. peye only uses it when some question needs it.
-- `forward` is a **forward rule**: if 5 is more interesting than 3, then
+- `implied_by` is a **backward definition**, N3's `<=`: X is more interesting
+  than Y *if* X > Y. peye only uses it when some question needs it.
+- `implies` is a **forward rule**, N3's `=>`: if 5 is more interesting than 3, then
   record that it is *indeed* more interesting.
 
 ---

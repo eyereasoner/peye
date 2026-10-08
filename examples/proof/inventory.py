@@ -1,8 +1,8 @@
 invoice(28)
 
 clause(5, fact(sum([], 0)))
-clause(6, backward(sum([X, *Xs], Total), sum(Xs, Rest), is_(Total, X + Rest)))
-clause(7, forward(invoice(Total), findall(Amount, line_total(_0, Amount), Amounts), sum(Amounts, Total)))
+clause(6, implied_by(sum([X, *Xs], Total), sum(Xs, Rest) & is_(Total, X + Rest)))
+clause(7, implies(findall(Amount, line_total(_0, Amount), Amounts) & sum(Amounts, Total), invoice(Total)))
 
 step(invoice(28), clause(7), {'Total': 28, 'Amount': A, '_0': B, 'Amounts': [6, 12, 10]}, [findall(A, line_total(B, A), [6, 12, 10]), sum([6, 12, 10], 28)])
 step(findall(A, line_total(B, A), [6, 12, 10]), 'collected', {}, [])

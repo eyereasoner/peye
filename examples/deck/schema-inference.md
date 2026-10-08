@@ -46,14 +46,14 @@ fact(codomain('parent_of', 'person'))
 fact(type('koko', 'cat'))
 fact(triple('alice', 'parent_of', 'bob'))
 
-forward(subclass(A, C), subclass(A, B), subclass(B, C))
-forward(type(X, B), type(X, A), subclass(A, B))
-forward(triple(S, Q, O), triple(S, P, O), subproperty(P, Q))
-forward(type(S, Class), triple(S, P, _), domain(P, Class))
-forward(type(O, Class), triple(_, P, O), codomain(P, Class))
+implies(subclass(A, B) & subclass(B, C), subclass(A, C))
+implies(type(X, A) & subclass(A, B), type(X, B))
+implies(triple(S, P, O) & subproperty(P, Q), triple(S, Q, O))
+implies(triple(S, P, _) & domain(P, Class), type(S, Class))
+implies(triple(_, P, O) & codomain(P, Class), type(O, Class))
 ```
 
-`forward` means "keep applying this until nothing new follows". No question is
+`implies` means "keep applying this until nothing new follows". No question is
 asked, so peye reports everything new.
 
 ---

@@ -7,7 +7,7 @@ args: program.py --goal "p(X)"
 from peye import *
 fact(p('source'))
 fact(q)
-forward(p('derived'), q)
+implies(q, p('derived'))
 --- stdout
 p('derived')
 p('source')
@@ -18,7 +18,7 @@ args: program.py --goal "p(X)"
 --- program.py
 from peye import *
 fact(p(1))
-backward(p(X), q(X))
+implied_by(p(X), q(X))
 fact(p(3))
 fact(q(2))
 --- stdout
@@ -31,8 +31,8 @@ spec: 7.2
 --- program.py
 from peye import *
 fact(a(1))
-forward(c(X), b(X))
-forward(b(X), a(X))
+implies(b(X), c(X))
+implies(a(X), b(X))
 --- stdout
 b(1)
 c(1)
@@ -42,8 +42,8 @@ spec: 7.2
 --- program.py
 from peye import *
 fact(edge('a', 'b'), edge('b', 'a'))
-forward(path(X, Y), edge(X, Y))
-forward(path(X, Z), path(X, Y), edge(Y, Z))
+implies(edge(X, Y), path(X, Y))
+implies(path(X, Y) & edge(Y, Z), path(X, Z))
 --- stdout
 path('a', 'b')
 path('b', 'a')
@@ -55,7 +55,7 @@ spec: 7.2
 --- program.py
 from peye import *
 fact(p(1))
-forward(p(X), p(X))
+implies(p(X), p(X))
 --- stdout
 
 === an unbound head variable becomes a Skolem atom of its own per activation
@@ -64,8 +64,8 @@ args: --skolem-genid test program.py
 --- program.py
 from peye import *
 fact(person('ann'), person('bob'))
-forward(has_parent(X, Y), person(X))
-forward(siblings(X, Y), has_parent(X, P), has_parent(Y, P), not_identical(X, Y))
+implies(person(X), has_parent(X, Y))
+implies(has_parent(X, P) & has_parent(Y, P) & not_identical(X, Y), siblings(X, Y))
 --- stdout
 has_parent('ann', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
 has_parent('bob', 'https://eyereasoner.github.io/.well-known/genid/test#sk_1')
@@ -76,7 +76,7 @@ args: --skolem-genid test program.py
 --- program.py
 from peye import *
 fact(p('a', 1), p('a', 2))
-forward(q(X, B), p(X, Y))
+implies(p(X, Y), q(X, B))
 --- stdout
 q('a', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
 
@@ -86,8 +86,8 @@ args: --skolem-genid test program.py
 --- program.py
 from peye import *
 fact(p('a', 1))
-forward(q(X, B), p(X, Y))
-forward(q2(X, B), p(X, Y))
+implies(p(X, Y), q(X, B))
+implies(p(X, Y), q2(X, B))
 --- stdout
 q('a', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
 q2('a', 'https://eyereasoner.github.io/.well-known/genid/test#sk_1')
@@ -100,7 +100,7 @@ stderr: prefix peye:
 --- program.py
 from peye import *
 fact(person('ann'))
-forward(has_parent(X, P) & person(P), person(X))
+implies(person(X), has_parent(X, P) & person(P))
 --- stdout
 
 === the same activation in a later round gets the same Skolem atoms
@@ -109,8 +109,8 @@ args: --skolem-genid test program.py
 --- program.py
 from peye import *
 fact(person('ann'))
-forward(has_parent(X, Y), person(X))
-forward(known(X), has_parent(X, P))
+implies(person(X), has_parent(X, Y))
+implies(has_parent(X, P), known(X))
 --- stdout
 has_parent('ann', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
 known('ann')
@@ -121,7 +121,7 @@ args: --skolem-genid test program.py
 --- program.py
 from peye import *
 fact(person('ann'))
-forward(r(X, Y, Z, Y) & s(Z), person(X))
+implies(person(X), r(X, Y, Z, Y) & s(Z))
 --- stdout
 r('ann', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0', 'https://eyereasoner.github.io/.well-known/genid/test#sk_1', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
 s('https://eyereasoner.github.io/.well-known/genid/test#sk_1')
@@ -152,7 +152,7 @@ spec: 7.6
 --- program.py
 from peye import *
 fact(p(1))
-forward(q(X), p(X))
+implies(p(X), q(X))
 query(r(X))
 --- stdout
 
@@ -162,8 +162,8 @@ args: --skolem-genid test program.py
 --- program.py
 from peye import *
 fact(p('a'), knows('sk_0', 'x'))
-forward(q(X, Y), p(X))
-forward(r(X, Z), q(X, Y), knows(Y, Z))
+implies(p(X), q(X, Y))
+implies(q(X, Y) & knows(Y, Z), r(X, Z))
 --- stdout
 q('a', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
 
@@ -172,7 +172,7 @@ spec: 7.2, 14
 --- program.py
 from peye import *
 fact(p('a'))
-forward(q(X, Y), p(X))
+implies(p(X), q(X, Y))
 --- stdout
 q('a', 'https://eyereasoner.github.io/.well-known/genid/…#sk_0')
 
@@ -181,7 +181,7 @@ spec: 7.6
 --- program.py
 from peye import *
 fact(p(1))
-forward(q(X), p(X))
+implies(p(X), q(X))
 query(p(X))
 --- stdout
 p(1)
@@ -192,7 +192,7 @@ args: program.py --goal "q(Y)"
 --- program.py
 from peye import *
 fact(p(1))
-forward(q(X), p(X))
+implies(p(X), q(X))
 query(p(X))
 --- stdout
 q(1)
@@ -221,7 +221,7 @@ exit: 65
 --- program.py
 from peye import *
 fact(p(1))
-forward(q(X), p(X))
+implies(p(X), q(X))
 contradiction(q(X))
 query(p(X))
 --- stdout
@@ -235,7 +235,7 @@ exit: 65
 --- program.py
 from peye import *
 fact(p(1))
-forward(q(X), p(X))
+implies(p(X), q(X))
 contradiction(q(X))
 --- stdout
 q(1)
@@ -248,7 +248,7 @@ exit: 65
 from peye import *
 fact(p(1))
 contradiction(p(1))
-forward(q(X), p(X))
+implies(p(X), q(X))
 --- stdout
 'false'
 
@@ -257,7 +257,7 @@ spec: 7.5
 --- program.py
 from peye import *
 fact(p(1))
-forward(q(X), p(X))
+implies(p(X), q(X))
 contradiction(q(2))
 --- stdout
 q(1)
@@ -269,7 +269,7 @@ exit: 1
 stderr: nonempty
 --- program.py
 from peye import *
-backward(p, p)
+implied_by(p, p)
 --- stdout
 
 === exceeding max-iterations is an error
@@ -280,7 +280,7 @@ stderr: nonempty
 --- program.py
 from peye import *
 fact(n(0))
-forward(n(M), n(N), is_(M, N + 1))
+implies(n(N) & is_(M, N + 1), n(M))
 --- stdout
 
 === exceeding max-inferences is an error
@@ -291,7 +291,7 @@ stderr: nonempty
 --- program.py
 from peye import *
 fact(p(1))
-forward(q(X), p(X), p(X))
+implies(p(X) & p(X), q(X))
 --- stdout
 
 === bounds large enough change nothing
@@ -300,7 +300,7 @@ args: program.py --max-depth 5 --max-iterations 5 --max-inferences 100
 --- program.py
 from peye import *
 fact(n(0))
-forward(n(M), n(N), N < 3, is_(M, N + 1))
+implies(n(N) & (N < 3) & is_(M, N + 1), n(M))
 --- stdout
 n(1)
 n(2)
@@ -311,7 +311,7 @@ spec: 7.7
 args: program.py --goal "p(X)"
 --- program.py
 from peye import *
-backward(p(X), is_var(X), unify(X, 'a'))
+implied_by(p(X), is_var(X) & unify(X, 'a'))
 --- stdout
 p('a')
 
@@ -322,5 +322,5 @@ exit: 1
 stderr: nonempty
 --- program.py
 from peye import *
-backward(p(X), is_var(X), unify(X, 'a'))
+implied_by(p(X), is_var(X) & unify(X, 'a'))
 --- stdout

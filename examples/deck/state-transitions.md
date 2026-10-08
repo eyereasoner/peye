@@ -35,22 +35,22 @@ one state to the next.
 ## What we tell peye: the rules
 
 ```python
-backward(balance(0, Amount), opening_balance(Amount))
-backward(
+implied_by(balance(0, Amount), opening_balance(Amount))
+implied_by(
     balance(N, Amount),
-    N > 0,
-    event(N, 'deposit', Value),
-    is_(Before, N - 1),
-    balance(Before, Previous),
-    is_(Amount, Previous + Value),
+    (N > 0)
+    & event(N, 'deposit', Value)
+    & is_(Before, N - 1)
+    & balance(Before, Previous)
+    & is_(Amount, Previous + Value),
 )
-backward(
+implied_by(
     balance(N, Amount),
-    N > 0,
-    event(N, 'withdraw', Value),
-    is_(Before, N - 1),
-    balance(Before, Previous),
-    is_(Amount, Previous - Value),
+    (N > 0)
+    & event(N, 'withdraw', Value)
+    & is_(Before, N - 1)
+    & balance(Before, Previous)
+    & is_(Amount, Previous - Value),
 )
 query(balance(3, Amount))
 ```

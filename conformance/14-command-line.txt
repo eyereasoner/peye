@@ -6,7 +6,7 @@ args:
 --- stdin
 from peye import *
 fact(p(1))
-forward(q(X), p(X))
+implies(p(X), q(X))
 --- stdout
 q(1)
 
@@ -18,7 +18,7 @@ from peye import *
 fact(p(1))
 --- stdin
 from peye import *
-backward(q(X), p(X))
+implied_by(q(X), p(X))
 --- stdout
 q(1)
 
@@ -85,8 +85,8 @@ exit: 1
 stderr: prefix peye:
 --- program.py
 from peye import *
-forward(p, ~q)
-forward(q, p)
+implies(~q, p)
+implies(p, q)
 --- stdout
 
 === a missing program file is an error
@@ -216,7 +216,7 @@ stderr: json
 --- program.py
 from peye import *
 fact(p(1))
-forward(q(X), p(X))
+implies(p(X), q(X))
 --- stdout
 q(1)
 

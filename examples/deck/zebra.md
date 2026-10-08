@@ -29,17 +29,17 @@ The program starts with five houses about which nothing is known, and each
 clue fills in a little more:
 
 ```python
-backward(
+implied_by(
     zebra(WaterDrinker, ZebraOwner),
-    unify(Houses, [_, _, _, _, _]),  # 1. There are five houses.
-    member(house('red', 'english', _, _, _), Houses),  # 2. The Englishman lives in the red house.
-    member(house(_, 'spanish', 'dog', _, _), Houses),  # 3. The Spaniard owns the dog.
-    next_to(house('ivory', _, _, _, _), house('green', _, _, _, _), Houses),  # 6. Green is immediately right of ivory.
-    unify(Houses, [_, _, house(_, _, _, 'milk', _), _, _]),  # 9. Milk is drunk in the middle house.
-    unify(Houses, [house(_, 'norwegian', _, _, _), *_]),  # 10. The Norwegian lives in the first house.
+    unify(Houses, [_, _, _, _, _])  # 1. There are five houses.
+    & member(house('red', 'english', _, _, _), Houses)  # 2. The Englishman lives in the red house.
+    & member(house(_, 'spanish', 'dog', _, _), Houses)  # 3. The Spaniard owns the dog.
+    & next_to(house('ivory', _, _, _, _), house('green', _, _, _, _), Houses)  # 6. Green is immediately right of ivory.
+    & unify(Houses, [_, _, house(_, _, _, 'milk', _), _, _])  # 9. Milk is drunk in the middle house.
+    & unify(Houses, [house(_, 'norwegian', _, _, _), *_])  # 10. The Norwegian lives in the first house.
     # … the other clues, in the same style
-    member(house(_, WaterDrinker, _, 'water', _), Houses),
-    member(house(_, ZebraOwner, 'zebra', _, _), Houses),
+    & member(house(_, WaterDrinker, _, 'water', _), Houses)
+    & member(house(_, ZebraOwner, 'zebra', _, _), Houses),
 )
 ```
 

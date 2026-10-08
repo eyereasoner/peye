@@ -121,12 +121,12 @@ args: --proof --skolem-genid test
 --- stdin
 from peye import *
 fact(p(1))
-forward(q(X, _, [X, *_]), p(X), unify(_0, _))
+implies(p(X) & unify(_0, _), q(X, _, [X, *_]))
 --- stdout
 q(1, 'https://eyereasoner.github.io/.well-known/genid/test#sk_0', [1, *'https://eyereasoner.github.io/.well-known/genid/test#sk_1'])
 
 clause(1, fact(p(1)))
-clause(2, forward(q(X, _1, [X, *_2]), p(X), unify(_0, _3)))
+clause(2, implies(p(X) & unify(_0, _3), q(X, _1, [X, *_2])))
 
 step(q(1, 'https://eyereasoner.github.io/.well-known/genid/test#sk_0', [1, *'https://eyereasoner.github.io/.well-known/genid/test#sk_1']), clause(2), {'X': 1, '_1': 'https://eyereasoner.github.io/.well-known/genid/test#sk_0', '_2': 'https://eyereasoner.github.io/.well-known/genid/test#sk_1', '_0': A, '_3': A}, [p(1), unify(A, A)])
 step(p(1), clause(1), {}, [])

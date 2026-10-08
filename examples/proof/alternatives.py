@@ -5,8 +5,8 @@ once(route('paris', 'brussels'))
 
 clause(1, fact(train('paris', 'brussels')))
 clause(2, fact(bus('paris', 'lille')))
-clause(3, backward(route(From, To), train(From, To)))
-clause(4, backward(route(From, To), bus(From, To)))
+clause(3, implied_by(route(From, To), train(From, To)))
+clause(4, implied_by(route(From, To), bus(From, To)))
 
 step(route('paris', 'brussels'), clause(3), {'From': 'paris', 'To': 'brussels'}, [train('paris', 'brussels')])
 step(train('paris', 'brussels'), clause(1), {}, [])

@@ -2,9 +2,9 @@ label('alice', 'hello_alice')
 characters('café', ['c', 'a', 'f', 'é'], 4)
 unicode_codes('😀', [128512])
 
-clause(1, backward(label(Name, Label), atom_concat('hello_', Name, Label)))
-clause(2, backward(characters(Text, Chars, Length), atom_chars(Text, Chars), atom_length(Text, Length)))
-clause(3, backward(unicode_codes(Text, Codes), atom_codes(Text, Codes)))
+clause(1, implied_by(label(Name, Label), atom_concat('hello_', Name, Label)))
+clause(2, implied_by(characters(Text, Chars, Length), atom_chars(Text, Chars) & atom_length(Text, Length)))
+clause(3, implied_by(unicode_codes(Text, Codes), atom_codes(Text, Codes)))
 
 step(label('alice', 'hello_alice'), clause(1), {'Name': 'alice', 'Label': 'hello_alice'}, [atom_concat('hello_', 'alice', 'hello_alice')])
 step(atom_concat('hello_', 'alice', 'hello_alice'), 'builtin', {}, [])

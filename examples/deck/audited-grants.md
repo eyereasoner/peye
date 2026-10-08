@@ -54,9 +54,9 @@ def policy():
     for name, money, size, evidence in APPLICATIONS:
         fact(applicant(name), income(name, money), household(name, size))
     fact(already_received('eve'))
-    forward(grant(P), applicant(P), income(P, I), I < 2500, ~already_received(P))
-    forward(top_up(P), grant(P), household(P, N), N >= 3)
-    forward(refused(P, 'income above 2500'), applicant(P), income(P, I), I >= 2500)
+    implies(applicant(P) & income(P, I) & (I < 2500) & ~already_received(P), grant(P))
+    implies(grant(P) & household(P, N) & (N >= 3), top_up(P))
+    implies(applicant(P) & income(P, I) & (I >= 2500), refused(P, 'income above 2500'))
 ```
 
 A grant needs an income below 2500 and no earlier grant; a household of
@@ -88,12 +88,12 @@ all: it already *is* a list of facts.
 ## The audit rules
 
 ```python
-forward(depends(G, U), step_of(G, By, Uses), member(U, Uses))
-forward(depends(G, W), depends(G, U), depends(U, W))
+implies(step_of(G, By, Uses) & member(U, Uses), depends(G, U))
+implies(depends(G, U) & depends(U, W), depends(G, W))
 
-forward(rests_on(D, F), decision(D), depends(D, F), step_of(F, clause(_), []))
-forward(assumes(D, A), decision(D), depends(D, A), step_of(A, 'absent', []))
-forward(at_risk(D, F), rests_on(D, F), evidence_of(F, 'self_declared'))
+implies(decision(D) & depends(D, F) & step_of(F, clause(_), []), rests_on(D, F))
+implies(decision(D) & depends(D, A) & step_of(A, 'absent', []), assumes(D, A))
+implies(rests_on(D, F) & evidence_of(F, 'self_declared'), at_risk(D, F))
 ```
 
 A decision depends on everything its proof used, all the way down. The data

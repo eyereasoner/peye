@@ -5,7 +5,7 @@ record_owner(record('person_rule', 'bob'), 'bob')
 
 clause(1, fact(person('alice')))
 clause(2, fact(person('bob')))
-clause(3, forward(has_record(Name, record('person_rule', Name)) & record_owner(record('person_rule', Name), Name), person(Name)))
+clause(3, implies(person(Name), has_record(Name, record('person_rule', Name)) & record_owner(record('person_rule', Name), Name)))
 
 step(has_record('alice', record('person_rule', 'alice')), clause(3), {'Name': 'alice'}, [person('alice')])
 step(person('alice'), clause(1), {}, [])

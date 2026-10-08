@@ -1,10 +1,10 @@
 colors('mapEU', [['Belgium', 'yellow'], ['Netherlands', 'green'], ['Luxemburg', 'green'], ['France', 'blue'], ['Germany', 'red'], ['Italy', 'red'], ['Denmark', 'green'], ['Ireland', 'red'], ['Greece', 'red'], ['Spain', 'green'], ['Portugal', 'red'], ['Austria', 'yellow'], ['Sweden', 'green'], ['Finland', 'red'], ['Cyprus', 'red'], ['Malta', 'red'], ['Poland', 'blue'], ['Hungary', 'blue'], ['Czech Republic', 'green'], ['Slovakia', 'red'], ['Slovenia', 'green'], ['Estonia', 'red'], ['Latvia', 'green'], ['Lithuania', 'red'], ['Bulgaria', 'green'], ['Romania', 'red'], ['Croatia', 'red']])
 
-clause(1, backward(colors(_Map, Places), findall([Place, _0], neighbours(Place, _1), Places), once(places(Places))))
+clause(1, implied_by(colors(_Map, Places), findall([Place, _0], neighbours(Place, _1), Places) & once(places(Places))))
 clause(2, fact(places([])))
-clause(3, backward(places([[Place, Color], *Tail]), places(Tail), neighbours(Place, Neighbours), member(Color, ['red', 'green', 'blue', 'yellow']), ~conflict(Color, Tail, Neighbours)))
+clause(3, implied_by(places([[Place, Color], *Tail]), places(Tail) & neighbours(Place, Neighbours) & member(Color, ['red', 'green', 'blue', 'yellow']) & ~conflict(Color, Tail, Neighbours)))
 clause(5, fact(member(X, [X, *_0])))
-clause(6, backward(member(X, [_0, *Rest]), member(X, Rest)))
+clause(6, implied_by(member(X, [_0, *Rest]), member(X, Rest)))
 clause(7, fact(neighbours('Belgium', ['France', 'Netherlands', 'Luxemburg', 'Germany'])))
 clause(8, fact(neighbours('Netherlands', ['Belgium', 'Germany'])))
 clause(9, fact(neighbours('Luxemburg', ['Belgium', 'France', 'Germany'])))

@@ -7,15 +7,15 @@ args: --check-proof proof.py program.py
 --- program.py
 from peye import *
 fact(p('a'))
-forward(q(X), p(X))
-forward(r(X), q(X))
+implies(p(X), q(X))
+implies(q(X), r(X))
 --- proof.py
 q('a')
 r('a')
 
 clause(1, fact(p('a')))
-clause(2, forward(q(X), p(X)))
-clause(3, forward(r(X), q(X)))
+clause(2, implies(p(X), q(X)))
+clause(3, implies(q(X), r(X)))
 
 step(q('a'), clause(2), {'X': 'a'}, [p('a')])
 step(p('a'), clause(1), {}, [])
@@ -42,7 +42,7 @@ args: --check-proof - program.py
 --- program.py
 from peye import *
 fact(p('a'))
-forward(q(X), p(X))
+implies(p(X), q(X))
 --- stdin
 q('a')
 
@@ -71,7 +71,7 @@ exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
-forward(q(X), p(X))
+implies(p(X), q(X))
 --- proof.py
 q('a')
 
@@ -103,7 +103,7 @@ exit: 2
 --- program.py
 from peye import *
 fact(p('b'))
-forward(q(X), p(X))
+implies(p(X), q(X))
 --- proof.py
 q('a')
 
@@ -136,7 +136,7 @@ exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
-forward(q(X), p(X))
+implies(p(X), q(X))
 --- proof.py
 q('a')
 
@@ -166,7 +166,7 @@ exit: 2
 --- program.py
 from peye import *
 fact(p('a'), p('b'))
-forward(q(X), p(X))
+implies(p(X), q(X))
 --- proof.py
 q('a')
 
@@ -196,7 +196,7 @@ exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
-forward(q(X), p(X))
+implies(p(X), q(X))
 --- proof.py
 q('a')
 
@@ -253,7 +253,7 @@ args: --check-proof proof.py --goal "p()" program.py
 exit: 2
 --- program.py
 from peye import *
-backward(p, p)
+implied_by(p, p)
 --- proof.py
 p()
 
@@ -499,8 +499,8 @@ exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
-forward(q(X), p(X))
-forward(r(X), q(X))
+implies(p(X), q(X))
+implies(q(X), r(X))
 --- proof.py
 q('a')
 r('a')
@@ -532,7 +532,7 @@ args: --check-proof proof.py program.py
 --- program.py
 from peye import *
 fact(p('a'))
-forward(q(X), p(X))
+implies(p(X), q(X))
 --- proof.py
 q('a')
 
@@ -559,7 +559,7 @@ args: --check-proof proof.py program.py
 --- program.py
 from peye import *
 fact(same(X, X), item(1))
-forward(twin(Y), item(Y), same(Y, Y))
+implies(item(Y) & same(Y, Y), twin(Y))
 --- proof.py
 twin(1)
 
@@ -587,7 +587,7 @@ exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
-forward(q(X), p(X))
+implies(p(X), q(X))
 --- proof.py
 q('a')
 unrelated('x')
@@ -779,8 +779,8 @@ args: --check-proof proof.py program.py
 --- program.py
 from peye import *
 fact(p(1), p(2))
-forward(ok(X), p(X), ~blocked(X))
-forward(all_of(L), findall(X, p(X), L))
+implies(p(X) & ~blocked(X), ok(X))
+implies(findall(X, p(X), L), all_of(L))
 --- proof.py
 ok(1)
 ok(2)
@@ -820,7 +820,7 @@ exit: 2
 --- program.py
 from peye import *
 fact(p(1))
-forward(ok(X), p(X), ~blocked(X))
+implies(p(X) & ~blocked(X), ok(X))
 --- proof.py
 ok(1)
 
@@ -852,7 +852,7 @@ exit: 2
 --- program.py
 from peye import *
 fact(p(1))
-forward(ok(X), p(X), ~blocked(X))
+implies(p(X) & ~blocked(X), ok(X))
 --- proof.py
 ok(1)
 
@@ -884,7 +884,7 @@ exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
-forward(q, ~p('a'))
+implies(~p('a'), q)
 --- proof.py
 'q'
 
@@ -914,7 +914,7 @@ args: --check-proof proof.py program.py
 exit: 2
 --- program.py
 from peye import *
-forward(q, ~(struct('<', 1, 2)))
+implies(~(struct('<', 1, 2)), q)
 --- proof.py
 'q'
 
@@ -945,8 +945,8 @@ exit: 2
 --- program.py
 from peye import *
 fact(s(1))
-forward(p(X), s(X))
-forward(q(X), s(X), ~p(X))
+implies(s(X), p(X))
+implies(s(X) & ~p(X), q(X))
 --- proof.py
 p(1)
 q(1)
@@ -980,7 +980,7 @@ exit: 2
 --- program.py
 from peye import *
 fact(p(1), p(2))
-forward(all_of(L), findall(X, p(X), L))
+implies(findall(X, p(X), L), all_of(L))
 --- proof.py
 all_of([1])
 
@@ -1010,7 +1010,7 @@ args: --check-proof proof.py --goal "ok(X)" program.py
 --- program.py
 from peye import *
 fact(p(1), q(2))
-backward(ok(X), p(X), ~(p(Y) & q(Y)))
+implied_by(ok(X), p(X) & ~(p(Y) & q(Y)))
 --- proof.py
 ok(1)
 
@@ -1276,12 +1276,12 @@ args: --check-proof proof.py program.py
 --- program.py
 from peye import *
 fact(n(1), n(3))
-forward(big(X), n(X), X > 2)
+implies(n(X) & (X > 2), big(X))
 --- proof.py
 big(3)
 
 clause(2, fact(n(3)))
-clause(3, forward(big(X), n(X), X > 2))
+clause(3, implies(n(X) & (X > 2), big(X)))
 
 step(big(3), clause(3), {'X': 3}, [n(3), 3 > 2])
 step(n(3), clause(2), {}, [])

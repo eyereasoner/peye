@@ -25,8 +25,8 @@ class Core(unittest.TestCase):
 edge, path = preds('edge path')
 X, Y, Z = vars('X Y Z')
 fact(edge('a', 'b'), edge('b', 'a'))
-forward(path(X, Y), edge(X, Y))
-forward(path(X, Z), path(X, Y), edge(Y, Z))
+implies(edge(X, Y), path(X, Y))
+implies(path(X, Y) & edge(Y, Z), path(X, Z))
 ''')
         self.assertEqual(set(proven(self, source).answers),
                          {"path('a', 'b')", "path('b', 'a')", "path('a', 'a')", "path('b', 'b')"})
@@ -40,7 +40,7 @@ forward(path(X, Z), path(X, Y), edge(Y, Z))
 in_, pair = preds('in_ pair')
 X, Y = vars('X Y')
 fact(in_('a'))
-forward(pair(X, Y, Y), in_(X))
+implies(in_(X), pair(X, Y, Y))
 ''')
         sk = "'https://eyereasoner.github.io/.well-known/genid/g#sk_0'"
         self.assertEqual(proven(self, source, skolem_genid='g').answers, [f"pair('a', {sk}, {sk})"])
@@ -48,9 +48,9 @@ forward(pair(X, Y, Y), in_(X))
     def test_each_activation_gets_skolem_atoms_of_its_own(self):
         source = program('''
 fact(person('a'), person('b'), knows('sk_1', 'x'))
-forward(has_parent(X, P), person(X))
-forward(siblings(X, Y), has_parent(X, P), has_parent(Y, P), not_identical(X, Y))
-forward(known(X), has_parent(X, P))
+implies(person(X), has_parent(X, P))
+implies(has_parent(X, P) & has_parent(Y, P) & not_identical(X, Y), siblings(X, Y))
+implies(has_parent(X, P), known(X))
 ''')
         result = run(source, proof=True, skolem_genid='g')
         self.assertTrue(result.proof_report['valid'])
@@ -69,14 +69,14 @@ forward(known(X), has_parent(X, P))
             edges = sorted({(rng.randrange(nodes), rng.randrange(nodes)) for _ in range(rng.randint(2, 12))})
             source = program(''.join(f'fact(edge({a}, {b}))\n' for a, b in edges) + '''
 fact(node(0))
-forward(node(Y), node(X), edge(X, Y))
-forward(path(X, Y), edge(X, Y))
-forward(path(X, Z), path(X, Y), path(Y, Z))
-forward(loop(X) & mark(X, M), path(X, X), is_(M, X * 2))
-forward(witness(X, W), node(X), X > 1)
-forward(tagged(W, X), witness(X, W))
-forward(hub(X, L), node(X), findall(Y, edge(X, Y), L))
-forward(isolated(X), node(X), ~edge(X, _))
+implies(node(X) & edge(X, Y), node(Y))
+implies(edge(X, Y), path(X, Y))
+implies(path(X, Y) & path(Y, Z), path(X, Z))
+implies(path(X, X) & is_(M, X * 2), loop(X) & mark(X, M))
+implies(node(X) & (X > 1), witness(X, W))
+implies(witness(X, W), tagged(W, X))
+implies(node(X) & findall(Y, edge(X, Y), L), hub(X, L))
+implies(node(X) & ~edge(X, _), isolated(X))
 ''')
             semi = run(source, proof=True, skolem_genid='g')
             saved = engine.Solver.direct_keys
@@ -90,12 +90,12 @@ forward(isolated(X), node(X), ~edge(X, _))
                 self.assertLessEqual(semi.stats['inferences'], naive.stats['inferences'])
 
     def test_answers_name_their_variables_as_their_bindings_do(self):
-        result = run(program("backward(r(Y, Z), unify(Y, f(_, Z)))"), goal='r(P, Q)')
+        result = run(program("implied_by(r(Y, Z), unify(Y, f(_, Z)))"), goal='r(P, Q)')
         self.assertEqual(result.answers, ['r(f(A, B), B)'])
         self.assertEqual(result.bindings, [{'P': 'f(A, B)', 'Q': 'B'}])
 
     def test_a_query_without_answers_concludes_nothing(self):
-        self.assertEqual(run(program("fact(p(1))\nforward(q(X), p(X))\nquery(r(X))")).answers, [])
+        self.assertEqual(run(program("fact(p(1))\nimplies(p(X), q(X))\nquery(r(X))")).answers, [])
 
     def test_recursive_arithmetic_and_goal(self):
         self.assertEqual(proven(self, example('fibonacci'), goal='fib(10, F)').answers, ['fib(10, 55)'])
@@ -127,38 +127,38 @@ forward(isolated(X), node(X), ~edge(X, _))
 seed, clear, blocked, derived = preds('seed clear blocked derived')
 X = vars('X')
 fact(seed('a'))
-forward(clear('a'), ~blocked('a'))
-backward(blocked(X), derived(X))
-forward(derived(X), seed(X))
+implies(~blocked('a'), clear('a'))
+implied_by(blocked(X), derived(X))
+implies(seed(X), derived(X))
 ''')
         self.assertEqual(proven(self, source).answers, ["derived('a')"])
 
     def test_closed_dependency_cycles_are_rejected(self):
         with self.assertRaisesRegex(PeyeError, 'unstratified'):
-            program("p, q = preds('p q')\nforward(p, not_(q))\nforward(q, p)")
+            program("p, q = preds('p q')\nimplies(not_(q), p)\nimplies(p, q)")
         with self.assertRaisesRegex(PeyeError, 'unstratified'):
-            program("p = preds('p')\nX, Y = vars('X Y')\nforward(p(X), findall(Y, p(Y), X))")
+            program("p = preds('p')\nX, Y = vars('X Y')\nimplies(findall(Y, p(Y), X), p(X))")
 
     def test_predicate_positions_distinguish_open_and_closed_dependencies(self):
         source = program('''
 t = preds('t')
 X = vars('X')
 fact(t('a', 'seed', 'true'))
-forward(t(X, 'allowed', 'true'), t(X, 'seed', 'true'), ~t(X, 'blocked', 'true'))
-forward(t(X, 'blocked', 'true'), t(X, 'seed', 'true'))
+implies(t(X, 'seed', 'true') & ~t(X, 'blocked', 'true'), t(X, 'allowed', 'true'))
+implies(t(X, 'seed', 'true'), t(X, 'blocked', 'true'))
 ''')
         self.assertEqual(proven(self, source).answers, ["t('a', 'blocked', 'true')"])
 
     def test_conjunction_disjunction_call_and_once_preserve_proof_uses(self):
         facts = "p, q = preds('p q')\nX = vars('X')\nfact(p('a'), p('b'))\n"
-        proven(self, program(facts + "backward(q(X), p(X) & unify(X, 'a'))"), goal='q(X)')
+        proven(self, program(facts + "implied_by(q(X), p(X) & unify(X, 'a'))"), goal='q(X)')
         proven(self, program(facts), goal="p('a') | p('b')")
         proven(self, program(facts), goal="call(p('a') & p('b'))")
         self.assertEqual(len(proven(self, program(facts), goal='once(p(X))').answers), 1)
         proven(self, program(facts), goal="p('a') & p('b')")
 
     def test_query_selects_output_and_contradiction_trips_the_fuse(self):
-        source = program("p, q = preds('p q')\nX = vars('X')\nfact(p('a'))\nforward(q(X), p(X))\nquery(q(X))")
+        source = program("p, q = preds('p q')\nX = vars('X')\nfact(p('a'))\nimplies(p(X), q(X))\nquery(q(X))")
         self.assertEqual(proven(self, source).answers, ["q('a')"])
         result = proven(self, program("p = preds('p')\nfact(p('a'))\ncontradiction(p('a'))"))
         self.assertEqual(result.halt_code, 65)
@@ -171,27 +171,27 @@ forward(t(X, 'blocked', 'true'), t(X, 'seed', 'true'))
 
     def test_unsupported_constructs_and_resource_exhaustion_fail_explicitly(self):
         with self.assertRaisesRegex(PeyeError, 'max_depth'):
-            run(program("p = preds('p')\nbackward(p, p)"), goal='p()', max_depth=10)
+            run(program("p = preds('p')\nimplied_by(p, p)"), goal='p()', max_depth=10)
         with self.assertRaisesRegex(PeyeError, 'max_iterations'):
-            run(program("p = preds('p')\nN, M = vars('N M')\nfact(p(0))\nforward(p(N), p(M), is_(N, M + 1))"),
+            run(program("p = preds('p')\nN, M = vars('N M')\nfact(p(0))\nimplies(p(M) & is_(N, M + 1), p(N))"),
                 max_iterations=3)
         with self.assertRaisesRegex(PeyeError, 'max_inferences'):
-            run(program("p, q = preds('p q')\nX = vars('X')\nfact(p('a'))\nforward(q(X), p(X), p(X))"), max_inferences=1)
+            run(program("p, q = preds('p q')\nX = vars('X')\nfact(p('a'))\nimplies(p(X) & p(X), q(X))"), max_inferences=1)
         with self.assertRaisesRegex(PeyeError, 'negation requires a goal whose variables are bound'):
             run(program(''), goal='~p(X)')
         with self.assertRaisesRegex(PeyeError, 'reserved'):
             program("fact(struct('step', 1, 2, 3, 4))")
         with self.assertRaisesRegex(PeyeError, 'a list is not a goal'):
-            program("p = preds('p')\nbackward(p, ['a'])")
+            program("p = preds('p')\nimplied_by(p, ['a'])")
 
     def test_pure_term_and_text_operations(self):
         source = program('''
 out, term, chars, codes = preds('out term chars codes')
 C, N, T = vars('C N T')
-backward(out(C, N), atom_concat('ab', 'cd', C), atom_length(C, N))
-backward(term(T), univ(T, ['pair', 'a', 'b']), functor(T, 'pair', 2), arg(2, T, 'b'))
-backward(chars(C), atom_chars('\U0001F600a', C))
-backward(codes(C), atom_codes('\U0001F600a', C))
+implied_by(out(C, N), atom_concat('ab', 'cd', C) & atom_length(C, N))
+implied_by(term(T), univ(T, ['pair', 'a', 'b']) & functor(T, 'pair', 2) & arg(2, T, 'b'))
+implied_by(chars(C), atom_chars('\U0001F600a', C))
+implied_by(codes(C), atom_codes('\U0001F600a', C))
 ''')
         self.assertEqual(proven(self, source, goal='out(C, N)').answers, ["out('abcd', 4)"])
         self.assertEqual(proven(self, source, goal='term(T)').answers, ["term(pair('a', 'b'))"])
@@ -200,27 +200,27 @@ backward(codes(C), atom_codes('\U0001F600a', C))
 
     def test_arithmetic_preserves_unbounded_integers_and_numeric_types(self):
         source = program("out = preds('out')\nN, M = vars('N M')\n"
-                         "backward(out(N), unify(M, 9007199254740993), is_(N, M + 1))")
+                         "implied_by(out(N), unify(M, 9007199254740993) & is_(N, M + 1))")
         self.assertEqual(proven(self, source, goal='out(N)').answers, ['out(9007199254740994)'])
         self.assertEqual(run(program("p = preds('p')\nfact(p(1))"), goal='p(1.0)').answers, [])
 
     def test_finite_tree_unification_and_nested_identity(self):
         self.assertEqual(run(program(''), goal='unify(X, f(X))').answers, [])
         proven(self, program("p = preds('p')\nX = vars('X')\n"
-                             "backward(p, unify(X, 'a'), identical(struct('f', X), struct('f', 'a')))"), goal='p()')
+                             "implied_by(p, unify(X, 'a') & identical(struct('f', X), struct('f', 'a')))"), goal='p()')
         proven(self, program("p = preds('p')\nT, X = vars('T X')\n"
-                             "backward(p(T), unify(X, 'pair'), univ(T, [X, 'a', 'b']))"), goal='p(T)')
+                             "implied_by(p(T), unify(X, 'pair') & univ(T, [X, 'a', 'b']))"), goal='p(T)')
         proven(self, program("p = preds('p')\nA, C = vars('A C')\n"
-                             "backward(p(C), unify(C, 'a'), atom_chars(A, [C]), unify(A, 'a'))"), goal='p(C)')
+                             "implied_by(p(C), unify(C, 'a') & atom_chars(A, [C]) & unify(A, 'a'))"), goal='p(C)')
 
     def test_computed_calls_work_backward_and_forward_analysis_rejects_hidden_calls(self):
-        source = "p, apply = preds('p apply')\nG = vars('G')\nfact(p('a'))\nbackward(apply(G), call(G))\n"
+        source = "p, apply = preds('p apply')\nG = vars('G')\nfact(p('a'))\nimplied_by(apply(G), call(G))\n"
         self.assertEqual(proven(self, program(source), goal="apply(p('a'))").answers, ["apply(p('a'))"])
         with self.assertRaisesRegex(PeyeError, 'statically named'):
-            program(source + "q = preds('q')\nforward(q, apply(p('a')))")
+            program(source + "q = preds('q')\nimplies(apply(p('a')), q)")
 
     def test_programs_can_be_reused_without_sharing_derived_state(self):
-        source = program("p, q = preds('p q')\nX = vars('X')\nfact(p('a'))\nforward(q(X), p(X))")
+        source = program("p, q = preds('p q')\nX = vars('X')\nfact(p('a'))\nimplies(p(X), q(X))")
         self.assertEqual(run(source).answers, ["q('a')"])
         self.assertEqual(run(source).answers, ["q('a')"])
 
@@ -242,7 +242,7 @@ fact(p('a', 'second'), p(X, 'generic_after'), p(f('a'), 'structured'), p(1, 'num
         self.assertEqual(len(proven(self, source, goal="unify(X, 'a') & p(X, Y)").answers), 4)
 
     def test_proofs_fail_explicitly_when_mode_tests_lose_their_state(self):
-        source = program("p = preds('p')\nX = vars('X')\nbackward(p(X), is_var(X), unify(X, 'a'))")
+        source = program("p = preds('p')\nX = vars('X')\nimplied_by(p(X), is_var(X) & unify(X, 'a'))")
         self.assertEqual(run(source, goal='p(X)').answers, ["p('a')"])
         with self.assertRaisesRegex(PeyeError, 'cannot certify'):
             run(source, goal='p(X)', proof=True)

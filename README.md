@@ -39,7 +39,7 @@ separate checker verifies against your program.
 from peye import *
 
 fact(human('socrates'))
-forward(mortal(X), human(X))
+implies(human(X), mortal(X))
 ```
 
 A fact and a rule. peye concludes `mortal('socrates')`. Ask for the reasoning
@@ -50,7 +50,7 @@ the substitution that connects them:
 mortal('socrates')
 
 clause(1, fact(human('socrates')))
-clause(2, forward(mortal(X), human(X)))
+clause(2, implies(human(X), mortal(X)))
 
 step(mortal('socrates'), clause(2), {'X': 'socrates'}, [human('socrates')])
 step(human('socrates'), clause(1), {}, [])
@@ -116,11 +116,14 @@ one clause per call:
 | Call | Meaning |
 | --- | --- |
 | `fact(Head)` | `Head` holds. |
-| `forward(Head, *Body)` | Whenever `Body` holds, conclude `Head`, until nothing new follows. Several conclusions join with `&`. |
-| `backward(Head, *Body)` | `Head` holds when `Body` does, decided when a goal asks for it. |
+| `implies(Premise, Conclusion)` | A forward rule, N3's `=>`: whenever `Premise` holds, conclude `Conclusion`, until nothing new follows. |
+| `implied_by(Conclusion, Premise)` | A backward rule, N3's `<=`: `Conclusion` holds when `Premise` does, decided when a goal asks for it. |
 | `query(*Body)` | Publish every instance of `Body` that holds. |
 | `contradiction(*Body)` | Stop with exit code 65 when `Body` holds: an integrity constraint. |
 | `facts_from(path)` | State every expression of a saved document as a fact. |
+
+A premise joins its goals with `&`, as N3 joins them with `.`, and so can a
+forward rule's conclusion: `implies(p(X) & q(X), r(X) & s(X))`.
 
 The two kinds of rule compose. A forward rule's body may call backward
 definitions, and a backward goal may use facts that forward reasoning
@@ -132,11 +135,11 @@ from peye import *
 fact(parent('alice', 'bob'))
 fact(parent('bob', 'carol'))
 
-forward(ancestor(X, Y), parent(X, Y))
-forward(ancestor(X, Z), ancestor(X, Y), parent(Y, Z))
+implies(parent(X, Y), ancestor(X, Y))
+implies(ancestor(X, Y) & parent(Y, Z), ancestor(X, Z))
 
-backward(related(X, Y), ancestor(X, Y))
-backward(related(X, Y), ancestor(Y, X))
+implied_by(related(X, Y), ancestor(X, Y))
+implied_by(related(X, Y), ancestor(Y, X))
 
 query(related('alice', 'carol'))
 ```
@@ -255,8 +258,8 @@ could still produce such a fact has finished. A program with no such ranking
 is rejected with "unstratified negation or collection dependency":
 
 ```python
-forward(p, ~q)
-forward(q, p)     # p needs q to be absent, yet p yields q: rejected
+implies(~q, p)
+implies(p, q)     # p needs q to be absent, yet p yields q: rejected
 ```
 
 Positive cycles, such as transitive closure, are fine. Ranks compare whole
@@ -300,15 +303,15 @@ from peye import *
 
 fact(p('a'))
 fact(q('b'))
-backward(s(X), q(X))
+implied_by(s(X), q(X))
 fact(z('c'))
-forward('ok', p('a'), ~s('a'))
+implies(p('a') & ~s('a'), 'ok')
 ```
 
 ```text
 $ peye --unused program.py
 unused(line(4), fact(q('b')))
-unused(line(5), backward(s(X), q(X)))
+unused(line(5), implied_by(s(X), q(X)))
 unused(line(6), fact(z('c')))
 ```
 
@@ -327,7 +330,7 @@ from peye import check_proof, load_text, run
 socrates = load_text("""
 from peye import *
 fact(human('socrates'))
-forward(mortal(X), human(X))
+implies(human(X), mortal(X))
 """)
 result = run(socrates, goal='mortal(X)', proof=True)
 print(result.answers)                                  # ["mortal('socrates')"]

@@ -65,13 +65,13 @@ Markets Act, the Data Governance Act and the directive on digital content.
 ## The legal analysis, as rules
 
 ```python
-forward(anchored(C), anchor(P, C, D, W))
-forward(fully_anchored(C), anchor(P, C, 'full', W))
-forward(gap(C), component(C, Description), ~anchored(C))
+implies(anchor(P, C, D, W), anchored(C))
+implies(anchor(P, C, 'full', W), fully_anchored(C))
+implies(component(C, Description) & ~anchored(C), gap(C))
 
-forward(fit(C, 'in existing law'), fully_anchored(C))
-forward(fit(C, 'by interpretation'), anchored(C), ~fully_anchored(C))
-forward(fit(C, 'needs an autonomous right'), gap(C))
+implies(fully_anchored(C), fit(C, 'in existing law'))
+implies(anchored(C) & ~fully_anchored(C), fit(C, 'by interpretation'))
+implies(gap(C), fit(C, 'needs an autonomous right'))
 ```
 
 A component anchored fully is already in the law. One anchored only in part
@@ -86,11 +86,11 @@ Five ways of developing the right are weighed against what the analysis
 found:
 
 ```python
-forward(needs_development(C), component(C, Meaning), ~fully_anchored(C))
-forward(objection(O, unaddressed(C)), option(O, F), needs_development(C), ~delivers(O, C))
-forward(objection(O, 'treats personal data as a commodity'), option(O, F), commodifies(F))
-forward(objection(O, 'gives the data subject no claim of their own'), option(O, F), ~own_claim(F))
-forward(recommended(O), option(O, F), ~objectionable(O))
+implies(component(C, Meaning) & ~fully_anchored(C), needs_development(C))
+implies(option(O, F) & needs_development(C) & ~delivers(O, C), objection(O, unaddressed(C)))
+implies(option(O, F) & commodifies(F), objection(O, 'treats personal data as a commodity'))
+implies(option(O, F) & ~own_claim(F), objection(O, 'gives the data subject no claim of their own'))
+implies(option(O, F) & ~objectionable(O), recommended(O))
 ```
 
 An option is objected to when it leaves a component that needs developing

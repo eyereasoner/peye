@@ -39,9 +39,9 @@ The shared pair, Alice's four operations and Bob's four readings are
 small tables of facts (omitted here). Then:
 
 ```python
-backward(path(N, M, [X, Y, B]), r(X, Y), alice(N, [X, B]), bob([B, Y], M))
+implied_by(path(N, M, [X, Y, B]), r(X, Y) & alice(N, [X, B]) & bob([B, Y], M))
 
-forward(sdcoding(N, M), message(N), message(M), findall(Path, path(N, M, Path), Paths), odd(Paths))
+implies(message(N) & message(M) & findall(Path, path(N, M, Path), Paths) & odd(Paths), sdcoding(N, M))
 ```
 
 A `path` is one way for Alice's message N to reach Bob as reading M:

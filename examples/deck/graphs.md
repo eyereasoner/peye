@@ -27,10 +27,10 @@ The data is written as *triples*: subject, relation, object.
 fact(base('alice', 'parent_of', 'bob'))
 fact(base('alice', 'parent_of', 'carol'))
 fact(base('bob', 'blocked', 'true'))
-backward(t(S, P, O), base(S, P, O))
-forward(t(C, 'child_of', P), t(P, 'parent_of', C))
-forward(allowed(C), t(C, 'child_of', 'alice'), ~t(C, 'blocked', 'true'))
-forward(children(P, Children), base(P, 'parent_of', _), findall(C, t(C, 'child_of', P), Children))
+implied_by(t(S, P, O), base(S, P, O))
+implies(t(P, 'parent_of', C), t(C, 'child_of', P))
+implies(t(C, 'child_of', 'alice') & ~t(C, 'blocked', 'true'), allowed(C))
+implies(base(P, 'parent_of', _) & findall(C, t(C, 'child_of', P), Children), children(P, Children))
 ```
 
 `base` is the original data, left untouched; `t` is a combined view of the

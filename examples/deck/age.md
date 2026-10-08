@@ -40,17 +40,17 @@ years.* `query` means "work this out and report what follows".
 The rule for "older than N years", quoted from the program:
 
 ```python
-backward(
+implied_by(
     age_above(Person, years(Years), Date),
-    is_int(Years),
-    Years >= 0,
-    birth_date(Person, Birth),
-    date_day(Birth, Born),
-    date_day(Date, Today),
-    Today >= Born,
-    anniversary(Birth, Years, Anniversary),
-    date_day(Anniversary, Threshold),
-    Today > Threshold,
+    is_int(Years)
+    & (Years >= 0)
+    & birth_date(Person, Birth)
+    & date_day(Birth, Born)
+    & date_day(Date, Today)
+    & (Today >= Born)
+    & anniversary(Birth, Years, Anniversary)
+    & date_day(Anniversary, Threshold)
+    & (Today > Threshold),
 )
 ```
 

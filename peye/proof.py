@@ -2,7 +2,7 @@
 
 A proof document is Python source, one expression per line: first the claims,
 then clause(N, Display) for every source clause the proof cites, written as
-the program states it (fact(...), forward(...) or backward(...)), then one
+the program states it (fact(...), implies(...) or implied_by(...)), then one
 step(Goal, By, Bindings, Uses) per inference. The document is read with the
 ast module and never executed.
 
@@ -23,9 +23,9 @@ from .writer import Lettering, letter_name, write, write_noting_variables
 def clause_display(clause):
     """A clause as the program states it."""
     if clause.forward:
-        return Struct('forward', (clause.head, *clause.body))
+        return Struct('implies', (conjunction(clause.body), clause.head))
     if clause.body:
-        return Struct('backward', (clause.head, *clause.body))
+        return Struct('implied_by', (clause.head, conjunction(clause.body)))
     return Struct('fact', (clause.head,))
 
 

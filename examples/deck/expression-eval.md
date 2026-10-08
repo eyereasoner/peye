@@ -40,18 +40,18 @@ fact(root('example', 'total'))
 ## What we tell peye: how to evaluate
 
 ```python
-backward(value(Node, Value), literal(Node, Value))
-backward(
+implied_by(value(Node, Value), literal(Node, Value))
+implied_by(
     value(Node, Value),
-    expression(Node, Operation, Left, Right),
-    value(Left, L),
-    value(Right, R),
-    calculate(Operation, L, R, Value),
+    expression(Node, Operation, Left, Right)
+    & value(Left, L)
+    & value(Right, R)
+    & calculate(Operation, L, R, Value),
 )
-backward(calculate('add', L, R, Value), is_(Value, L + R))
-backward(calculate('sub', L, R, Value), is_(Value, L - R))
-backward(calculate('mul', L, R, Value), is_(Value, L * R))
-forward(result(Name, Value), root(Name, Node), value(Node, Value))
+implied_by(calculate('add', L, R, Value), is_(Value, L + R))
+implied_by(calculate('sub', L, R, Value), is_(Value, L - R))
+implied_by(calculate('mul', L, R, Value), is_(Value, L * R))
+implies(root(Name, Node) & value(Node, Value), result(Name, Value))
 ```
 
 A number's value is itself. An expression's value: evaluate both sides, then

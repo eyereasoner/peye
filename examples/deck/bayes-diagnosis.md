@@ -39,19 +39,19 @@ clues, so their chances can simply be multiplied.
 fact(fault('paper_jam', 20, 90, 10))
 fact(fault('network_loss', 30, 5, 95))
 fact(fault('power_loss', 50, 1, 99))
-forward(
+implies(
+    fault(Fault, Prior, Jam, Offline)
+    & is_(Weight, Prior * Jam * Offline),
     weight(Fault, Weight),
-    fault(Fault, Prior, Jam, Offline),
-    is_(Weight, Prior * Jam * Offline),
 )
 # … sum_weights adds up a list, in two lines
-forward(total(Total), findall(W, weight(Fault, W), Weights), sum_weights(Weights, Total))
-forward(
+implies(findall(W, weight(Fault, W), Weights) & sum_weights(Weights, Total), total(Total))
+implies(
+    weight(Fault, Numerator)
+    & total(Denominator)
+    & (Denominator > 0)
+    & is_(Probability, Numerator / Denominator),
     posterior(Fault, Numerator, Denominator, Probability),
-    weight(Fault, Numerator),
-    total(Denominator),
-    Denominator > 0,
-    is_(Probability, Numerator / Denominator),
 )
 ```
 

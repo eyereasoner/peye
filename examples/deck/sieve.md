@@ -22,22 +22,22 @@ next number still standing, cross out its multiples. Repeat.
 ## What we tell peye
 
 ```python
-backward(primes(Limit, Primes), integers(2, Limit, Integers), sift(Integers, Primes))
+implied_by(primes(Limit, Primes), integers(2, Limit, Integers) & sift(Integers, Primes))
 
-backward(integers(Start, End, []), Start > End)
-backward(
+implied_by(integers(Start, End, []), Start > End)
+implied_by(
     integers(Start, End, [Start, *Rest]),
-    Start <= End,
-    is_(Next, Start + 1),
-    integers(Next, End, Rest),
+    (Start <= End)
+    & is_(Next, Start + 1)
+    & integers(Next, End, Rest),
 )
 
 fact(sift([], []))
-backward(sift([I, *Is], [I, *Ps]), remove(I, Is, New), sift(New, Ps))
+implied_by(sift([I, *Is], [I, *Ps]), remove(I, Is, New) & sift(New, Ps))
 
 fact(remove(_, [], []))
-backward(remove(P, [I, *Is], Rest), eq(0, I % P), remove(P, Is, Rest))
-backward(remove(P, [I, *Is], [I, *Rest]), ne(0, I % P), remove(P, Is, Rest))
+implied_by(remove(P, [I, *Is], Rest), eq(0, I % P) & remove(P, Is, Rest))
+implied_by(remove(P, [I, *Is], [I, *Rest]), ne(0, I % P) & remove(P, Is, Rest))
 
 query(primes(100, _))
 ```

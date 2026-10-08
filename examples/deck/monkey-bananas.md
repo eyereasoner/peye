@@ -28,8 +28,8 @@ fact(goal_state([_, _, _, _, 'y']))
 
 fact(legal_move([B, M, M, 'n', H], 'climb_on', [B, M, M, 'y', H]))
 fact(legal_move([B, B, B, 'y', 'n'], 'grab', [B, B, B, 'y', 'y']))
-backward(legal_move([B, M, M, 'n', H], push(X), [B, X, X, 'n', H]), location(X), not_unify(X, M))
-backward(legal_move([B, M, L, 'n', H], go(X), [B, X, L, 'n', H]), location(X), not_unify(X, M))
+implied_by(legal_move([B, M, M, 'n', H], push(X), [B, X, X, 'n', H]), location(X) & not_unify(X, M))
+implied_by(legal_move([B, M, L, 'n', H], go(X), [B, X, L, 'n', H]), location(X) & not_unify(X, M))
 # …
 ```
 
@@ -42,7 +42,7 @@ and `not_unify(X, M)` means X and M are different places.
 ## Asking for plans
 
 ```python
-forward(plan(Moves), in_range(1, 5, N), moves(N, Moves), reaches_goal(Moves))
+implies(in_range(1, 5, N) & moves(N, Moves) & reaches_goal(Moves), plan(Moves))
 ```
 
 For each length N from 1 to 5, make a list of N moves still to be chosen,

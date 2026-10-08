@@ -5,25 +5,25 @@
 
 from peye import *
 
-backward(compute([], OutTape), start(_, I), find(I, [], '#', [], OutTape))
-backward(compute([Head, *Tail], OutTape), start(_, I), find(I, [], Head, Tail, OutTape))
+implied_by(compute([], OutTape), start(_, I) & find(I, [], '#', [], OutTape))
+implied_by(compute([Head, *Tail], OutTape), start(_, I) & find(I, [], Head, Tail, OutTape))
 
-backward(
+implied_by(
     find(State, Left, Cell, Right, OutTape),
-    t([State, Cell, Write, Move], Next),
-    move(Move, Left, Write, Right, A, B, C),
-    struct('continue', Next, A, B, C, OutTape),
+    t([State, Cell, Write, Move], Next)
+    & move(Move, Left, Write, Right, A, B, C)
+    & struct('continue', Next, A, B, C, OutTape),
 )
 
-backward(
+implied_by(
     struct('continue', 'halt', Left, Cell, Right, OutTape),
-    reverse(Left, R),
-    append(R, [Cell, *Right], OutTape),
+    reverse(Left, R)
+    & append(R, [Cell, *Right], OutTape),
 )
-backward(
+implied_by(
     struct('continue', State, Left, Cell, Right, OutTape),
-    not_unify(State, 'halt'),
-    find(State, Left, Cell, Right, OutTape),
+    not_unify(State, 'halt')
+    & find(State, Left, Cell, Right, OutTape),
 )
 
 fact(move('l', [], Cell, Right, [], '#', [Cell, *Right]))
@@ -33,10 +33,10 @@ fact(move('r', Left, Cell, [], [Cell, *Left], '#', []))
 fact(move('r', Left, Cell, [Head, *Tail], [Cell, *Left], Head, Tail))
 
 fact(append([], Ys, Ys))
-backward(append([X, *Xs], Ys, [X, *Zs]), append(Xs, Ys, Zs))
-backward(reverse(Xs, Ys), reverse(Xs, [], Ys))
+implied_by(append([X, *Xs], Ys, [X, *Zs]), append(Xs, Ys, Zs))
+implied_by(reverse(Xs, Ys), reverse(Xs, [], Ys))
 fact(reverse([], Ys, Ys))
-backward(reverse([X, *Xs], Acc, Ys), reverse(Xs, [X, *Acc], Ys))
+implied_by(reverse([X, *Xs], Acc, Ys), reverse(Xs, [X, *Acc], Ys))
 
 # The machine: scan right to the end, then carry leftwards.
 fact(start('add1', 0))

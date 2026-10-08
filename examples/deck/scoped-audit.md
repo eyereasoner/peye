@@ -28,16 +28,16 @@ fact(
 )
 fact(context('incomplete', graph([triple('bob', 'role', 'editor')])))
 
-forward(
+implies(
+    context(Context, Graph)
+    & includes(Graph, triple(Person, 'consent', 'yes')),
     consented(Context, Person),
-    context(Context, Graph),
-    includes(Graph, triple(Person, 'consent', 'yes')),
 )
-forward(
+implies(
+    context(Context, Graph)
+    & includes(Graph, triple(Person, 'role', 'editor'))
+    & ~includes(Graph, triple(Person, 'consent', 'yes')),
     needs_review(Context, Person),
-    context(Context, Graph),
-    includes(Graph, triple(Person, 'role', 'editor')),
-    ~includes(Graph, triple(Person, 'consent', 'yes')),
 )
 ```
 

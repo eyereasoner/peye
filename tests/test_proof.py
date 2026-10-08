@@ -9,8 +9,8 @@ SOURCE = program('''
 p, q, r = preds('p q r')
 X = vars('X')
 fact(p('a'))
-forward(q(X), p(X))
-forward(r(X), q(X))
+implies(p(X), q(X))
+implies(q(X), r(X))
 ''')
 
 
@@ -27,7 +27,7 @@ class Proofs(unittest.TestCase):
     def test_proofs_are_checked_against_source_rather_than_display_records(self):
         self.invalid(proof().replace("clause(1, fact(p('a')))", "clause(1, fact(p('b')))"), 'C1')
         self.invalid(proof(), 'C1', program("p, q, r = preds('p q r')\nX = vars('X')\nfact(p('b'))\n"
-                                            "forward(q(X), p(X))\nforward(r(X), q(X))"))
+                                            "implies(p(X), q(X))\nimplies(q(X), r(X))"))
 
     def test_altered_conclusion_premise_binding_and_citation_fail_resolution(self):
         self.invalid(proof().replace("step(q('a')", "step(q('b')"), 'C1')
@@ -53,7 +53,7 @@ class Proofs(unittest.TestCase):
         self.invalid("__import__('os').system('true')", 'C3')
 
     def test_cyclic_certificates_cannot_justify_their_own_conclusions(self):
-        self.invalid("p()\nstep(p(), clause(1), {}, [p()])", 'C2', program("p = preds('p')\nbackward(p, p)"))
+        self.invalid("p()\nstep(p(), clause(1), {}, [p()])", 'C2', program("p = preds('p')\nimplied_by(p, p)"))
 
     def test_primitive_results_are_recomputed_with_no_theory_clauses(self):
         self.invalid('is_(7, 2 + 3)\nstep(is_(7, 2 + 3), \'builtin\', {}, [])', 'C5', program(''))
@@ -69,25 +69,25 @@ class Proofs(unittest.TestCase):
 
     def test_absence_and_collection_obligations_remain_visible(self):
         source = program("p, out, missing = preds('p out missing')\nX = vars('X')\n"
-                         "fact(p('a'))\nforward(out(X), p(X), ~missing(X))")
+                         "fact(p('a'))\nimplies(p(X) & ~missing(X), out(X))")
         document = run(source, proof=True).proof
         self.assertEqual(len(check_proof(source, document)['trusted']), 1)
         self.assertFalse(check_proof(source, document, allow_trusted=False)['valid'])
 
     def test_absences_and_collections_contradicted_by_evidence_fail_boundary_consistency(self):
         text = ("p, out, blocked, all_ = preds('p out blocked all_')\nX, L = vars('X L')\n"
-                "fact(p('a'), p('b'))\nforward(out(X), p(X), ~blocked(X))\n"
-                "forward(all_(L), findall(X, p(X), L))\n")
+                "fact(p('a'), p('b'))\nimplies(p(X) & ~blocked(X), out(X))\n"
+                "implies(findall(X, p(X), L), all_(L))\n")
         source = program(text)
         document = run(source, proof=True).proof
         self.assertTrue(check_proof(source, document)['valid'])
         self.invalid(document, 'C6', program(text + "fact(blocked('a'))"))
         self.invalid(document.replace("['a', 'b']", "['a']"), 'C6')
         self.invalid("q()\nstep(q(), clause(1), {}, [~(1 < 2)])\nstep(~(1 < 2), 'absent', {}, [])", 'C6',
-                     program("q = preds('q')\nforward(q, ~(struct('<', 1, 2)))"))
+                     program("q = preds('q')\nimplies(~(struct('<', 1, 2)), q)"))
 
     def test_an_absence_with_anonymous_variables_is_refuted_by_any_instance(self):
-        text = "fact(p('a'), p('b'), q('b', 1))\nforward(s(X), p(X), ~q(X, _))\n"
+        text = "fact(p('a'), p('b'), q('b', 1))\nimplies(p(X) & ~q(X, _), s(X))\n"
         document = run(program(text), proof=True).proof
         self.assertIn("~q('a', A)", document)
         self.assertTrue(check_proof(program(text), document)['valid'])

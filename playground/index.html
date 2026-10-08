@@ -114,15 +114,16 @@
     import { colorize, escapeHtml } from './python-highlight.js';
     import { pack, unpack } from './share.js';
 
-    const FALLBACK_SOURCE = `# Facts and rules are Python. forward(Head, *Body) materializes
-# conclusions; backward(Head, *Body) is evaluated when called.
+    const FALLBACK_SOURCE = `# Facts and rules are Python. implies(Premise, Conclusion), N3's =>,
+# concludes until nothing new follows; implied_by(Conclusion, Premise),
+# N3's <=, is decided when a goal asks for it.
 from peye import *
 
 fact(parent('alice', 'bob'))
 fact(parent('bob', 'carol'))
 
-forward(ancestor(X, Y), parent(X, Y))
-forward(ancestor(X, Z), ancestor(X, Y), parent(Y, Z))
+implies(parent(X, Y), ancestor(X, Y))
+implies(ancestor(X, Y) & parent(Y, Z), ancestor(X, Z))
 
 # query(Goal) asks a question and publishes each answer.
 query(ancestor('alice', Who))

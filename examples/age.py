@@ -8,59 +8,59 @@ from peye import *
 fact(birth_date('pat_h', date(1944, 8, 21)))
 fact(as_of(date(2026, 10, 1)))
 
-backward(age_above(Person, Duration), as_of(Date), age_above(Person, Duration, Date))
-backward(
+implied_by(age_above(Person, Duration), as_of(Date) & age_above(Person, Duration, Date))
+implied_by(
     age_above(Person, years(Years), Date),
-    is_int(Years),
-    Years >= 0,
-    birth_date(Person, Birth),
-    date_day(Birth, Born),
-    date_day(Date, Today),
-    Today >= Born,
-    anniversary(Birth, Years, Anniversary),
-    date_day(Anniversary, Threshold),
-    Today > Threshold,
+    is_int(Years)
+    & (Years >= 0)
+    & birth_date(Person, Birth)
+    & date_day(Birth, Born)
+    & date_day(Date, Today)
+    & (Today >= Born)
+    & anniversary(Birth, Years, Anniversary)
+    & date_day(Anniversary, Threshold)
+    & (Today > Threshold),
 )
-backward(
+implied_by(
     age_above(Person, days(Days), Date),
-    is_int(Days),
-    Days >= 0,
-    age_days(Person, Date, Age),
-    Age > Days,
+    is_int(Days)
+    & (Days >= 0)
+    & age_days(Person, Date, Age)
+    & (Age > Days),
 )
-backward(
+implied_by(
     age_days(Person, Date, Days),
-    birth_date(Person, Birth),
-    date_day(Birth, Born),
-    date_day(Date, Today),
-    Today >= Born,
-    is_(Days, Today - Born),
+    birth_date(Person, Birth)
+    & date_day(Birth, Born)
+    & date_day(Date, Today)
+    & (Today >= Born)
+    & is_(Days, Today - Born),
 )
-backward(
+implied_by(
     anniversary(date(Y, M, D), Years, date(Year, M, Day)),
-    is_(Year, Y + Years),
-    month_days(Year, M, Maximum),
-    is_(Day, min(D, Maximum)),
+    is_(Year, Y + Years)
+    & month_days(Year, M, Maximum)
+    & is_(Day, min(D, Maximum)),
 )
 
 # Proleptic Gregorian calendar; dates have integer years >= 1.
-backward(
+implied_by(
     date_day(date(Y, M, D), Ordinal),
-    is_int(Y),
-    is_int(M),
-    is_int(D),
-    Y >= 1,
-    month_days(Y, M, Maximum),
-    D >= 1,
-    D <= Maximum,
-    month_offset(M, Offset),
-    leap_extra(Y, M, Extra),
-    is_(Previous, Y - 1),
-    is_(Ordinal, 365 * Previous + Previous // 4 - Previous // 100 + Previous // 400 + Offset + Extra + D),
+    is_int(Y)
+    & is_int(M)
+    & is_int(D)
+    & (Y >= 1)
+    & month_days(Y, M, Maximum)
+    & (D >= 1)
+    & (D <= Maximum)
+    & month_offset(M, Offset)
+    & leap_extra(Y, M, Extra)
+    & is_(Previous, Y - 1)
+    & is_(Ordinal, 365 * Previous + Previous // 4 - Previous // 100 + Previous // 400 + Offset + Extra + D),
 )
-backward(month_days(Y, 2, 29), leap_year(Y))
-backward(month_days(Y, 2, 28), common_year(Y))
-backward(month_days(_, M, Days), ordinary_month(M, Days))
+implied_by(month_days(Y, 2, 29), leap_year(Y))
+implied_by(month_days(Y, 2, 28), common_year(Y))
+implied_by(month_days(_, M, Days), ordinary_month(M, Days))
 fact(ordinary_month(1, 31))
 fact(ordinary_month(3, 31))
 fact(ordinary_month(4, 30))
@@ -72,13 +72,13 @@ fact(ordinary_month(9, 30))
 fact(ordinary_month(10, 31))
 fact(ordinary_month(11, 30))
 fact(ordinary_month(12, 31))
-backward(leap_year(Y), eq(0, Y % 400))
-backward(leap_year(Y), eq(0, Y % 4), ne(0, Y % 100))
-backward(common_year(Y), ne(0, Y % 4))
-backward(common_year(Y), eq(0, Y % 100), ne(0, Y % 400))
-backward(leap_extra(_, M, 0), M <= 2)
-backward(leap_extra(Y, M, 1), M > 2, leap_year(Y))
-backward(leap_extra(Y, M, 0), M > 2, common_year(Y))
+implied_by(leap_year(Y), eq(0, Y % 400))
+implied_by(leap_year(Y), eq(0, Y % 4) & ne(0, Y % 100))
+implied_by(common_year(Y), ne(0, Y % 4))
+implied_by(common_year(Y), eq(0, Y % 100) & ne(0, Y % 400))
+implied_by(leap_extra(_, M, 0), M <= 2)
+implied_by(leap_extra(Y, M, 1), (M > 2) & leap_year(Y))
+implied_by(leap_extra(Y, M, 0), (M > 2) & common_year(Y))
 fact(month_offset(1, 0))
 fact(month_offset(2, 31))
 fact(month_offset(3, 59))

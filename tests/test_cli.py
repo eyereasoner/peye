@@ -13,7 +13,7 @@ class CommandLine(unittest.TestCase):
     def test_runs_files_stdin_multiple_sources_and_goals(self):
         self.assertEqual(cli(['examples/socrates.py']).stdout, SOCRATES)
         self.assertEqual(cli([], "from peye import *\np, q = preds('p q')\nX = vars('X')\n"
-                                 "fact(p('a'))\nforward(q(X), p(X))\n").stdout, "q('a')\n")
+                                 "fact(p('a'))\nimplies(p(X), q(X))\n").stdout, "q('a')\n")
         result = cli(['examples/socrates.py', '-', '--goal', "type(X, 'mortal')"],
                      "from peye import *\ntype = preds('type')\nfact(type('plato', 'human'))\n")
         self.assertEqual(result.stdout, "type('socrates', 'mortal')\ntype('plato', 'mortal')\n", result.stderr)
@@ -53,11 +53,11 @@ class CommandLine(unittest.TestCase):
 
     def test_lists_the_clauses_that_make_no_difference(self):
         source = ("from peye import *\np, q, s, z = preds('p q s z')\nX = vars('X')\n"
-                  "fact(p('a'))\nfact(q('b'))\nbackward(s(X), q(X))\nfact(z('c'))\nforward('ok', p('a'), ~s('a'))\n")
+                  "fact(p('a'))\nfact(q('b'))\nimplied_by(s(X), q(X))\nfact(z('c'))\nimplies(p('a') & ~s('a'), 'ok')\n")
         result = cli(['--unused'], source)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.stdout, "unused(line(5), fact(q('b')))\n"
-                                        "unused(line(6), backward(s(X), q(X)))\n"
+                                        "unused(line(6), implied_by(s(X), q(X)))\n"
                                         "unused(line(7), fact(z('c')))\n")
         self.assertEqual(cli(['--unused', 'examples/socrates.py']).stdout, '')
         self.assertEqual(cli(['--unused', '--proof', 'examples/socrates.py']).returncode, 1)

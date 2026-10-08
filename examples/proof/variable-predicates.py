@@ -5,7 +5,7 @@ clause(1, fact(t('alice', 'source_name', 'Alice')))
 clause(2, fact(t('alice', 'source_age', 30)))
 clause(3, fact(maps('source_name', 'name')))
 clause(4, fact(maps('source_age', 'age')))
-clause(5, forward(t(S, Target, O), t(S, Source, O), maps(Source, Target)))
+clause(5, implies(t(S, Source, O) & maps(Source, Target), t(S, Target, O)))
 
 step(t('alice', 'name', 'Alice'), clause(5), {'S': 'alice', 'Target': 'name', 'O': 'Alice', 'Source': 'source_name'}, [t('alice', 'source_name', 'Alice'), maps('source_name', 'name')])
 step(t('alice', 'source_name', 'Alice'), clause(1), {}, [])

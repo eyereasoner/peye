@@ -104,82 +104,82 @@ fact(
 )
 
 # What a left operand is for a request.
-backward(
+implied_by(
     value(C, 'ex:requesterRole', 'ex:leadTraveller'),
-    request(C, B, by(X), _, _, _, _),
-    booking(B, _, lead(X), _),
+    request(C, B, by(X), _, _, _, _)
+    & booking(B, _, lead(X), _),
 )
-backward(
+implied_by(
     value(C, 'ex:requesterRole', 'ex:otherPerson'),
-    request(C, B, by(X), _, _, _, _),
-    booking(B, _, lead(L), _),
-    not_identical(X, L),
+    request(C, B, by(X), _, _, _, _)
+    & booking(B, _, lead(L), _)
+    & not_identical(X, L),
 )
-backward(value(C, 'ex:daysBeforeDeparture', D), request(C, _, _, _, days(D), _, _))
+implied_by(value(C, 'ex:daysBeforeDeparture', D), request(C, _, _, _, days(D), _, _))
 # Each operator decides its comparison either way, so no step rests on
 # the absence of an answer.
-backward(compare_('odrl:eq', V, R, 'true'), identical(V, R))
-backward(compare_('odrl:eq', V, R, 'false'), not_identical(V, R))
-backward(compare_('odrl:gt', V, R, 'true'), V > R)
-backward(compare_('odrl:gt', V, R, 'false'), V <= R)
+implied_by(compare_('odrl:eq', V, R, 'true'), identical(V, R))
+implied_by(compare_('odrl:eq', V, R, 'false'), not_identical(V, R))
+implied_by(compare_('odrl:gt', V, R, 'true'), V > R)
+implied_by(compare_('odrl:gt', V, R, 'false'), V <= R)
 
 # Gate 1. A permission of an offer addresses a request when the booking is
 # with the offer's assigner and the actions match. Each operand of its
 # odrl:and constraint is then met or unmet, in the order the policy lists them.
-backward(
+implied_by(
     addresses(C, Rule),
-    t(Offer, 'rdf:type', 'odrl:Offer'),
-    t(Offer, 'odrl:assigner', Operator),
-    t(Offer, 'odrl:permission', Rule),
-    t(Rule, 'odrl:action', Action),
-    request(C, B, _, Action, _, _, _),
-    booking(B, operator(Operator), _, _),
+    t(Offer, 'rdf:type', 'odrl:Offer')
+    & t(Offer, 'odrl:assigner', Operator)
+    & t(Offer, 'odrl:permission', Rule)
+    & t(Rule, 'odrl:action', Action)
+    & request(C, B, _, Action, _, _, _)
+    & booking(B, operator(Operator), _, _),
 )
-backward(
+implied_by(
     condition(C, K, Result),
-    t(K, 'odrl:leftOperand', Left),
-    t(K, 'odrl:operator', Op),
-    t(K, 'odrl:rightOperand', Right),
-    value(C, Left, V),
-    compare_(Op, V, Right, Holds),
-    result(Holds, K, Left, V, Op, Right, Result),
+    t(K, 'odrl:leftOperand', Left)
+    & t(K, 'odrl:operator', Op)
+    & t(K, 'odrl:rightOperand', Right)
+    & value(C, Left, V)
+    & compare_(Op, V, Right, Holds)
+    & result(Holds, K, Left, V, Op, Right, Result),
 )
 fact(result('true', _, _, _, _, _, 'met'))
 fact(result('false', K, Left, V, Op, Right, unmet(K, Left, V, Op, Right)))
 fact(unmet(_, [], []))
-backward(unmet(C, [K, *Ks], Reasons), condition(C, K, 'met'), unmet(C, Ks, Reasons))
-backward(
+implied_by(unmet(C, [K, *Ks], Reasons), condition(C, K, 'met') & unmet(C, Ks, Reasons))
+implied_by(
     unmet(C, [K, *Ks], [Why, *Reasons]),
-    condition(C, K, Why),
-    not_identical(Why, 'met'),
-    unmet(C, Ks, Reasons),
+    condition(C, K, Why)
+    & not_identical(Why, 'met')
+    & unmet(C, Ks, Reasons),
 )
-backward(
+implied_by(
     policy_result(C, permit(Rule)),
-    addresses(C, Rule),
-    t(Rule, 'odrl:constraint', X),
-    t(X, 'odrl:and', Ks),
-    unmet(C, Ks, []),
+    addresses(C, Rule)
+    & t(Rule, 'odrl:constraint', X)
+    & t(X, 'odrl:and', Ks)
+    & unmet(C, Ks, []),
 )
-backward(
+implied_by(
     policy_result(C, refuse(Reasons)),
-    addresses(C, Rule),
-    t(Rule, 'odrl:constraint', X),
-    t(X, 'odrl:and', Ks),
-    unmet(C, Ks, Reasons),
-    not_identical(Reasons, []),
+    addresses(C, Rule)
+    & t(Rule, 'odrl:constraint', X)
+    & t(X, 'odrl:and', Ks)
+    & unmet(C, Ks, Reasons)
+    & not_identical(Reasons, []),
 )
 
 # The fee band for the days left, from the compensation duty of the permission.
-backward(
+implied_by(
     fee_percent(Rule, D, Pct),
-    t(Rule, 'odrl:duty', Duty),
-    t(Duty, 'odrl:action', 'odrl:compensate'),
-    t(Duty, 'ex:feeScale', Bands),
-    band(D, Bands, Pct),
+    t(Rule, 'odrl:duty', Duty)
+    & t(Duty, 'odrl:action', 'odrl:compensate')
+    & t(Duty, 'ex:feeScale', Bands)
+    & band(D, Bands, Pct),
 )
-backward(band(D, [band(Min, Max, Pct), *_], Pct), Min <= D, D <= Max)
-backward(band(D, [band(Min, _, _), *Bands], Pct), D < Min, band(D, Bands, Pct))
+implied_by(band(D, [band(Min, Max, Pct), *_], Pct), (Min <= D) & (D <= Max))
+implied_by(band(D, [band(Min, _, _), *Bands], Pct), (D < Min) & band(D, Bands, Pct))
 
 # Gate 2: whether the circumstances make the cancellation free of charge.
 fact(free_cancellation('directive_2015', 'none', 'no', 'PTD Art. 12(1)'))
@@ -192,11 +192,11 @@ fact(
 )
 
 # How the money is settled: the operator's fee, or a refund or voucher.
-backward(
+implied_by(
     settle(_, 'no', Rule, P, D, _, pay_fee(percent(Pct), fee(F), refund(Back), within_days(14))),
-    fee_percent(Rule, D, Pct),
-    is_(F, P * Pct // 100),
-    is_(Back, P - F),
+    fee_percent(Rule, D, Pct)
+    & is_(F, P * Pct // 100)
+    & is_(Back, P - F),
 )
 fact(settle(_, 'yes', _, P, _, 'not_offered', refund(P, within_days(14))))
 fact(settle(_, 'yes', _, P, _, offered('refused'), refund(P, within_days(14))))
@@ -215,44 +215,44 @@ fact(money_basis('revised_2026', 'yes', offered(_), 'revised PTD: vouchers'))
 
 # A refusal by the terms takes precedence; a permitted cancellation is settled
 # under the directive.
-forward(
+implies(
+    regime(R)
+    & policy_result(C, refuse(Reasons)),
     assessment(R, C, refused_by_terms(Reasons), basis(['ex:terms'])),
-    regime(R),
-    policy_result(C, refuse(Reasons)),
 )
-forward(
+implies(
+    regime(R)
+    & policy_result(C, permit(Rule))
+    & request(C, B, _, _, days(D), circumstances(What), voucher(V))
+    & booking(B, _, _, price(P))
+    & free_cancellation(R, What, F, Free)
+    & settle(R, F, Rule, P, D, V, Outcome)
+    & money_basis(R, F, V, Money),
     assessment(R, C, Outcome, basis(['ex:terms', Free, Money])),
-    regime(R),
-    policy_result(C, permit(Rule)),
-    request(C, B, _, _, days(D), circumstances(What), voucher(V)),
-    booking(B, _, _, price(P)),
-    free_cancellation(R, What, F, Free),
-    settle(R, F, Rule, P, D, V, Outcome),
-    money_basis(R, F, V, Money),
 )
 
 # Complaints are a separate duty, whatever happens to a booking.
 fact(complaint('k1', 'pool closed for the whole stay'))
 fact(complaint('k2', 'refund not received'))
-forward(
+implies(
+    complaint(K, _),
     complaint_plan('directive_2015', K, deadlines('set_by_national_law'), basis(['PTD 2015: no complaint deadlines'])),
-    complaint(K, _),
 )
-forward(
-    complaint_plan('revised_2026', K, deadlines(acknowledge(within_days(7)), reasoned_reply(within_days(60))), basis(['revised PTD: complaints'])),
+implies(
     complaint(K, _),
+    complaint_plan('revised_2026', K, deadlines(acknowledge(within_days(7)), reasoned_reply(within_days(60))), basis(['revised PTD: complaints'])),
 )
 
 # Compare final outcomes, rather than provision labels.
-forward(
+implies(
+    assessment('directive_2015', C, Old, _)
+    & assessment('revised_2026', C, New, _)
+    & not_identical(Old, New),
     changed(cancellation(C), struct('from', Old), to(New)),
-    assessment('directive_2015', C, Old, _),
-    assessment('revised_2026', C, New, _),
-    not_identical(Old, New),
 )
-forward(
+implies(
+    complaint_plan('directive_2015', K, Old, _)
+    & complaint_plan('revised_2026', K, New, _)
+    & not_identical(Old, New),
     changed(complaint(K), struct('from', Old), to(New)),
-    complaint_plan('directive_2015', K, Old, _),
-    complaint_plan('revised_2026', K, New, _),
-    not_identical(Old, New),
 )

@@ -26,8 +26,8 @@ Each person comes with a description, kept as a short list of words:
 fact(description('joe', ['good', 'cobbler']))
 fact(description('jane', ['good', 'carpenter']))
 fact(description('sam', ['novice', 'cobbler']))
-forward(good_at(Person, Trade), description(Person, ['good', Trade]))
-forward(classified_as(Person, Trade), description(Person, ['good', Trade]))
+implies(description(Person, ['good', Trade]), good_at(Person, Trade))
+implies(description(Person, ['good', Trade]), classified_as(Person, Trade))
 ```
 
 The rules only fire on the pattern `['good', Trade]`, and they tie "good" to

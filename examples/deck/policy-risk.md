@@ -46,12 +46,12 @@ c3 and c5 both allow sharing data, but only c5 asks for consent.
 Each kind of risk has a rule. This one flags sharing without consent:
 
 ```python
-forward(
+implies(
+    permission(Clause, 'share_data')
+    & ~safeguard(Clause, 'consent')
+    & importance('consent', Weight)
+    & is_(Raw, 85 + Weight),
     finding(Clause, Raw, 'sharing_without_consent', 'require_consent'),
-    permission(Clause, 'share_data'),
-    ~safeguard(Clause, 'consent'),
-    importance('consent', Weight),
-    is_(Raw, 85 + Weight),
 )
 ```
 

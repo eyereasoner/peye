@@ -4,27 +4,27 @@
 
 from peye import *
 
-backward(fib(N, F), N >= 0, fib_pair(N, F, _))
+implied_by(fib(N, F), (N >= 0) & fib_pair(N, F, _))
 fact(fib_pair(0, 0, 1))
-backward(
+implied_by(
     fib_pair(N, A, B),
-    N > 0,
-    is_(Half, N // 2),
-    fib_pair(Half, X, Y),
-    is_(C, X * (2 * Y - X)),
-    is_(D, X * X + Y * Y),
-    parity_pair(N, C, D, A, B),
+    (N > 0)
+    & is_(Half, N // 2)
+    & fib_pair(Half, X, Y)
+    & is_(C, X * (2 * Y - X))
+    & is_(D, X * X + Y * Y)
+    & parity_pair(N, C, D, A, B),
 )
-backward(parity_pair(N, C, D, A, B), eq(0, N % 2), unify(A, C), unify(B, D))
-backward(parity_pair(N, C, D, A, B), eq(1, N % 2), unify(A, D), is_(B, C + D))
+implied_by(parity_pair(N, C, D, A, B), eq(0, N % 2) & unify(A, C) & unify(B, D))
+implied_by(parity_pair(N, C, D, A, B), eq(1, N % 2) & unify(A, D) & is_(B, C + D))
 # The ratio of successive Fibonacci numbers converges on the golden ratio.
-backward(
+implied_by(
     golden_ratio(N, Ratio),
-    fib(N, A),
-    A > 0,
-    is_(Next, N + 1),
-    fib(Next, B),
-    is_(Ratio, B / A),
+    fib(N, A)
+    & (A > 0)
+    & is_(Next, N + 1)
+    & fib(Next, B)
+    & is_(Ratio, B / A),
 )
 query(fib(0, F))
 query(fib(1, F))

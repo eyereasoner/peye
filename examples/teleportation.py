@@ -51,23 +51,23 @@ fact(k('true', 'false'))
 fact(k('true', 'true'))
 
 # KG
-backward(kg(X, Y), g(X, Z), k(Z, Y))
+implied_by(kg(X, Y), g(X, Z) & k(Z, Y))
 
 # GK
-backward(gk(X, Y), k(X, Z), g(Z, Y))
+implied_by(gk(X, Y), k(X, Z) & g(Z, Y))
 
 # Alice's measurement: outcome M projects her qubit A and her half X of the
 # pair onto one of four two-qubit states.
-backward(alice(0, [A, X]), gk(A, X))
-backward(alice(1, [A, X]), k(A, X))
-backward(alice(2, [A, X]), g(A, X))
-backward(alice(3, [A, X]), id(A, X))
+implied_by(alice(0, [A, X]), gk(A, X))
+implied_by(alice(1, [A, X]), k(A, X))
+implied_by(alice(2, [A, X]), g(A, X))
+implied_by(alice(3, [A, X]), id(A, X))
 
 # Bob's correction for outcome M undoes Alice's basis relation.
-backward(bob(0, Y, Z), kg(Y, Z))
-backward(bob(1, Y, Z), k(Y, Z))
-backward(bob(2, Y, Z), g(Y, Z))
-backward(bob(3, Y, Z), id(Y, Z))
+implied_by(bob(0, Y, Z), kg(Y, Z))
+implied_by(bob(1, Y, Z), k(Y, Z))
+implied_by(bob(2, Y, Z), g(Y, Z))
+implied_by(bob(3, Y, Z), id(Y, Z))
 
 fact(outcome(0))
 fact(outcome(1))
@@ -75,19 +75,19 @@ fact(outcome(2))
 fact(outcome(3))
 
 # One way for Alice's state S to end as Bob's basis value Z after outcome M.
-backward(path(S, M, Z, [A, X, Y]), state(S, A), r(X, Y), alice(M, [A, X]), bob(M, Y, Z))
+implied_by(path(S, M, Z, [A, X, Y]), state(S, A) & r(X, Y) & alice(M, [A, X]) & bob(M, Y, Z))
 
 fact(odd([_]))
-backward(odd([_, _, *T]), odd(T))
+implied_by(odd([_, _, *T]), odd(T))
 
 # Bob's qubit has amplitude 1 on Z when an odd number of ways lead there.
-backward(received(S, M, Z), qubit(Z), findall(Path, path(S, M, Z, Path), Paths), odd(Paths))
+implied_by(received(S, M, Z), qubit(Z) & findall(Path, path(S, M, Z, Path), Paths) & odd(Paths))
 
 # What Bob holds after each outcome, for each state Alice could send.
-forward(teleported(S, M, Received), name(S), outcome(M), findall(Z, received(S, M, Z), Received))
+implies(name(S) & outcome(M) & findall(Z, received(S, M, Z), Received), teleported(S, M, Received))
 
 # Bob must hold exactly the state Alice sent, whatever the outcome.
-backward(sent(S, Sent), findall(A, state(S, A), Sent))
+implied_by(sent(S, Sent), findall(A, state(S, A), Sent))
 contradiction(teleported(S, _, Received), sent(S, Sent), not_identical(Received, Sent))
 
 # query

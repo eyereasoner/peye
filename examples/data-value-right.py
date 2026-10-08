@@ -76,42 +76,42 @@ fact(commodifies('property'))
 
 # ----- Legal analysis: how a right would fit existing law ----------------
 
-forward(anchored(C), anchor(P, C, D, W))
-forward(fully_anchored(C), anchor(P, C, 'full', W))
-forward(gap(C), component(C, Description), ~anchored(C))
+implies(anchor(P, C, D, W), anchored(C))
+implies(anchor(P, C, 'full', W), fully_anchored(C))
+implies(component(C, Description) & ~anchored(C), gap(C))
 
-forward(fit(C, 'in existing law'), fully_anchored(C))
-forward(fit(C, 'by interpretation'), anchored(C), ~fully_anchored(C))
-forward(fit(C, 'needs an autonomous right'), gap(C))
+implies(fully_anchored(C), fit(C, 'in existing law'))
+implies(anchored(C) & ~fully_anchored(C), fit(C, 'by interpretation'))
+implies(gap(C), fit(C, 'needs an autonomous right'))
 
 # Each component, what it means, how it fits, and the provisions it rests on.
-forward(
+implies(
+    component(C, Meaning)
+    & fit(C, How)
+    & findall(P, anchor(P, C, D, W), Provisions),
     analysis(C, Meaning, How, Provisions),
-    component(C, Meaning),
-    fit(C, How),
-    findall(P, anchor(P, C, D, W), Provisions),
 )
 query(analysis(C, Meaning, How, Provisions))
 
 # ----- Policy evaluation: how to develop the right -----------------------
 
-forward(delivers('interpret_existing_law', C), anchored(C))
+implies(anchored(C), delivers('interpret_existing_law', C))
 
 # A component needs developing unless existing law anchors it fully, and an
 # option that leaves such a component undelivered leaves the right incomplete.
-forward(needs_development(C), component(C, Meaning), ~fully_anchored(C))
-forward(objection(O, unaddressed(C)), option(O, F), needs_development(C), ~delivers(O, C))
-forward(objection(O, 'treats personal data as a commodity'), option(O, F), commodifies(F))
-forward(objection(O, 'gives the data subject no claim of their own'), option(O, F), ~own_claim(F))
+implies(component(C, Meaning) & ~fully_anchored(C), needs_development(C))
+implies(option(O, F) & needs_development(C) & ~delivers(O, C), objection(O, unaddressed(C)))
+implies(option(O, F) & commodifies(F), objection(O, 'treats personal data as a commodity'))
+implies(option(O, F) & ~own_claim(F), objection(O, 'gives the data subject no claim of their own'))
 
-forward(objectionable(O), objection(O, Why))
-forward(recommended(O), option(O, F), ~objectionable(O))
+implies(objection(O, Why), objectionable(O))
+implies(option(O, F) & ~objectionable(O), recommended(O))
 
-forward(
+implies(
+    option(O, F)
+    & findall(C, delivers(O, C), Delivered)
+    & findall(Why, objection(O, Why), Objections),
     evaluation(O, Delivered, Objections),
-    option(O, F),
-    findall(C, delivers(O, C), Delivered),
-    findall(Why, objection(O, Why), Objections),
 )
 query(evaluation(O, Delivered, Objections))
 query(recommended(O))

@@ -24,7 +24,7 @@ Three small puzzles:
 
 ```python
 fact(append([], Ys, Ys))
-backward(append([X, *Xs], Ys, [X, *Zs]), append(Xs, Ys, Zs))
+implied_by(append([X, *Xs], Ys, [X, *Zs]), append(Xs, Ys, Zs))
 fact(matching_pair(pair(X, X)))
 fact(head_tail([Head, *Tail], Head, Tail))
 ```

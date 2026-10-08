@@ -120,119 +120,119 @@ fact(
 fact(
     process('ex:r11', 'ex:hospital', 'ex:partnerBE', 'dpv:Share', 'ex:labResults', 'dpv:AcademicResearch', 'dpv:Consent', 'dpv:ConsentGiven', 'dpv:Pseudonymisation', 20261115),
 )
-backward(t(P, 'rdf:type', 'dpv:Process'), process(P, _, _, _, _, _, _, _, _, _))
-backward(t(P, 'dpv:hasDataController', X), process(P, X, _, _, _, _, _, _, _, _))
-backward(t(P, 'ex:requestedBy', Who), process(P, _, Who, _, _, _, _, _, _, _))
-backward(t(P, 'dpv:hasProcessing', X), process(P, _, _, X, _, _, _, _, _, _))
-backward(t(P, 'dpv:hasPersonalData', X), process(P, _, _, _, X, _, _, _, _, _))
-backward(t(P, 'dpv:hasPurpose', X), process(P, _, _, _, _, X, _, _, _, _))
-backward(t(P, 'dpv:hasLegalBasis', X), process(P, _, _, _, _, _, X, _, _, _))
-backward(t(P, 'dpv:hasConsentStatus', X), process(P, _, _, _, _, _, _, X, _, _))
-backward(t(P, 'dpv:hasTechnicalMeasure', X), process(P, _, _, _, _, _, _, _, X, _))
-backward(t(P, 'ex:requestDate', X), process(P, _, _, _, _, _, _, _, _, X))
+implied_by(t(P, 'rdf:type', 'dpv:Process'), process(P, _, _, _, _, _, _, _, _, _))
+implied_by(t(P, 'dpv:hasDataController', X), process(P, X, _, _, _, _, _, _, _, _))
+implied_by(t(P, 'ex:requestedBy', Who), process(P, _, Who, _, _, _, _, _, _, _))
+implied_by(t(P, 'dpv:hasProcessing', X), process(P, _, _, X, _, _, _, _, _, _))
+implied_by(t(P, 'dpv:hasPersonalData', X), process(P, _, _, _, X, _, _, _, _, _))
+implied_by(t(P, 'dpv:hasPurpose', X), process(P, _, _, _, _, X, _, _, _, _))
+implied_by(t(P, 'dpv:hasLegalBasis', X), process(P, _, _, _, _, _, X, _, _, _))
+implied_by(t(P, 'dpv:hasConsentStatus', X), process(P, _, _, _, _, _, _, X, _, _))
+implied_by(t(P, 'dpv:hasTechnicalMeasure', X), process(P, _, _, _, _, _, _, _, X, _))
+implied_by(t(P, 'ex:requestDate', X), process(P, _, _, _, _, _, _, _, _, X))
 
 # How a DPV processing reads as an ODRL action.
 fact(action('dpv:Use', 'odrl:use'))
 fact(action('dpv:Share', 'odrl:distribute'))
 
 # What a left operand is for a given process.
-backward(value(P, 'odrl:purpose', V), t(P, 'dpv:hasPurpose', V))
-backward(value(P, 'ex:legalBasis', V), t(P, 'dpv:hasLegalBasis', V))
-backward(value(P, 'ex:consentStatus', V), t(P, 'dpv:hasConsentStatus', V))
-backward(value(P, 'ex:technicalMeasure', V), t(P, 'dpv:hasTechnicalMeasure', V))
-backward(value(P, 'odrl:dateTime', V), t(P, 'ex:requestDate', V))
+implied_by(value(P, 'odrl:purpose', V), t(P, 'dpv:hasPurpose', V))
+implied_by(value(P, 'ex:legalBasis', V), t(P, 'dpv:hasLegalBasis', V))
+implied_by(value(P, 'ex:consentStatus', V), t(P, 'dpv:hasConsentStatus', V))
+implied_by(value(P, 'ex:technicalMeasure', V), t(P, 'dpv:hasTechnicalMeasure', V))
+implied_by(value(P, 'odrl:dateTime', V), t(P, 'ex:requestDate', V))
 
-backward(holds('odrl:isA', V, Class), within(V, Class))
+implied_by(holds('odrl:isA', V, Class), within(V, Class))
 fact(holds('odrl:eq', V, V))
-backward(holds('odrl:lt', V, Limit), is_int(V), is_int(Limit), V < Limit)
+implied_by(holds('odrl:lt', V, Limit), is_int(V) & is_int(Limit) & (V < Limit))
 fact(within(Class, Class))
-backward(within(Class, Super), t(Class, 'skos:broader', Middle), within(Middle, Super))
+implied_by(within(Class, Super), t(Class, 'skos:broader', Middle) & within(Middle, Super))
 fact(party(Who, Who))
-backward(party(Who, Group), t(Who, 'odrl:partOf', Group))
+implied_by(party(Who, Group), t(Who, 'odrl:partOf', Group))
 
 # A rule addresses a process when its assignee, action and target fit; it then
 # applies when every one of its constraints is met.
-backward(
+implied_by(
     addresses(P, Rule),
-    t(P, 'ex:requestedBy', Who),
-    t(Rule, 'odrl:assignee', Assignee),
-    party(Who, Assignee),
-    t(P, 'dpv:hasProcessing', Processing),
-    action(Processing, Action),
-    t(Rule, 'odrl:action', Action),
-    t(P, 'dpv:hasPersonalData', Data),
-    t(Rule, 'odrl:target', Data),
+    t(P, 'ex:requestedBy', Who)
+    & t(Rule, 'odrl:assignee', Assignee)
+    & party(Who, Assignee)
+    & t(P, 'dpv:hasProcessing', Processing)
+    & action(Processing, Action)
+    & t(Rule, 'odrl:action', Action)
+    & t(P, 'dpv:hasPersonalData', Data)
+    & t(Rule, 'odrl:target', Data),
 )
-backward(
+implied_by(
     met(P, C),
-    constraint(C, Left, Operator, Right),
-    value(P, Left, V),
-    holds(Operator, V, Right),
+    constraint(C, Left, Operator, Right)
+    & value(P, Left, V)
+    & holds(Operator, V, Right),
 )
-backward(
+implied_by(
     unmet(P, Rule, unmet(C, Left, V, Operator, Right)),
-    addresses(P, Rule),
-    t(Rule, 'odrl:constraint', C),
-    constraint(C, Left, Operator, Right),
-    value(P, Left, V),
-    ~met(P, C),
+    addresses(P, Rule)
+    & t(Rule, 'odrl:constraint', C)
+    & constraint(C, Left, Operator, Right)
+    & value(P, Left, V)
+    & ~met(P, C),
 )
-backward(applies(P, Rule), addresses(P, Rule), findall(Why, unmet(P, Rule, Why), []))
+implied_by(applies(P, Rule), addresses(P, Rule) & findall(Why, unmet(P, Rule, Why), []))
 # A policy governs a process when it is an agreement assigned by the
 # process's data controller.
-backward(
+implied_by(
     governs(Policy, P),
-    t(Policy, 'rdf:type', 'odrl:Agreement'),
-    t(Policy, 'odrl:assigner', Controller),
-    t(P, 'dpv:hasDataController', Controller),
+    t(Policy, 'rdf:type', 'odrl:Agreement')
+    & t(Policy, 'odrl:assigner', Controller)
+    & t(P, 'dpv:hasDataController', Controller),
 )
-backward(
+implied_by(
     permitted(P, Rule),
-    governs(Policy, P),
-    t(Policy, 'odrl:permission', Rule),
-    applies(P, Rule),
+    governs(Policy, P)
+    & t(Policy, 'odrl:permission', Rule)
+    & applies(P, Rule),
 )
-backward(
+implied_by(
     prohibited(P, Rule),
-    governs(Policy, P),
-    t(Policy, 'odrl:prohibition', Rule),
-    applies(P, Rule),
+    governs(Policy, P)
+    & t(Policy, 'odrl:prohibition', Rule)
+    & applies(P, Rule),
 )
-backward(
+implied_by(
     candidate(P, Rule),
-    governs(Policy, P),
-    t(Policy, 'odrl:permission', Rule),
-    addresses(P, Rule),
+    governs(Policy, P)
+    & t(Policy, 'odrl:permission', Rule)
+    & addresses(P, Rule),
 )
-backward(
+implied_by(
     policy_ready(P),
-    governs(Policy, P),
-    findall(S, t(Policy, 'odrl:conflict', S), ['odrl:prohibit']),
+    governs(Policy, P)
+    & findall(S, t(Policy, 'odrl:conflict', S), ['odrl:prohibit']),
 )
 
 # Policy outcomes are evaluated before considering the device step.
-backward(
+implied_by(
     policy_result(P, permit(Rule)),
-    policy_ready(P),
-    permitted(P, Rule),
-    findall(R, prohibited(P, R), []),
+    policy_ready(P)
+    & permitted(P, Rule)
+    & findall(R, prohibited(P, R), []),
 )
-backward(policy_result(P, deny(prohibited_by(Rule))), policy_ready(P), prohibited(P, Rule))
-backward(
+implied_by(policy_result(P, deny(prohibited_by(Rule))), policy_ready(P) & prohibited(P, Rule))
+implied_by(
     policy_result(P, deny(not_permitted(Reasons))),
-    t(P, 'rdf:type', 'dpv:Process'),
-    policy_ready(P),
-    candidate(P, _),
-    findall(R, permitted(P, R), []),
-    findall(R, prohibited(P, R), []),
-    findall(Why, governs(Policy, P) & t(Policy, 'odrl:permission', Rule) & unmet(P, Rule, Why), Reasons),
+    t(P, 'rdf:type', 'dpv:Process')
+    & policy_ready(P)
+    & candidate(P, _)
+    & findall(R, permitted(P, R), [])
+    & findall(R, prohibited(P, R), [])
+    & findall(Why, governs(Policy, P) & t(Policy, 'odrl:permission', Rule) & unmet(P, Rule, Why), Reasons),
 )
-backward(
+implied_by(
     policy_result(P, deny('no_matching_permission')),
-    t(P, 'rdf:type', 'dpv:Process'),
-    policy_ready(P),
-    findall(R, candidate(P, R), []),
-    findall(R, prohibited(P, R), []),
+    t(P, 'rdf:type', 'dpv:Process')
+    & policy_ready(P)
+    & findall(R, candidate(P, R), [])
+    & findall(R, prohibited(P, R), []),
 )
 
 # Each research session specifies its device access and the visitor's choice.
@@ -265,19 +265,19 @@ fact(ask('in_force', _, _, 'ask_for_consent', 'ePrivacy Art. 5(3)'))
 fact(
     ask('omnibus_proposal', media_service('no'), browser_signal('refuse'), 'refused_by_signal', 'GDPR Art. 88b(1)-(2)'),
 )
-backward(
+implied_by(
     ask('omnibus_proposal', _, refused(completed_months(M)), 'do_not_ask_again', 'GDPR Art. 88a(4)(c)'),
-    is_int(M),
-    M >= 0,
-    refusal_pause(months(Min)),
-    M < Min,
+    is_int(M)
+    & (M >= 0)
+    & refusal_pause(months(Min))
+    & (M < Min),
 )
-backward(
+implied_by(
     ask('omnibus_proposal', _, refused(completed_months(M)), 'ask_for_consent', 'GDPR Art. 88a(4)(c)'),
-    is_int(M),
-    M >= 0,
-    refusal_pause(months(Min)),
-    M >= Min,
+    is_int(M)
+    & (M >= 0)
+    & refusal_pause(months(Min))
+    & (M >= Min),
 )
 
 # Who must be told of a breach, and on which provisions.
@@ -294,81 +294,81 @@ fact(people(_, risk('some'), 'none', 'GDPR Art. 34(1)'))
 fact(people(_, risk('high'), 'without_undue_delay', 'GDPR Art. 34(1)'))
 
 # A policy denial takes precedence. A policy permit proceeds to the device gate.
-forward(
+implies(
+    regime(R)
+    & session(P, _, _)
+    & policy_result(P, deny(Reason)),
     assessment(R, P, deny_policy(Reason), basis(['ex:policy'])),
-    regime(R),
-    session(P, _, _),
-    policy_result(P, deny(Reason)),
 )
-forward(
+implies(
+    regime(R)
+    & policy_result(P, permit(Rule))
+    & session(P, Kind, _)
+    & consent(R, Kind, 'not_needed', Provision),
     assessment(R, P, permit(Rule), basis(['ex:policy', Provision])),
-    regime(R),
-    policy_result(P, permit(Rule)),
-    session(P, Kind, _),
-    consent(R, Kind, 'not_needed', Provision),
 )
-forward(
+implies(
+    regime(R)
+    & policy_result(P, permit(Rule))
+    & session(P, Kind, Before)
+    & consent(R, Kind, 'needed', Provision)
+    & ask(R, media_service('no'), Before, 'ask_for_consent', Next)
+    & device_basis(Provision, Next, Basis),
     assessment(R, P, await_device_consent(Rule), basis(Basis)),
-    regime(R),
-    policy_result(P, permit(Rule)),
-    session(P, Kind, Before),
-    consent(R, Kind, 'needed', Provision),
-    ask(R, media_service('no'), Before, 'ask_for_consent', Next),
-    device_basis(Provision, Next, Basis),
 )
-forward(
+implies(
+    regime(R)
+    & policy_result(P, permit(_))
+    & session(P, Kind, Before)
+    & consent(R, Kind, 'needed', Provision)
+    & ask(R, media_service('no'), Before, Reason, Next)
+    & not_identical(Reason, 'ask_for_consent')
+    & device_basis(Provision, Next, Basis),
     assessment(R, P, deny_device(Reason), basis(Basis)),
-    regime(R),
-    policy_result(P, permit(_)),
-    session(P, Kind, Before),
-    consent(R, Kind, 'needed', Provision),
-    ask(R, media_service('no'), Before, Reason, Next),
-    not_identical(Reason, 'ask_for_consent'),
-    device_basis(Provision, Next, Basis),
 )
 
 fact(device_basis(P, P, ['ex:policy', P]))
-backward(device_basis(P, Q, ['ex:policy', P, Q]), not_identical(P, Q))
+implied_by(device_basis(P, Q, ['ex:policy', P, Q]), not_identical(P, Q))
 
-forward(
+implies(
+    session(P, _, _)
+    & policy_ready(P)
+    & permitted(P, Permission)
+    & prohibited(P, Prohibition),
     policy_conflict(P, resolved_by('odrl:prohibit', Prohibition, overrides(Permission))),
-    session(P, _, _),
-    policy_ready(P),
-    permitted(P, Permission),
-    prohibited(P, Prohibition),
 )
 
 # Duties attach to final permits, not to requests waiting for device consent.
-forward(
+implies(
+    assessment(R, P, permit(Rule), _)
+    & t(Rule, 'odrl:duty', Duty)
+    & t(Duty, 'odrl:action', Action)
+    & t(Duty, 'ex:withinDays', Days),
     planned_duty(R, P, Action, within_days(Days)),
-    assessment(R, P, permit(Rule), _),
-    t(Rule, 'odrl:duty', Duty),
-    t(Duty, 'odrl:action', Action),
-    t(Duty, 'ex:withinDays', Days),
 )
 
 # Incidents concern existing portal data, independently of planned requests.
 fact(breach('b1', 'encrypted laptop lost, key safe', risk('unlikely')))
 fact(breach('b2', 'researcher contact addresses exposed', risk('some')))
 fact(breach('b3', 'patient lab records exposed', risk('high')))
-forward(
+implies(
+    regime(R)
+    & breach(B, _, Risk)
+    & authority(R, Risk, When, P)
+    & people(R, Risk, How, Q),
     breach_plan(R, B, notify(authority(When), people(How)), 'document_breach', basis([P, Q, 'GDPR Art. 33(5)'])),
-    regime(R),
-    breach(B, _, Risk),
-    authority(R, Risk, When, P),
-    people(R, Risk, How, Q),
 )
 
 # Compare final session decisions and incident plans, rather than provision labels.
-forward(
+implies(
+    assessment('in_force', P, Old, _)
+    & assessment('omnibus_proposal', P, New, _)
+    & not_identical(Old, New),
     changed(session(P), struct('from', Old), to(New)),
-    assessment('in_force', P, Old, _),
-    assessment('omnibus_proposal', P, New, _),
-    not_identical(Old, New),
 )
-forward(
+implies(
+    breach_plan('in_force', B, Old, _, _)
+    & breach_plan('omnibus_proposal', B, New, _, _)
+    & not_identical(Old, New),
     changed(breach(B), struct('from', Old), to(New)),
-    breach_plan('in_force', B, Old, _, _),
-    breach_plan('omnibus_proposal', B, New, _, _),
-    not_identical(Old, New),
 )

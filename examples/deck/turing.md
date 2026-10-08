@@ -42,22 +42,22 @@ State 0 runs right to the end of the number. State 1 walks back, turning
 ## What we tell peye: the interpreter
 
 ```python
-backward(
+implied_by(
     find(State, Left, Cell, Right, OutTape),
-    t([State, Cell, Write, Move], Next),
-    move(Move, Left, Write, Right, A, B, C),
-    struct('continue', Next, A, B, C, OutTape),
+    t([State, Cell, Write, Move], Next)
+    & move(Move, Left, Write, Right, A, B, C)
+    & struct('continue', Next, A, B, C, OutTape),
 )
 
-backward(
+implied_by(
     struct('continue', 'halt', Left, Cell, Right, OutTape),
-    reverse(Left, R),
-    append(R, [Cell, *Right], OutTape),
+    reverse(Left, R)
+    & append(R, [Cell, *Right], OutTape),
 )
-backward(
+implied_by(
     struct('continue', State, Left, Cell, Right, OutTape),
-    not_unify(State, 'halt'),
-    find(State, Left, Cell, Right, OutTape),
+    not_unify(State, 'halt')
+    & find(State, Left, Cell, Right, OutTape),
 )
 ```
 

@@ -5,7 +5,7 @@
 const KEYWORDS = new Set(['from', 'import', 'as', 'def', 'return', 'lambda', 'for', 'in', 'if', 'else', 'elif',
   'while', 'with', 'not', 'and', 'or', 'is', 'None', 'True', 'False', 'pass', 'class', 'yield']);
 // Stating clauses.
-const STATEMENTS = new Set(['fact', 'forward', 'backward', 'query', 'contradiction', 'preds', 'vars', 'facts_from',
+const STATEMENTS = new Set(['fact', 'implies', 'implied_by', 'query', 'contradiction', 'preds', 'vars', 'facts_from',
   'clause', 'step']);
 // Native predicates, controls and arithmetic functions, from peye/builtins.py, peye/dsl.py and peye/arith.py.
 const BUILTINS = new Set(['unify', 'not_unify', 'identical', 'not_identical', 'compare', 'is_', 'eq', 'ne',

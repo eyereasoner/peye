@@ -10,16 +10,16 @@ fact(expression('product', 'mul', 'n2', 'n3'))
 fact(expression('difference', 'sub', 'n10', 'n4'))
 fact(expression('total', 'add', 'product', 'difference'))
 fact(root('example', 'total'))
-backward(value(Node, Value), literal(Node, Value))
-backward(
+implied_by(value(Node, Value), literal(Node, Value))
+implied_by(
     value(Node, Value),
-    expression(Node, Operation, Left, Right),
-    value(Left, L),
-    value(Right, R),
-    calculate(Operation, L, R, Value),
+    expression(Node, Operation, Left, Right)
+    & value(Left, L)
+    & value(Right, R)
+    & calculate(Operation, L, R, Value),
 )
-backward(calculate('add', L, R, Value), is_(Value, L + R))
-backward(calculate('sub', L, R, Value), is_(Value, L - R))
-backward(calculate('mul', L, R, Value), is_(Value, L * R))
-forward(result(Name, Value), root(Name, Node), value(Node, Value))
+implied_by(calculate('add', L, R, Value), is_(Value, L + R))
+implied_by(calculate('sub', L, R, Value), is_(Value, L - R))
+implied_by(calculate('mul', L, R, Value), is_(Value, L * R))
+implies(root(Name, Node) & value(Node, Value), result(Name, Value))
 query(result(Name, Value))

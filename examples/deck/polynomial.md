@@ -40,15 +40,15 @@ i and 1+i.
 ## What we tell peye: the method
 
 ```python
-backward(roots(P, L), findall(Z, racine(P, Z), L))
+implied_by(roots(P, L), findall(Z, racine(P, Z), L))
 # …
-backward(racine([A, B, C, D], Z), racine_cubique([A, B, C, D], Z))
-backward(
+implied_by(racine([A, B, C, D], Z), racine_cubique([A, B, C, D], Z))
+implied_by(
     racine([A, B, C, D, E], Zp),
-    est(T, B // fois([-4, 0], A)),
+    est(T, B // fois([-4, 0], A))
     # …
-    solutionLagrange(P, Q, R, Z),
-    est(Zp, add(Z, T)),
+    & solutionLagrange(P, Q, R, Z)
+    & est(Zp, add(Z, T)),
 )
 ```
 

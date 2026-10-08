@@ -8,8 +8,8 @@ program, condition by condition (C1-C7).
 import sys
 
 from .dsl import (
-    _, arg, atom_chars, atom_codes, atom_concat, atom_length, backward, call, compare,
-    contradiction, eq, fact, facts_from, fail, false, findall, forward, functor, identical, is_,
+    _, arg, atom_chars, atom_codes, atom_concat, atom_length, call, compare,
+    contradiction, eq, fact, facts_from, fail, false, findall, functor, identical, implied_by, implies, is_,
     is_atom, is_compound, is_float, is_ground, is_int, is_nonvar, is_number, is_var, load,
     load_text, ne, not_, not_identical, not_unify, once, preds, build, query, struct, true,
     unify, univ, vars,
@@ -31,7 +31,7 @@ __version__ = '0.2.1'
 # with. The library API (load, run, check_proof, ...) is imported by name.
 __all__ = [
     # Stating a program.
-    'preds', 'vars', '_', 'fact', 'facts_from', 'forward', 'backward', 'query', 'contradiction',
+    'preds', 'vars', '_', 'fact', 'facts_from', 'implies', 'implied_by', 'query', 'contradiction',
     'struct',
     # Controls.
     'call', 'once', 'not_', 'findall',

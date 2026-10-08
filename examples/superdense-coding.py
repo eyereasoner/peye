@@ -61,26 +61,26 @@ fact(k('true', 'false'))
 fact(k('true', 'true'))
 
 # KG
-backward(kg(X, Y), g(X, Z), k(Z, Y))
+implied_by(kg(X, Y), g(X, Z) & k(Z, Y))
 
 # GK
-backward(gk(X, Y), k(X, Z), g(Z, Y))
+implied_by(gk(X, Y), k(X, Z) & g(Z, Y))
 
 # alice
-backward(alice(0, [X, Y]), id(X, Y))
-backward(alice(1, [X, Y]), g(X, Y))
-backward(alice(2, [X, Y]), k(X, Y))
-backward(alice(3, [X, Y]), kg(X, Y))
+implied_by(alice(0, [X, Y]), id(X, Y))
+implied_by(alice(1, [X, Y]), g(X, Y))
+implied_by(alice(2, [X, Y]), k(X, Y))
+implied_by(alice(3, [X, Y]), kg(X, Y))
 
 # bob
-backward(bob([X, Y], 0), gk(X, Y))
-backward(bob([X, Y], 1), k(X, Y))
-backward(bob([X, Y], 2), g(X, Y))
-backward(bob([X, Y], 3), id(X, Y))
+implied_by(bob([X, Y], 0), gk(X, Y))
+implied_by(bob([X, Y], 1), k(X, Y))
+implied_by(bob([X, Y], 2), g(X, Y))
+implied_by(bob([X, Y], 3), id(X, Y))
 
 # One way for Alice's message N to arrive as Bob's M: the shared pair |R), her
 # operation on her half, and his measurement of both halves.
-backward(path(N, M, [X, Y, B]), r(X, Y), alice(N, [X, B]), bob([B, Y], M))
+implied_by(path(N, M, [X, Y, B]), r(X, Y) & alice(N, [X, B]) & bob([B, Y], M))
 
 fact(message(0))
 fact(message(1))
@@ -88,10 +88,10 @@ fact(message(2))
 fact(message(3))
 
 fact(odd([_]))
-backward(odd([_, _, *T]), odd(T))
+implied_by(odd([_, _, *T]), odd(T))
 
 # superdense coding: the pairs reached an odd number of times
-forward(sdcoding(N, M), message(N), message(M), findall(Path, path(N, M, Path), Paths), odd(Paths))
+implies(message(N) & message(M) & findall(Path, path(N, M, Path), Paths) & odd(Paths), sdcoding(N, M))
 
 # query
 query(sdcoding(_, _))

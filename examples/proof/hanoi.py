@@ -1,9 +1,9 @@
 moves(3, 'left', 'right', 'center', [move('left', 'right'), move('left', 'center'), move('right', 'center'), move('left', 'right'), move('center', 'left'), move('center', 'right'), move('left', 'right')])
 
 clause(1, fact(append([], Ys, Ys)))
-clause(2, backward(append([X, *Xs], Ys, [X, *Zs]), append(Xs, Ys, Zs)))
+clause(2, implied_by(append([X, *Xs], Ys, [X, *Zs]), append(Xs, Ys, Zs)))
 clause(3, fact(moves(1, From, To, _0, [move(From, To)])))
-clause(4, backward(moves(N, From, To, Spare, Moves), N > 1, is_(Smaller, N - 1), moves(Smaller, From, Spare, To, First), moves(Smaller, Spare, To, From, Last), append(First, [move(From, To), *Last], Moves)))
+clause(4, implied_by(moves(N, From, To, Spare, Moves), (N > 1) & is_(Smaller, N - 1) & moves(Smaller, From, Spare, To, First) & moves(Smaller, Spare, To, From, Last) & append(First, [move(From, To), *Last], Moves)))
 
 step(moves(3, 'left', 'right', 'center', [move('left', 'right'), move('left', 'center'), move('right', 'center'), move('left', 'right'), move('center', 'left'), move('center', 'right'), move('left', 'right')]), clause(4), {'N': 3, 'From': 'left', 'To': 'right', 'Spare': 'center', 'Moves': [move('left', 'right'), move('left', 'center'), move('right', 'center'), move('left', 'right'), move('center', 'left'), move('center', 'right'), move('left', 'right')], 'Smaller': 2, 'First': [move('left', 'right'), move('left', 'center'), move('right', 'center')], 'Last': [move('center', 'left'), move('center', 'right'), move('left', 'right')]}, [3 > 1, is_(2, 3 - 1), moves(2, 'left', 'center', 'right', [move('left', 'right'), move('left', 'center'), move('right', 'center')]), moves(2, 'center', 'right', 'left', [move('center', 'left'), move('center', 'right'), move('left', 'right')]), append([move('left', 'right'), move('left', 'center'), move('right', 'center')], [move('left', 'right'), move('center', 'left'), move('center', 'right'), move('left', 'right')], [move('left', 'right'), move('left', 'center'), move('right', 'center'), move('left', 'right'), move('center', 'left'), move('center', 'right'), move('left', 'right')])])
 step(3 > 1, 'builtin', {}, [])

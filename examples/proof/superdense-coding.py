@@ -8,7 +8,7 @@ clause(30, fact(message(1)))
 clause(31, fact(message(2)))
 clause(32, fact(message(3)))
 clause(33, fact(odd([_0])))
-clause(35, forward(sdcoding(N, M), message(N), message(M), findall(Path, path(N, M, Path), Paths), odd(Paths)))
+clause(35, implies(message(N) & message(M) & findall(Path, path(N, M, Path), Paths) & odd(Paths), sdcoding(N, M)))
 
 step(sdcoding(0, 0), clause(35), {'N': 0, 'M': 0, 'Path': A, 'Paths': [['true', 'true', 'true']]}, [message(0), message(0), findall(A, path(0, 0, A), [['true', 'true', 'true']]), odd([['true', 'true', 'true']])])
 step(message(0), clause(29), {}, [])

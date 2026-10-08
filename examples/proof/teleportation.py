@@ -18,7 +18,7 @@ clause(29, fact(outcome(0)))
 clause(30, fact(outcome(1)))
 clause(31, fact(outcome(2)))
 clause(32, fact(outcome(3)))
-clause(37, forward(teleported(S, M, Received), name(S), outcome(M), findall(Z, received(S, M, Z), Received)))
+clause(37, implies(name(S) & outcome(M) & findall(Z, received(S, M, Z), Received), teleported(S, M, Received)))
 
 step(teleported('zero', 0, ['false']), clause(37), {'S': 'zero', 'M': 0, 'Received': ['false'], 'Z': A}, [name('zero'), outcome(0), findall(A, received('zero', 0, A), ['false'])])
 step(name('zero'), clause(5), {}, [])

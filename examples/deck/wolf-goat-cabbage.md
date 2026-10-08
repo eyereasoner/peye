@@ -24,17 +24,17 @@ wolf, goat and cabbage are on. Everyone starts west.
 
 ```python
 fact(solution(['e', 'e', 'e', 'e'], []))
-backward(solution(State, [Move, *Rest]), move(State, Move, Next), safe(Next), solution(Next, Rest))
+implied_by(solution(State, [Move, *Rest]), move(State, Move, Next) & safe(Next) & solution(Next, Rest))
 
-backward(move([X, X, Goat, Cabbage], 'wolf', [Y, Y, Goat, Cabbage]), change(X, Y))
-backward(move([X, Wolf, Goat, Cabbage], 'nothing', [Y, Wolf, Goat, Cabbage]), change(X, Y))
+implied_by(move([X, X, Goat, Cabbage], 'wolf', [Y, Y, Goat, Cabbage]), change(X, Y))
+implied_by(move([X, Wolf, Goat, Cabbage], 'nothing', [Y, Wolf, Goat, Cabbage]), change(X, Y))
 # … same for goat and cabbage
 
 # Safe when the goat is with the farmer, or with neither the wolf nor the cabbage.
-backward(
+implied_by(
     safe([Farmer, Wolf, Goat, Cabbage]),
-    one_eq(Farmer, Goat, Wolf),
-    one_eq(Farmer, Goat, Cabbage),
+    one_eq(Farmer, Goat, Wolf)
+    & one_eq(Farmer, Goat, Cabbage),
 )
 ```
 
@@ -43,24 +43,24 @@ backward(
 ## Asking for the shortest plan
 
 ```python
-backward(
+implied_by(
     'shorter_solution',
-    in_range(0, 6, N),
-    moves(N, Plan),
-    solution(['w', 'w', 'w', 'w'], Plan),
+    in_range(0, 6, N)
+    & moves(N, Plan)
+    & solution(['w', 'w', 'w', 'w'], Plan),
 )
 
-backward(
+implied_by(
     wolf_goat_cabbage_verified(7),
-    not_('shorter_solution'),
-    moves(7, Plan),
-    once(solution(['w', 'w', 'w', 'w'], Plan)),
+    not_('shorter_solution')
+    & moves(7, Plan)
+    & once(solution(['w', 'w', 'w', 'w'], Plan)),
 )
-backward(
+implied_by(
     shortest_crossing(Plan),
-    not_('shorter_solution'),
-    moves(7, Plan),
-    solution(['w', 'w', 'w', 'w'], Plan),
+    not_('shorter_solution')
+    & moves(7, Plan)
+    & solution(['w', 'w', 'w', 'w'], Plan),
 )
 ```
 

@@ -40,22 +40,22 @@ who the killer is in each one.
 Each clue becomes one line inside the definition of a model:
 
 ```python
-backward(
+implied_by(
     model(Killer, world(Richer, Hates)),
     # …
-    resident(Killer),                                    # 1, 2
-    hates(Hates, Killer, 'agatha', 'yes'),               # 3
-    richer(Richer, Killer, 'no'),
-    implies_not(AA, CA),                                 # 4
-    implies_not(AB, CB),
-    implies_not(AC, CC),
-    unify(AA, 'yes'),                                    # 5
-    unify(AC, 'yes'),
+    resident(Killer)  # 1, 2
+    & hates(Hates, Killer, 'agatha', 'yes')  # 3
+    & richer(Richer, Killer, 'no')
+    & if_then_not(AA, CA)  # 4
+    & if_then_not(AB, CB)
+    & if_then_not(AC, CC)
+    & unify(AA, 'yes')  # 5
+    & unify(AC, 'yes')
     # … clues 6 and 7 …
-    label([RA, RB, RC, AA, AB, AC, BA, BB, BC, CA, CB, CC]),
-    some_no(AA, AB, AC),                                 # 8
-    some_no(BA, BB, BC),
-    some_no(CA, CB, CC),
+    & label([RA, RB, RC, AA, AB, AC, BA, BB, BC, CA, CB, CC])
+    & some_no(AA, AB, AC)  # 8
+    & some_no(BA, BB, BC)
+    & some_no(CA, CB, CC),
 )
 ```
 
@@ -70,15 +70,15 @@ exactly once.
 Three rules then turn "every model" into a verdict:
 
 ```python
-forward(models(Suspect, N), resident(Suspect), findall(W, model(Suspect, W), Ws), count(Ws, N))
-forward(
+implies(resident(Suspect) & findall(W, model(Suspect, W), Ws) & count(Ws, N), models(Suspect, N))
+implies(
+    models('agatha', N)
+    & (N > 0)
+    & models('butler', 0)
+    & models('charles', 0),
     entailed(killed('agatha', 'agatha')),
-    models('agatha', N),
-    N > 0,
-    models('butler', 0),
-    models('charles', 0),
 )
-forward(witness(Killer, W), once(model(Killer, W)))
+implies(once(model(Killer, W)), witness(Killer, W))
 ```
 
 `findall` gathers *all* models for a suspect into a list, and `count`
@@ -141,7 +141,7 @@ python -m peye --proof examples/aunt-agatha.py
 ```
 
 Or open it in the [playground](https://eyereasoner.github.io/peye/playground/#example=aunt-agatha).
-Delete clue 4 (the three `implies_not` lines) and run again: now there are 14
+Delete clue 4 (the three `if_then_not` lines) and run again: now there are 14
 models with Agatha as killer and 6 with Charles, so `entailed(...)`
 disappears. Without that clue, the mystery has no single answer.
 

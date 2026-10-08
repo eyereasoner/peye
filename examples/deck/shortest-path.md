@@ -32,20 +32,20 @@ fact(edge('a', 'c', 2))
 fact(edge('c', 'b', 1))
 fact(edge('b', 'd', 3))
 fact(edge('c', 'd', 8))
-forward(path(X, Y, Cost), edge(X, Y, Cost))
-forward(path(X, Z, Cost), path(X, Y, Before), edge(Y, Z, Weight), is_(Cost, Before + Weight))
+implies(edge(X, Y, Cost), path(X, Y, Cost))
+implies(path(X, Y, Before) & edge(Y, Z, Weight) & is_(Cost, Before + Weight), path(X, Z, Cost))
 ```
 
 A road is a path; a path followed by one more road is a longer path, and the
-costs add up. `forward` means "keep applying this until nothing new follows".
+costs add up. `implies` means "keep applying this until nothing new follows".
 
 ---
 
 ## What we tell peye: "cheapest"
 
 ```python
-backward(cheaper(X, Y, Cost), path(X, Y, Other), Other < Cost)
-forward(shortest(X, Y, Cost), path(X, Y, Cost), ~cheaper(X, Y, Cost))
+implied_by(cheaper(X, Y, Cost), path(X, Y, Other) & (Other < Cost))
+implies(path(X, Y, Cost) & ~cheaper(X, Y, Cost), shortest(X, Y, Cost))
 query(shortest('a', 'd', Cost))
 ```
 

@@ -8,12 +8,12 @@ from peye import *
 
 fact(p('a'))
 fact(q('b'))
-backward(s(X), q(X))
+implied_by(s(X), q(X))
 fact(z('c'))
-forward('ok', p('a'), ~s('a'))
+implies(p('a') & ~s('a'), 'ok')
 --- stdout
 unused(line(4), fact(q('b')))
-unused(line(5), backward(s(X), q(X)))
+unused(line(5), implied_by(s(X), q(X)))
 unused(line(6), fact(z('c')))
 
 === a program whose every clause is used lists nothing
@@ -23,7 +23,7 @@ args: --unused program.py
 from peye import *
 fact(type('socrates', 'human'))
 fact(subclass_of('human', 'mortal'))
-forward(type(S, B), type(S, A), subclass_of(A, B))
+implies(type(S, A) & subclass_of(A, B), type(S, B))
 query(type(X, Y))
 --- stdout
 
@@ -34,7 +34,7 @@ args: --unused program.py
 from peye import *
 fact(p('a'), p('b'))
 fact(blocked('b'))
-forward(ok(X), p(X), ~blocked(X))
+implies(p(X) & ~blocked(X), ok(X))
 --- stdout
 unused(line(2), fact(p('b')))
 
@@ -45,7 +45,7 @@ args: --unused program.py
 from peye import *
 fact(p('a'))
 fact(blocked('b'))
-forward(ok(X), p(X), ~blocked(X))
+implies(p(X) & ~blocked(X), ok(X))
 --- stdout
 unused(line(3), fact(blocked('b')))
 
@@ -55,9 +55,9 @@ args: --unused program.py
 --- program.py
 from peye import *
 fact(p(1), p(2))
-forward(count(N), findall(X, p(X), L), length(L, N))
+implies(findall(X, p(X), L) & length(L, N), count(N))
 fact(length([], 0))
-backward(length([_, *T], N), length(T, M), is_(N, M + 1))
+implied_by(length([_, *T], N), length(T, M) & is_(N, M + 1))
 --- stdout
 
 === a multi-line clause is reported with its first line
@@ -66,13 +66,13 @@ args: --unused program.py
 --- program.py
 from peye import *
 fact(p(1))
-backward(
+implied_by(
     never(X),
     q(X),
 )
 query(p(X))
 --- stdout
-unused(line(3), backward(never(X), q(X)))
+unused(line(3), implied_by(never(X), q(X)))
 
 === unused clauses are relative to the goals asked
 spec: 13
@@ -90,10 +90,10 @@ args: --unused program.py
 --- program.py
 from peye import *
 fact(p(1))
-forward(q(X), p(X))
-forward(r(X), s(X))
+implies(p(X), q(X))
+implies(s(X), r(X))
 --- stdout
-unused(line(4), forward(r(X), s(X)))
+unused(line(4), implies(s(X), r(X)))
 
 === facts stated by facts_from record the line of the call
 spec: 4.2, 13
@@ -102,7 +102,7 @@ args: --unused program.py
 from peye import *
 fact(p(1))
 facts_from(text="q(1)\nq(2)\n")
-forward(r(X), p(X))
+implies(p(X), r(X))
 --- stdout
 unused(line(3), fact(q(1)))
 unused(line(3), fact(q(2)))

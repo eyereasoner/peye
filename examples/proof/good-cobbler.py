@@ -5,8 +5,8 @@ classified_as('jane', 'carpenter')
 
 clause(1, fact(description('joe', ['good', 'cobbler'])))
 clause(2, fact(description('jane', ['good', 'carpenter'])))
-clause(4, forward(good_at(Person, Trade), description(Person, ['good', Trade])))
-clause(5, forward(classified_as(Person, Trade), description(Person, ['good', Trade])))
+clause(4, implies(description(Person, ['good', Trade]), good_at(Person, Trade)))
+clause(5, implies(description(Person, ['good', Trade]), classified_as(Person, Trade)))
 
 step(good_at('joe', 'cobbler'), clause(4), {'Person': 'joe', 'Trade': 'cobbler'}, [description('joe', ['good', 'cobbler'])])
 step(description('joe', ['good', 'cobbler']), clause(1), {}, [])

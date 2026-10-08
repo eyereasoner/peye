@@ -38,11 +38,11 @@ arithmetic is used anywhere in this example.
 
 ```python
 fact(add(A, 'zero', A))
-backward(add(A, s(B), s(C)), add(A, B, C))
+implied_by(add(A, s(B), s(C)), add(A, B, C))
 fact(multiply(_, 'zero', 'zero'))
-backward(multiply(A, s(B), C), multiply(A, B, D), add(A, D, C))
+implied_by(multiply(A, s(B), C), multiply(A, B, D) & add(A, D, C))
 fact(factorial('zero', s('zero')))
-backward(factorial(s(N), F), factorial(N, Before), multiply(s(N), Before, F))
+implied_by(factorial(s(N), F), factorial(N, Before) & multiply(s(N), Before, F))
 query(add(A, B, s(s(s('zero')))))
 query(
     multiply(s('zero'), s(s('zero')), Product),

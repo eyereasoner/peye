@@ -46,14 +46,14 @@ a slot ending at 12:00 and one starting at 12:00 touch without overlapping.
 Missing endpoints are filled in, then each relation gets a rule:
 
 ```python
-forward(interval(I, S, E), start_duration(I, S, D), D > 0, is_(E, S + D))
-forward(interval(I, S, E), end_duration(I, E, D), D > 0, is_(S, E - D))
-backward(valid_interval(I, S, E), interval(I, S, E), S < E)
-forward(relation(I, 'before', J), pair(I, J, SI, EI, SJ, EJ), EI < SJ)
-forward(relation(I, 'meets', J), pair(I, J, SI, EI, SJ, EJ), eq(EI, SJ))
-forward(relation(I, 'during', J), pair(I, J, SI, EI, SJ, EJ), SJ < SI, EI < EJ)
+implies(start_duration(I, S, D) & (D > 0) & is_(E, S + D), interval(I, S, E))
+implies(end_duration(I, E, D) & (D > 0) & is_(S, E - D), interval(I, S, E))
+implied_by(valid_interval(I, S, E), interval(I, S, E) & (S < E))
+implies(pair(I, J, SI, EI, SJ, EJ) & (EI < SJ), relation(I, 'before', J))
+implies(pair(I, J, SI, EI, SJ, EJ) & eq(EI, SJ), relation(I, 'meets', J))
+implies(pair(I, J, SI, EI, SJ, EJ) & (SJ < SI) & (EI < EJ), relation(I, 'during', J))
 # … overlaps, starts, finishes, equals
-forward(relation(J, 'after', I), relation(I, 'before', J))
+implies(relation(I, 'before', J), relation(J, 'after', I))
 # … and the other five reverse relations
 ```
 

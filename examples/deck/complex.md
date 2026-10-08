@@ -23,19 +23,19 @@ rules, and get answers that are both right and explained?**
 How to add and multiply pairs, as ordinary rules:
 
 ```python
-backward(complex_add(complex(A, B), complex(C, D), complex(R, I)), is_(R, A + C), is_(I, B + D))
-backward(
+implied_by(complex_add(complex(A, B), complex(C, D), complex(R, I)), is_(R, A + C) & is_(I, B + D))
+implied_by(
     complex_mul(complex(A, B), complex(C, D), complex(R, I)),
-    is_(R, A * C - B * D),
-    is_(I, A * D + B * C),
+    is_(R, A * C - B * D)
+    & is_(I, A * D + B * C),
 )
 
 fact(point('z', complex(3, 4)))
 fact(point('w', complex(1, 2)))
 
-forward(sum(Sum), point('z', Z), point('w', W), complex_add(Z, W, Sum))
-forward(product(Product), point('z', Z), point('w', W), complex_mul(Z, W, Product))
-forward(unit_square(Square), complex_mul(complex(0, 1), complex(0, 1), Square))
+implies(point('z', Z) & point('w', W) & complex_add(Z, W, Sum), sum(Sum))
+implies(point('z', Z) & point('w', W) & complex_mul(Z, W, Product), product(Product))
+implies(complex_mul(complex(0, 1), complex(0, 1), Square), unit_square(Square))
 # …
 ```
 

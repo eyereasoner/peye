@@ -26,14 +26,14 @@ One fact, and three rules per level:
 
 ```python
 fact(type('ind', 'n0'))
-backward(type(X, 'n1'), type(X, 'n0'))
-backward(type(X, 'i1'), type(X, 'n0'))
-backward(type(X, 'j1'), type(X, 'n0'))
-backward(type(X, 'n2'), type(X, 'n1'))
+implied_by(type(X, 'n1'), type(X, 'n0'))
+implied_by(type(X, 'i1'), type(X, 'n0'))
+implied_by(type(X, 'j1'), type(X, 'n0'))
+implied_by(type(X, 'n2'), type(X, 'n1'))
 # … the same pattern for levels 3 to 9 …
-backward(type(X, 'n10'), type(X, 'n9'))
-backward(type(X, 'i10'), type(X, 'n9'))
-backward(type(X, 'j10'), type(X, 'n9'))
+implied_by(type(X, 'n10'), type(X, 'n9'))
+implied_by(type(X, 'i10'), type(X, 'n9'))
+implied_by(type(X, 'j10'), type(X, 'n9'))
 query(type(X, 'n10'))
 ```
 

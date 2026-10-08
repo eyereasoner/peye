@@ -38,13 +38,13 @@ the easy case: just move it.
 ```python
 # … two lines defining append
 fact(moves(1, From, To, _, [move(From, To)]))
-backward(
+implied_by(
     moves(N, From, To, Spare, Moves),
-    N > 1,
-    is_(Smaller, N - 1),
-    moves(Smaller, From, Spare, To, First),
-    moves(Smaller, Spare, To, From, Last),
-    append(First, [move(From, To), *Last], Moves),
+    (N > 1)
+    & is_(Smaller, N - 1)
+    & moves(Smaller, From, Spare, To, First)
+    & moves(Smaller, Spare, To, From, Last)
+    & append(First, [move(From, To), *Last], Moves),
 )
 query(moves(3, 'left', 'right', 'center', Moves))
 ```

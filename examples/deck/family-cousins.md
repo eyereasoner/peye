@@ -39,15 +39,15 @@ Branch `'b'` is Bob's side of the family; branch `'c'` is Carol's.
 ## The three rules
 
 ```python
-forward(generation(Child, Next), parent(Parent, Child), generation(Parent, N), is_(Next, N + 1))
-forward(branch(Child, Branch), parent(Parent, Child), branch(Parent, Branch))
-forward(
+implies(parent(Parent, Child) & generation(Parent, N) & is_(Next, N + 1), generation(Child, Next))
+implies(parent(Parent, Child) & branch(Parent, Branch), branch(Child, Branch))
+implies(
+    generation(X, N)
+    & generation(Y, N)
+    & branch(X, A)
+    & branch(Y, B)
+    & not_unify(A, B),
     cousin(X, Y),
-    generation(X, N),
-    generation(Y, N),
-    branch(X, A),
-    branch(Y, B),
-    not_unify(A, B),
 )
 ```
 

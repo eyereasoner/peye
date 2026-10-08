@@ -28,8 +28,8 @@ fact(owns('bob', 'dog7'))
 fact(owner('alice'))
 fact(owner('bob'))
 
-forward(dog_count(Owner, N), owner(Owner), findall(Dog, owns(Owner, Dog), Dogs), length(Dogs, N))
-forward(requires(Owner, 'dog_license'), dog_count(Owner, N), N > 4)
+implies(owner(Owner) & findall(Dog, owns(Owner, Dog), Dogs) & length(Dogs, N), dog_count(Owner, N))
+implies(dog_count(Owner, N) & (N > 4), requires(Owner, 'dog_license'))
 ```
 
 `findall` means "gather *all* the dogs this owner has into a list".

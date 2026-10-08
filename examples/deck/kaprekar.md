@@ -38,14 +38,14 @@ are 705 of them.
 One step of the routine, written as a backward definition:
 
 ```python
-backward(
+implied_by(
     kaprekar_step(A, B),
-    digits(A, Ds),
-    sort4(Ds, Asc),
-    reverse(Asc, Desc),
-    number_of(Asc, Low),
-    number_of(Desc, High),
-    is_(B, High - Low),
+    digits(A, Ds)
+    & sort4(Ds, Asc)
+    & reverse(Asc, Desc)
+    & number_of(Asc, Low)
+    & number_of(Desc, High)
+    & is_(B, High - Low),
 )
 ```
 
@@ -53,17 +53,17 @@ And the claim to test:
 
 ```python
 fact(reaches_6174(6174, _))
-backward(
+implied_by(
     reaches_6174(A, Steps),
-    ne(A, 6174),
-    Steps < 7,
-    kaprekar_step(A, B),
-    is_(Next, Steps + 1),
-    reaches_6174(B, Next),
+    ne(A, 6174)
+    & (Steps < 7)
+    & kaprekar_step(A, B)
+    & is_(Next, Steps + 1)
+    & reaches_6174(B, Next),
 )
 
-backward('counterexample', digit_multiset(A), ~reaches_6174(A, 0))
-backward(kaprekar_verified(6174, 7), not_('counterexample'))
+implied_by('counterexample', digit_multiset(A) & ~reaches_6174(A, 0))
+implied_by(kaprekar_verified(6174, 7), not_('counterexample'))
 ```
 
 `~` and `not_` mean "cannot be shown". A **counterexample** is a multiset that does

@@ -142,10 +142,10 @@ and primitives of Section 5, and the atoms `true`, `fail` and `false`.
 | Statement | Clause stated |
 | --- | --- |
 | `fact(T1, T2, ...)` | One fact per argument. |
-| `forward(Head, G1, G2, ...)` | A forward rule. `Head` MAY join several conclusions with `&`. At least one body goal is REQUIRED. |
-| `backward(Head, G1, G2, ...)` | A backward rule; with no body goal, a fact. |
-| `query(G1, G2, ...)` | The forward rule `forward('true', G1, G2, ...)`. |
-| `contradiction(G1, G2, ...)` | The forward rule `forward('false', G1, G2, ...)`. |
+| `implies(Premise, Conclusion)` | A forward rule, N3's `=>`: the premise's goals are its body and the conclusion its head, which MAY join several conclusions with `&`. |
+| `implied_by(Conclusion, Premise)` | A backward rule, N3's `<=`: the conclusion is its head and the premise's goals are its body. |
+| `query(G1, G2, ...)` | The forward rule `implies(G1 & G2 & ..., 'true')`. |
+| `contradiction(G1, G2, ...)` | The forward rule `implies(G1 & G2 & ..., 'false')`. |
 | `facts_from(path)` or `facts_from(text=...)` | One fact per expression of a document (Section 9). |
 
 A body goal that is a conjunction (`&`, Section 5.1) is split into its
@@ -537,7 +537,8 @@ as a claim, whatever its position.
 ### 10.2 Clause displays
 
 `Display` shows clause `N` as the program states it: `fact(Head)`,
-`backward(Head, G1, ...)` or `forward(Head, G1, ...)`. Displays are not
+`implies(Body, Head)` or `implied_by(Head, Body)`, where `Body` is the
+clause's body goals joined left to right with `&`. Displays are not
 authority: a checker MUST compare each with the program it checks against.
 
 ### 10.3 Steps
@@ -869,7 +870,7 @@ from peye import *
 
 fact(type('socrates', 'human'))
 fact(subclass_of('human', 'mortal'))
-forward(type(S, B), type(S, A), subclass_of(A, B))
+implies(type(S, A) & subclass_of(A, B), type(S, B))
 query(type(X, Y))
 ```
 
@@ -888,7 +889,7 @@ type('socrates', 'human')
 
 clause(1, fact(type('socrates', 'human')))
 clause(2, fact(subclass_of('human', 'mortal')))
-clause(3, forward(type(S, B), type(S, A), subclass_of(A, B)))
+clause(3, implies(type(S, A) & subclass_of(A, B), type(S, B)))
 
 step(type('socrates', 'mortal'), clause(3), {'S': 'socrates', 'B': 'mortal', 'A': 'human'}, [type('socrates', 'human'), subclass_of('human', 'mortal')])
 step(type('socrates', 'human'), clause(1), {}, [])

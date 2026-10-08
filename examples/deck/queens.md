@@ -29,19 +29,19 @@ automatically. Only the **diagonals** still need checking.
 
 ```python
 fact(place([], _, []))
-backward(
+implied_by(
     place(Available, Placed, [Column, *Rest]),
-    select(Column, Available, Remaining),
-    safe(Column, Placed, 1),
-    place(Remaining, [Column, *Placed], Rest),
+    select(Column, Available, Remaining)
+    & safe(Column, Placed, 1)
+    & place(Remaining, [Column, *Placed], Rest),
 )
 fact(safe(_, [], _))
-backward(
+implied_by(
     safe(Column, [Other, *Rest], Distance),
-    ne(Column, Other + Distance),
-    ne(Column, Other - Distance),
-    is_(Next, Distance + 1),
-    safe(Column, Rest, Next),
+    ne(Column, Other + Distance)
+    & ne(Column, Other - Distance)
+    & is_(Next, Distance + 1)
+    & safe(Column, Rest, Next),
 )
 query(once(queens(8, Columns)))
 ```

@@ -5,6 +5,6 @@ from peye import *
 
 fact(type('socrates', 'human'))
 fact(subclass_of('human', 'mortal'))
-forward(type(S, B), type(S, A), subclass_of(A, B))
+implies(type(S, A) & subclass_of(A, B), type(S, B))
 # The query reports every class membership, asserted as well as derived.
 query(type(X, Y))

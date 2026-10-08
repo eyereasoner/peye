@@ -20,10 +20,10 @@ in_range(1, 20, 19) & trajectory(19, [19, 58, 29, 88, 44, 22, 11, 34, 17, 52, 26
 in_range(1, 20, 20) & trajectory(20, [20, 10, 5, 16, 8, 4, 2, 1])
 
 clause(1, fact(trajectory(1, [1])))
-clause(2, backward(trajectory(N, [N, *Rest]), N > 1, eq(0, N % 2), is_(Next, N // 2), trajectory(Next, Rest)))
-clause(3, backward(trajectory(N, [N, *Rest]), N > 1, eq(1, N % 2), is_(Next, 3 * N + 1), trajectory(Next, Rest)))
-clause(4, backward(in_range(Low, High, Low), Low <= High))
-clause(5, backward(in_range(Low, High, N), Low < High, is_(Next, Low + 1), in_range(Next, High, N)))
+clause(2, implied_by(trajectory(N, [N, *Rest]), (N > 1) & eq(0, N % 2) & is_(Next, N // 2) & trajectory(Next, Rest)))
+clause(3, implied_by(trajectory(N, [N, *Rest]), (N > 1) & eq(1, N % 2) & is_(Next, 3 * N + 1) & trajectory(Next, Rest)))
+clause(4, implied_by(in_range(Low, High, Low), Low <= High))
+clause(5, implied_by(in_range(Low, High, N), (Low < High) & is_(Next, Low + 1) & in_range(Next, High, N)))
 
 step(in_range(1, 20, 1), clause(4), {'Low': 1, 'High': 20}, [1 <= 20])
 step(1 <= 20, 'builtin', {}, [])

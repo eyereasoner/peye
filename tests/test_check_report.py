@@ -16,7 +16,7 @@ def named(records, name):
 class CheckReports(unittest.TestCase):
     def test_reports_expose_coverage_and_source_and_primitive_counts(self):
         source = program("p, q = preds('p q')\nX = vars('X')\nfact(p('a'))\n"
-                         "backward(q(X), p(X), unify(X, 'a'))")
+                         "implied_by(q(X), p(X) & unify(X, 'a'))")
         report = check_proof(source, run(source, goal='q(X)', proof=True).proof, goals=['q(X)'])
         self.assertEqual(report['conditions'], [
             {'id': 'C1', 'name': 'resolution', 'covered': 2, 'failed': 0},
@@ -35,11 +35,11 @@ class CheckReports(unittest.TestCase):
     def test_each_failed_condition_is_represented_with_counts_and_a_failure(self):
         cases = [
             ('C1', "p = preds('p')\nfact(p('a'))", "p('b')\nstep(p('b'), clause(1), {}, [])"),
-            ('C2', "p = preds('p')\nbackward(p, p)", "p()\nstep(p(), clause(1), {}, [p()])"),
+            ('C2', "p = preds('p')\nimplied_by(p, p)", "p()\nstep(p(), clause(1), {}, [p()])"),
             ('C3', '', "p()\nstep(p(), 'magic', {}, [])"),
             ('C4', '', "missing()\ntrue()\nstep(true(), 'builtin', {}, [])"),
             ('C5', '', "is_(7, 2 + 3)\nstep(is_(7, 2 + 3), 'builtin', {}, [])"),
-            ('C6', "p, q = preds('p q')\nfact(p('a'))\nforward(q, ~p('a'))",
+            ('C6', "p, q = preds('p q')\nfact(p('a'))\nimplies(~p('a'), q)",
              "q()\nstep(q(), clause(2), {}, [~p('a')])\nstep(~p('a'), 'absent', {}, [])"),
             ('C7', "p = preds('p')\nfact(p('a'))", "p('a')\nstep(p('a'), clause(1), {}, [])"),
         ]
@@ -69,7 +69,7 @@ class CheckReports(unittest.TestCase):
 
     def test_obligations_carry_goal_terms_and_strict_checking_fails_c5(self):
         source = program("p, out, missing = preds('p out missing')\nX = vars('X')\n"
-                         "fact(p('a'))\nforward(out(X), p(X), ~missing(X))")
+                         "fact(p('a'))\nimplies(p(X) & ~missing(X), out(X))")
         document = run(source, proof=True).proof
         report = check_proof(source, document)
         obligation = named(facts(report), 'obligation')[0]
@@ -82,7 +82,7 @@ class CheckReports(unittest.TestCase):
         self.assertIn("condition('C5', 're_decision', failed(1), 0)\n", check_report(strict))
 
     def test_reports_can_be_loaded_and_queried_as_ordinary_data(self):
-        source = program("p, q = preds('p q')\nX = vars('X')\nfact(p('a'))\nforward(q(X), p(X))")
+        source = program("p, q = preds('p q')\nX = vars('X')\nfact(p('a'))\nimplies(p(X), q(X))")
         data = check_report(check_proof(source, run(source, proof=True).proof))
         facts_program = build(lambda: facts_from(text=data))
         self.assertEqual(run(facts_program, goal="condition('C1', Name, 'ok', Count)").answers,

@@ -6,27 +6,27 @@
 from peye import *
 
 fact(prod([0, _], 0))
-backward(prod([X, Y], Z), ne(X, 0), eq(0, X % 2), is_(S, X // 2), is_(T, Y + Y), prod([S, T], Z))
-backward(
+implied_by(prod([X, Y], Z), ne(X, 0) & eq(0, X % 2) & is_(S, X // 2) & is_(T, Y + Y) & prod([S, T], Z))
+implied_by(
     prod([X, Y], Z),
-    ne(X, 0),
-    eq(1, X % 2),
-    is_(S, X // 2),
-    is_(T, Y + Y),
-    prod([S, T], R),
-    is_(Z, R + Y),
+    ne(X, 0)
+    & eq(1, X % 2)
+    & is_(S, X // 2)
+    & is_(T, Y + Y)
+    & prod([S, T], R)
+    & is_(Z, R + Y),
 )
 
 fact(pow([_, 0], 1))
-backward(pow([X, Y], Z), ne(Y, 0), eq(0, Y % 2), is_(S, X * X), is_(T, Y // 2), pow([S, T], Z))
-backward(
+implied_by(pow([X, Y], Z), ne(Y, 0) & eq(0, Y % 2) & is_(S, X * X) & is_(T, Y // 2) & pow([S, T], Z))
+implied_by(
     pow([X, Y], Z),
-    ne(Y, 0),
-    eq(1, Y % 2),
-    is_(S, X * X),
-    is_(T, Y // 2),
-    pow([S, T], R),
-    is_(Z, R * X),
+    ne(Y, 0)
+    & eq(1, Y % 2)
+    & is_(S, X * X)
+    & is_(T, Y // 2)
+    & pow([S, T], R)
+    & is_(Z, R * X),
 )
 
 query(prod([3, 0], _))

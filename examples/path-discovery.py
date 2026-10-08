@@ -45214,32 +45214,32 @@ fact(flight('AIRPORT_N', 'AIRPORT_N'))
 # Find simple directed routes with at most MaxStopovers intermediate airports.
 # Example: path_discovery('Ostend-Bruges International Airport',
 #                         'Václav Havel Airport Prague', 2, Path).
-backward(
+implied_by(
     path_discovery(From, To, MaxStopovers, Path),
-    is_int(MaxStopovers),
-    MaxStopovers >= 0,
-    airport(Source, From),
-    airport(Destination, To),
-    not_unify(Source, Destination),
-    route_airports(Source, Destination, MaxStopovers, [Source], Airports),
-    airport_names(Airports, Path),
+    is_int(MaxStopovers)
+    & (MaxStopovers >= 0)
+    & airport(Source, From)
+    & airport(Destination, To)
+    & not_unify(Source, Destination)
+    & route_airports(Source, Destination, MaxStopovers, [Source], Airports)
+    & airport_names(Airports, Path),
 )
 
-backward(route_airports(From, To, _, Visited, [From, To]), flight(From, To), unvisited(To, Visited))
-backward(
+implied_by(route_airports(From, To, _, Visited, [From, To]), flight(From, To) & unvisited(To, Visited))
+implied_by(
     route_airports(From, To, Remaining, Visited, [From, *Rest]),
-    Remaining > 0,
-    flight(From, Via),
-    not_unify(Via, To),
-    unvisited(Via, Visited),
-    is_(Next, Remaining - 1),
-    route_airports(Via, To, Next, [Via, *Visited], Rest),
+    (Remaining > 0)
+    & flight(From, Via)
+    & not_unify(Via, To)
+    & unvisited(Via, Visited)
+    & is_(Next, Remaining - 1)
+    & route_airports(Via, To, Next, [Via, *Visited], Rest),
 )
 
 # Explicit disequalities make cycle prevention independently checkable.
 fact(unvisited(_, []))
-backward(unvisited(Airport, [Other, *Rest]), not_unify(Airport, Other), unvisited(Airport, Rest))
+implied_by(unvisited(Airport, [Other, *Rest]), not_unify(Airport, Other) & unvisited(Airport, Rest))
 fact(airport_names([], []))
-backward(airport_names([Id, *Ids], [Name, *Names]), airport(Id, Name), airport_names(Ids, Names))
+implied_by(airport_names([Id, *Ids], [Name, *Names]), airport(Id, Name) & airport_names(Ids, Names))
 
 query(path_discovery('Ostend-Bruges International Airport', 'Václav Havel Airport Prague', 2, Path))

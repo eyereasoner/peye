@@ -33,7 +33,7 @@ class ImplicitNames(unittest.TestCase):
         source = program('''
 fact(type('socrates', 'human'))
 fact(subclass_of('human', 'mortal'))
-forward(type(S, B), type(S, A), subclass_of(A, B))
+implies(type(S, A) & subclass_of(A, B), type(S, B))
 query(type(X, Y))
 ''')
         self.assertEqual(run(source).answers, ["type('socrates', 'mortal')", "type('socrates', 'human')"])
@@ -45,8 +45,8 @@ def chain(n):
         fact(edge(i, i + 1))
 
 chain(3)
-forward(path(X, Y), edge(X, Y))
-forward(path(X, Z), path(X, Y), edge(Y, Z))
+implies(edge(X, Y), path(X, Y))
+implies(path(X, Y) & edge(Y, Z), path(X, Z))
 query(path(0, W))
 ''')
         self.assertEqual(run(source).answers, ['path(0, 1)', 'path(0, 2)', 'path(0, 3)'])
@@ -66,7 +66,7 @@ query(path(0, W))
     def test_clauses_know_the_line_that_states_them(self):
         lines = ['from peye import *', '', 'def state(n):', '    fact(n_(n))', '']
         lines += [f'fact(p({i}))' for i in range(2000)]
-        lines += ['state(1)', 'backward(', '    q(X),', '    p(X),', ')']
+        lines += ['state(1)', 'implied_by(', '    q(X),', '    p(X),', ')']
         clauses = load_text('\n'.join(lines) + '\n').clauses
         self.assertEqual([clause.line for clause in clauses[:2]], [6, 7])
         self.assertEqual(clauses[1999].line, 2005)
@@ -90,7 +90,7 @@ query(path(0, W))
             "fact(p([type for type in xs]))", "fact(p('type'))", 'fact(p("""type\n"""))', "# fact(type)\n",
             "fact(p(X)) if type(1) else 0", "fact\n(p(type))", "y = x.fact(type(1))", "fact(p(min))\nmax(1)",
             "fact(p(type == 1))", "fact(p(sum != 1))", "fact(p(1 if type else 2))", "fact(p(rb'x', type))",
-            "fact(p(r'\\'', type))", "fact(p(\nsum\n))\nzip(1)", "forward(q, findall(X, p(X), L) & ~abs)",
+            "fact(p(r'\\'', type))", "fact(p(\nsum\n))\nzip(1)", "implies(findall(X, p(X), L) & ~abs, q)",
         ]
         for source in sources:
             with self.subTest(source[:60]):

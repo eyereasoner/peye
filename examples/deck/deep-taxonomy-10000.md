@@ -41,18 +41,18 @@ One fact, then three rules per level — 30,000 rules in all:
 
 ```python
 fact(type('ind', 'n0'))
-backward(type(X, 'n1'), type(X, 'n0'))
-backward(type(X, 'i1'), type(X, 'n0'))
-backward(type(X, 'j1'), type(X, 'n0'))
-backward(type(X, 'n2'), type(X, 'n1'))
+implied_by(type(X, 'n1'), type(X, 'n0'))
+implied_by(type(X, 'i1'), type(X, 'n0'))
+implied_by(type(X, 'j1'), type(X, 'n0'))
+implied_by(type(X, 'n2'), type(X, 'n1'))
 # … and so on, down to
-backward(type(X, 'n10000'), type(X, 'n9999'))
-backward(type(X, 'i10000'), type(X, 'n9999'))
-backward(type(X, 'j10000'), type(X, 'n9999'))
+implied_by(type(X, 'n10000'), type(X, 'n9999'))
+implied_by(type(X, 'i10000'), type(X, 'n9999'))
+implied_by(type(X, 'j10000'), type(X, 'n9999'))
 query(type(X, 'n10000'))
 ```
 
-Read `backward(type(X, 'n2'), type(X, 'n1'))` as *anything in n1 is also in
+Read `implied_by(type(X, 'n2'), type(X, 'n1'))` as *anything in n1 is also in
 n2*. The `i` and `j` rules are the dead-end side branches. The last line asks
 the question.
 
@@ -66,7 +66,7 @@ type('ind', 'n10000')
 
 One answer: yes.
 
-peye works backward from the question (`backward` rules are explored only
+peye works backward from the question (`implied_by` rules are explored only
 when a question needs them): to be in `n10000`, be in `n9999`; to be in
 `n9999`, be in `n9998`; … all the way up to the fact we gave. The search is an
 explicit machine inside peye, so ten thousand levels deep is no problem.

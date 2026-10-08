@@ -15,72 +15,72 @@
 from peye import *
 
 # find paths in the state space from the current state to a goal state within limits
-backward(
+implied_by(
     findpath(_Scope, [Goal, Path, Duration, Cost, Belief, Comfort, Limits]),
-    current_state(State),
-    findpaths(State, [], Goal, [], 0.0, 0.0, 1.0, 1.0, Path, Duration, Cost, Belief, Comfort, Limits),
+    current_state(State)
+    & findpaths(State, [], Goal, [], 0.0, 0.0, 1.0, 1.0, Path, Duration, Cost, Belief, Comfort, Limits),
 )
 
 # A path ends as soon as the goal holds; otherwise it takes one more step.
-backward(
+implied_by(
     findpaths(State, Maps, Goal, Path_s, Duration_s, Cost_s, Belief_s, Comfort_s, Path, Duration, Cost, Belief, Comfort, Limits),
-    holds(Goal, State, Holds),
-    struct('continue', Holds, State, Maps, Goal, Path_s, Duration_s, Cost_s, Belief_s, Comfort_s, Path, Duration, Cost, Belief, Comfort, Limits),
+    holds(Goal, State, Holds)
+    & struct('continue', Holds, State, Maps, Goal, Path_s, Duration_s, Cost_s, Belief_s, Comfort_s, Path, Duration, Cost, Belief, Comfort, Limits),
 )
 
 fact(
     struct('continue', 'yes', _State, _Maps, _Goal, Path, Duration, Cost, Belief, Comfort, Path, Duration, Cost, Belief, Comfort, _Limits),
 )
-backward(
+implied_by(
     struct('continue', 'no', State, Maps_s, Goal, Path_s, Duration_s, Cost_s, Belief_s, Comfort_s, Path, Duration, Cost, Belief, Comfort, Limits),
-    unify(Limits, [MaxDuration, MaxCost, MinBelief, MinComfort, MaxStagecount]),
-    description(Map, [From, _Transition, To, Action, Duration_n, Cost_n, Belief_n, Comfort_n]),
-    becomes(From, To, State, State_t),
-    append(Maps_s, [Map], Maps_t),
-    stagecount(Maps_t, Stagecount),
-    Stagecount <= MaxStagecount,
-    is_(Duration_t, Duration_s + Duration_n),
-    Duration_t <= MaxDuration,
-    is_(Cost_t, Cost_s + Cost_n),
-    Cost_t <= MaxCost,
-    is_(Belief_t, Belief_s * Belief_n),
-    Belief_t >= MinBelief,
-    is_(Comfort_t, Comfort_s * Comfort_n),
-    Comfort_t >= MinComfort,
-    append(Path_s, [Action], Path_t),
+    unify(Limits, [MaxDuration, MaxCost, MinBelief, MinComfort, MaxStagecount])
+    & description(Map, [From, _Transition, To, Action, Duration_n, Cost_n, Belief_n, Comfort_n])
+    & becomes(From, To, State, State_t)
+    & append(Maps_s, [Map], Maps_t)
+    & stagecount(Maps_t, Stagecount)
+    & (Stagecount <= MaxStagecount)
+    & is_(Duration_t, Duration_s + Duration_n)
+    & (Duration_t <= MaxDuration)
+    & is_(Cost_t, Cost_s + Cost_n)
+    & (Cost_t <= MaxCost)
+    & is_(Belief_t, Belief_s * Belief_n)
+    & (Belief_t >= MinBelief)
+    & is_(Comfort_t, Comfort_s * Comfort_n)
+    & (Comfort_t >= MinComfort)
+    & append(Path_s, [Action], Path_t)
     # Like the original, each step commits to the first way of finishing from it.
-    once(findpaths(State_t, Maps_t, Goal, Path_t, Duration_t, Cost_t, Belief_t, Comfort_t, Path, Duration, Cost, Belief, Comfort, Limits)),
+    & once(findpaths(State_t, Maps_t, Goal, Path_t, Duration_t, Cost_t, Belief_t, Comfort_t, Path, Duration, Cost, Belief, Comfort, Limits)),
 )
 
 # Whether a fluent of the state matches the goal, binding it to the first that does.
 fact(holds(_Goal, [], 'no'))
-backward(holds(Goal, [Fluent, *_], 'yes'), unify(Fluent, Goal))
-backward(
+implied_by(holds(Goal, [Fluent, *_], 'yes'), unify(Fluent, Goal))
+implied_by(
     holds(Goal, [Fluent, *Fluents], Holds),
-    not_unify(Fluent, Goal),
-    holds(Goal, Fluents, Holds),
+    not_unify(Fluent, Goal)
+    & holds(Goal, Fluents, Holds),
 )
 
 # A transition applies to a fluent of the state and replaces it.
-backward(becomes(From, To, [Fluent, *Fluents], [To, *Fluents]), unify(Fluent, From))
-backward(becomes(From, To, [Fluent, *Fluents], [Fluent, *Rest]), becomes(From, To, Fluents, Rest))
+implied_by(becomes(From, To, [Fluent, *Fluents], [To, *Fluents]), unify(Fluent, From))
+implied_by(becomes(From, To, [Fluent, *Fluents], [Fluent, *Rest]), becomes(From, To, Fluents, Rest))
 
 # counting the number of stages (a stage is a sequence of steps in the same map)
 fact(stagecount([_], 1))
-backward(
+implied_by(
     stagecount([Map, Next, *Maps], Count),
-    identical(Map, Next),
-    stagecount([Next, *Maps], Count),
+    identical(Map, Next)
+    & stagecount([Next, *Maps], Count),
 )
-backward(
+implied_by(
     stagecount([Map, Next, *Maps], Count),
-    not_identical(Map, Next),
-    stagecount([Next, *Maps], Rest),
-    is_(Count, Rest + 1),
+    not_identical(Map, Next)
+    & stagecount([Next, *Maps], Rest)
+    & is_(Count, Rest + 1),
 )
 
 fact(append([], L, L))
-backward(append([X, *Xs], L, [X, *Ys]), append(Xs, L, Ys))
+implied_by(append([X, *Xs], L, [X, *Ys]), append(Xs, L, Ys))
 
 # test data: partial map of Belgium
 fact(

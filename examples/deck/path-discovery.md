@@ -39,15 +39,15 @@ fact(flight('AIRPORT_1', 'AIRPORT_3'))
 ## What we tell peye: the rules
 
 ```python
-backward(route_airports(From, To, _, Visited, [From, To]), flight(From, To), unvisited(To, Visited))
-backward(
+implied_by(route_airports(From, To, _, Visited, [From, To]), flight(From, To) & unvisited(To, Visited))
+implied_by(
     route_airports(From, To, Remaining, Visited, [From, *Rest]),
-    Remaining > 0,
-    flight(From, Via),
-    not_unify(Via, To),
-    unvisited(Via, Visited),
-    is_(Next, Remaining - 1),
-    route_airports(Via, To, Next, [Via, *Visited], Rest),
+    (Remaining > 0)
+    & flight(From, Via)
+    & not_unify(Via, To)
+    & unvisited(Via, Visited)
+    & is_(Next, Remaining - 1)
+    & route_airports(Via, To, Next, [Via, *Visited], Rest),
 )
 ```
 

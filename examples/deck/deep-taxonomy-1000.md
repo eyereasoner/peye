@@ -41,18 +41,18 @@ One fact, then three rules per level — 3000 rules in all:
 
 ```python
 fact(type('ind', 'n0'))
-backward(type(X, 'n1'), type(X, 'n0'))
-backward(type(X, 'i1'), type(X, 'n0'))
-backward(type(X, 'j1'), type(X, 'n0'))
-backward(type(X, 'n2'), type(X, 'n1'))
+implied_by(type(X, 'n1'), type(X, 'n0'))
+implied_by(type(X, 'i1'), type(X, 'n0'))
+implied_by(type(X, 'j1'), type(X, 'n0'))
+implied_by(type(X, 'n2'), type(X, 'n1'))
 # … and so on, down to
-backward(type(X, 'n1000'), type(X, 'n999'))
-backward(type(X, 'i1000'), type(X, 'n999'))
-backward(type(X, 'j1000'), type(X, 'n999'))
+implied_by(type(X, 'n1000'), type(X, 'n999'))
+implied_by(type(X, 'i1000'), type(X, 'n999'))
+implied_by(type(X, 'j1000'), type(X, 'n999'))
 query(type(X, 'n1000'))
 ```
 
-Read `backward(type(X, 'n2'), type(X, 'n1'))` as *anything in n1 is also in
+Read `implied_by(type(X, 'n2'), type(X, 'n1'))` as *anything in n1 is also in
 n2*. The `i` and `j` rules are the side branches. The last line asks the
 question.
 
@@ -66,7 +66,7 @@ type('ind', 'n1000')
 
 One answer: yes, `ind` is in `n1000`.
 
-peye works backward from the question (`backward` rules are explored when a
+peye works backward from the question (`implied_by` rules are explored when a
 question needs them): to be in `n1000`, be in `n999`; to be in `n999`, be in
 `n998`; … all the way up to the fact we gave.
 

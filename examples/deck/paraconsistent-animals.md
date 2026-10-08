@@ -31,11 +31,11 @@ fact(bat('batsy'))
 fact(fish('nemo'))
 fact(bird('mythic'))
 fact(observed('mythic', 'flies', 'false'))
-forward(flies(X, 'true'), bird(X))
-forward(wings(X, 'true'), bird(X))
-forward(flies(X, 'false'), penguin(X))
-forward(wings(X, 'false'), mammal(X))
-forward(flies(X, 'true') & wings(X, 'true'), bat(X))
+implies(bird(X), flies(X, 'true'))
+implies(bird(X), wings(X, 'true'))
+implies(penguin(X), flies(X, 'false'))
+implies(mammal(X), wings(X, 'false'))
+implies(bat(X), flies(X, 'true') & wings(X, 'true'))
 # …
 ```
 
@@ -49,11 +49,11 @@ can be recorded side by side without the program falling over.
 Each property gets a local summary: *true only*, *false only*, or *both*.
 
 ```python
-forward(flight_status(X, 'both'), flies(X, 'true'), flies(X, 'false'))
-forward(flight_status(X, 'true_only'), flies(X, 'true'), ~flies(X, 'false'))
+implies(flies(X, 'true') & flies(X, 'false'), flight_status(X, 'both'))
+implies(flies(X, 'true') & ~flies(X, 'false'), flight_status(X, 'true_only'))
 # …
-forward(flies_safely(X, 'true'), flight_status(X, 'true_only'))
-forward(flies_safely(X, 'undecided'), flight_status(X, 'both'))
+implies(flight_status(X, 'true_only'), flies_safely(X, 'true'))
+implies(flight_status(X, 'both'), flies_safely(X, 'undecided'))
 ```
 
 `~` means "not found": nothing peye knows says otherwise. Decisions read

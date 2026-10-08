@@ -23,28 +23,28 @@
 
 from peye import *
 
-backward(
+implied_by(
     model(Killer, world(Richer, Hates)),
-    unify(Richer, richer(RA, RB, RC)),
-    unify(Hates, hates(AA, AB, AC, BA, BB, BC, CA, CB, CC)),
-    resident(Killer),  # 1, 2
-    hates(Hates, Killer, 'agatha', 'yes'),  # 3
-    richer(Richer, Killer, 'no'),
-    implies_not(AA, CA),  # 4
-    implies_not(AB, CB),
-    implies_not(AC, CC),
-    unify(AA, 'yes'),  # 5
-    unify(AC, 'yes'),
-    unless(RA, BA),  # 6
-    unless(RB, BB),
-    unless(RC, BC),
-    implies(AA, BA),  # 7
-    implies(AB, BB),
-    implies(AC, BC),
-    label([RA, RB, RC, AA, AB, AC, BA, BB, BC, CA, CB, CC]),
-    some_no(AA, AB, AC),  # 8
-    some_no(BA, BB, BC),
-    some_no(CA, CB, CC),
+    unify(Richer, richer(RA, RB, RC))
+    & unify(Hates, hates(AA, AB, AC, BA, BB, BC, CA, CB, CC))
+    & resident(Killer)  # 1, 2
+    & hates(Hates, Killer, 'agatha', 'yes')  # 3
+    & richer(Richer, Killer, 'no')
+    & if_then_not(AA, CA)  # 4
+    & if_then_not(AB, CB)
+    & if_then_not(AC, CC)
+    & unify(AA, 'yes')  # 5
+    & unify(AC, 'yes')
+    & unless(RA, BA)  # 6
+    & unless(RB, BB)
+    & unless(RC, BC)
+    & if_then(AA, BA)  # 7
+    & if_then(AB, BB)
+    & if_then(AC, BC)
+    & label([RA, RB, RC, AA, AB, AC, BA, BB, BC, CA, CB, CC])
+    & some_no(AA, AB, AC)  # 8
+    & some_no(BA, BB, BC)
+    & some_no(CA, CB, CC),
 )
 
 fact(resident('agatha'))
@@ -69,13 +69,13 @@ fact(richer(richer(_, _, V), 'charles', V))
 fact(truth('yes'))
 fact(truth('no'))
 fact(label([]))
-backward(label([V, *Vs]), truth(V), label(Vs))
+implied_by(label([V, *Vs]), truth(V) & label(Vs))
 # Each connective's clauses are mutually exclusive in their first argument,
 # so a value that is still unbound splits the search without duplicates.
-fact(implies('no', _))  # A -> B
-fact(implies('yes', 'yes'))
-fact(implies_not('no', _))  # A -> not B
-fact(implies_not('yes', 'no'))
+fact(if_then('no', _))  # A -> B
+fact(if_then('yes', 'yes'))
+fact(if_then_not('no', _))  # A -> not B
+fact(if_then_not('yes', 'no'))
 fact(unless('yes', _))  # not A -> B
 fact(unless('no', 'yes'))
 fact(some_no('no', _, _))  # not (A and B and C)
@@ -83,17 +83,17 @@ fact(some_no('yes', 'no', _))
 fact(some_no('yes', 'yes', 'no'))
 
 fact(count([], 0))
-backward(count([_, *Xs], N), count(Xs, M), is_(N, M + 1))
+implied_by(count([_, *Xs], N), count(Xs, M) & is_(N, M + 1))
 
 # How many models make each resident the killer.
-forward(models(Suspect, N), resident(Suspect), findall(W, model(Suspect, W), Ws), count(Ws, N))
+implies(resident(Suspect) & findall(W, model(Suspect, W), Ws) & count(Ws, N), models(Suspect, N))
 # Entailment: some model exists, and every model has Agatha as the killer.
-forward(
+implies(
+    models('agatha', N)
+    & (N > 0)
+    & models('butler', 0)
+    & models('charles', 0),
     entailed(killed('agatha', 'agatha')),
-    models('agatha', N),
-    N > 0,
-    models('butler', 0),
-    models('charles', 0),
 )
 # One model in full, with a proof that every premise holds in it.
-forward(witness(Killer, W), once(model(Killer, W)))
+implies(once(model(Killer, W)), witness(Killer, W))

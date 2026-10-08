@@ -6,30 +6,30 @@
 
 from peye import *
 
-backward(
+implied_by(
     colors(_Map, Places),
-    findall([Place, _], neighbours(Place, _), Places),
-    once(places(Places)),
+    findall([Place, _], neighbours(Place, _), Places)
+    & once(places(Places)),
 )
 
 fact(places([]))
-backward(
+implied_by(
     places([[Place, Color], *Tail]),
-    places(Tail),
-    neighbours(Place, Neighbours),
-    member(Color, ['red', 'green', 'blue', 'yellow']),
-    ~conflict(Color, Tail, Neighbours),
+    places(Tail)
+    & neighbours(Place, Neighbours)
+    & member(Color, ['red', 'green', 'blue', 'yellow'])
+    & ~conflict(Color, Tail, Neighbours),
 )
 
 # A colour conflicts when an already-coloured neighbour has it.
-backward(
+implied_by(
     conflict(Color, Coloured, Neighbours),
-    member([Neighbour, Color], Coloured),
-    member(Neighbour, Neighbours),
+    member([Neighbour, Color], Coloured)
+    & member(Neighbour, Neighbours),
 )
 
 fact(member(X, [X, *_]))
-backward(member(X, [_, *Rest]), member(X, Rest))
+implied_by(member(X, [_, *Rest]), member(X, Rest))
 
 # The map of the European Union.
 fact(neighbours('Belgium', ['France', 'Netherlands', 'Luxemburg', 'Germany']))

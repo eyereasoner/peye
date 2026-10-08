@@ -45,7 +45,7 @@ stderr: nonempty
 --- program.py
 from peye import *
 fact(p('a'), q('a', 1))
-forward(s(X), p(X), ~q(X, Y))
+implies(p(X) & ~q(X, Y), s(X))
 --- stdout
 
 === the anonymous variables of a negation stand for any value
@@ -53,7 +53,7 @@ spec: 4.4, 5.1
 --- program.py
 from peye import *
 fact(p('a'), p('b'), q('a', 1))
-forward(s(X), p(X), ~q(X, _))
+implies(p(X) & ~q(X, _), s(X))
 --- stdout
 s('b')
 
@@ -72,12 +72,12 @@ args: --proof
 --- stdin
 from peye import *
 fact(p('a'), p('b'), q('a', 1))
-forward(s(X), p(X), ~q(X, _))
+implies(p(X) & ~q(X, _), s(X))
 --- stdout
 s('b')
 
 clause(2, fact(p('b')))
-clause(4, forward(s(X), p(X), ~q(X, _0)))
+clause(4, implies(p(X) & ~q(X, _0), s(X)))
 
 step(s('b'), clause(4), {'X': 'b', '_0': A}, [p('b'), ~q('b', A)])
 step(p('b'), clause(2), {}, [])
@@ -154,7 +154,7 @@ args: program.py --goal "first(X)"
 --- program.py
 from peye import *
 fact(p(1), p(2))
-backward(first(X), once(p(X)))
+implied_by(first(X), once(p(X)))
 --- stdout
 first(1)
 
@@ -181,7 +181,7 @@ args: program.py --goal "distinct()"
 --- program.py
 from peye import *
 fact(item(f(_)), item(f(_)))
-backward(distinct, findall(T, item(T), [A, B]), not_identical(A, B))
+implied_by(distinct, findall(T, item(T), [A, B]) & not_identical(A, B))
 --- stdout
 'distinct'
 

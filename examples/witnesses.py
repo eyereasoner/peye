@@ -4,7 +4,7 @@ from peye import *
 
 fact(person('alice'))
 fact(person('bob'))
-forward(
-    has_record(Name, record('person_rule', Name)) & record_owner(record('person_rule', Name), Name),
+implies(
     person(Name),
+    has_record(Name, record('person_rule', Name)) & record_owner(record('person_rule', Name), Name),
 )

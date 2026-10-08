@@ -27,12 +27,12 @@ Two facts, and two rules that both define a `route`:
 ```python
 fact(train('paris', 'brussels'))
 fact(bus('paris', 'lille'))
-backward(route(From, To), train(From, To))
-backward(route(From, To), bus(From, To))
+implied_by(route(From, To), train(From, To))
+implied_by(route(From, To), bus(From, To))
 ```
 
 Two rules with the same name are **alternatives**: a route is a train
-connection, *or* a bus connection. The `backward` means "work this out when
+connection, *or* a bus connection. The `implied_by` means "work this out when
 someone asks".
 
 ---

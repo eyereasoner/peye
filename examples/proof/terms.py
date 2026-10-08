@@ -3,9 +3,9 @@ witness(graph([triple(iri('https://example.org/s'), iri('https://example.org/p')
 
 clause(1, fact(quoted(graph([triple(iri('https://example.org/s'), iri('https://example.org/p'), literal('hello', lang('en')))]))))
 clause(2, fact(member_of(X, [X, *_0])))
-clause(4, backward(includes(graph(Triples), Triple), member_of(Triple, Triples)))
-clause(5, forward(found(T), quoted(G), includes(G, T)))
-clause(6, forward(witness(X, W), quoted(X)))
+clause(4, implied_by(includes(graph(Triples), Triple), member_of(Triple, Triples)))
+clause(5, implies(quoted(G) & includes(G, T), found(T)))
+clause(6, implies(quoted(X), witness(X, W)))
 
 step(found(triple(iri('https://example.org/s'), iri('https://example.org/p'), literal('hello', lang('en')))), clause(5), {'T': triple(iri('https://example.org/s'), iri('https://example.org/p'), literal('hello', lang('en'))), 'G': graph([triple(iri('https://example.org/s'), iri('https://example.org/p'), literal('hello', lang('en')))])}, [quoted(graph([triple(iri('https://example.org/s'), iri('https://example.org/p'), literal('hello', lang('en')))])), includes(graph([triple(iri('https://example.org/s'), iri('https://example.org/p'), literal('hello', lang('en')))]), triple(iri('https://example.org/s'), iri('https://example.org/p'), literal('hello', lang('en'))))])
 step(quoted(graph([triple(iri('https://example.org/s'), iri('https://example.org/p'), literal('hello', lang('en')))])), clause(1), {}, [])

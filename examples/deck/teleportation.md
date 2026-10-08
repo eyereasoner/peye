@@ -35,9 +35,9 @@ and `plus` (both at once).
 
 ```python
 # … the shared pair, Alice's measurement and Bob's fixes
-backward(received(S, M, Z), qubit(Z), findall(Path, path(S, M, Z, Path), Paths), odd(Paths))
+implied_by(received(S, M, Z), qubit(Z) & findall(Path, path(S, M, Z, Path), Paths) & odd(Paths))
 # …
-forward(teleported(S, M, Received), name(S), outcome(M), findall(Z, received(S, M, Z), Received))
+implies(name(S) & outcome(M) & findall(Z, received(S, M, Z), Received), teleported(S, M, Received))
 # …
 contradiction(teleported(S, _, Received), sent(S, Sent), not_identical(Received, Sent))
 ```
@@ -96,7 +96,7 @@ python -m peye examples/teleportation.py            # the answers
 python -m peye --proof examples/teleportation.py    # answers with their proof
 ```
 
-Break Bob's fix for outcome 0: in `backward(bob(0, Y, Z), kg(Y, Z))` replace
+Break Bob's fix for outcome 0: in `implied_by(bob(0, Y, Z), kg(Y, Z))` replace
 `kg(Y, Z)` with `id(Y, Z)`. Now Bob sometimes gets the wrong state, peye
 prints `'false'` and exits with code 65.
 

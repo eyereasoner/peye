@@ -6,14 +6,14 @@ args: --proof program.py
 --- program.py
 from peye import *
 fact(p(1), p(2))
-forward(q(X), p(X))
+implies(p(X), q(X))
 --- stdout
 q(1)
 q(2)
 
 clause(1, fact(p(1)))
 clause(2, fact(p(2)))
-clause(3, forward(q(X), p(X)))
+clause(3, implies(p(X), q(X)))
 
 step(q(1), clause(3), {'X': 1}, [p(1)])
 step(p(1), clause(1), {}, [])
@@ -26,13 +26,13 @@ args: --proof program.py
 --- program.py
 from peye import *
 fact(p(1))
-forward(a(X) & b(X), p(X))
+implies(p(X), a(X) & b(X))
 --- stdout
 a(1)
 b(1)
 
 clause(1, fact(p(1)))
-clause(2, forward(a(X) & b(X), p(X)))
+clause(2, implies(p(X), a(X) & b(X)))
 
 step(a(1), clause(2), {'X': 1}, [p(1)])
 step(p(1), clause(1), {}, [])
@@ -43,7 +43,7 @@ spec: 4.2
 args: --proof --goal "p(X)" program.py
 --- program.py
 from peye import *
-backward(p(1))
+fact(p(1))
 --- stdout
 p(1)
 
@@ -57,13 +57,13 @@ args: --proof --goal "r(X)" program.py
 --- program.py
 from peye import *
 fact(p(1), q(1))
-backward(r(X), p(X) & q(X))
+implied_by(r(X), p(X) & q(X))
 --- stdout
 r(1)
 
 clause(1, fact(p(1)))
 clause(2, fact(q(1)))
-clause(3, backward(r(X), p(X), q(X)))
+clause(3, implied_by(r(X), p(X) & q(X)))
 
 step(r(1), clause(3), {'X': 1}, [p(1), q(1)])
 step(p(1), clause(1), {}, [])
@@ -121,12 +121,12 @@ from peye import *
 fact(p(1))
 --- b.py
 from peye import *
-forward(q(X), p(X))
+implies(p(X), q(X))
 --- stdout
 q(1)
 
 clause(1, fact(p(1)))
-clause(2, forward(q(X), p(X)))
+clause(2, implies(p(X), q(X)))
 
 step(q(1), clause(2), {'X': 1}, [p(1)])
 step(p(1), clause(1), {}, [])
@@ -205,7 +205,7 @@ from peye import *
 p, q = preds('p q')
 A = vars('A')
 fact(p(1))
-forward(q(A), p(A))
+implies(p(A), q(A))
 --- stdout
 q(1)
 
@@ -219,8 +219,8 @@ def chain(n):
         fact(edge(i, i + 1))
 
 chain(3)
-forward(path(X, Y), edge(X, Y))
-forward(path(X, Z), path(X, Y), edge(Y, Z))
+implies(edge(X, Y), path(X, Y))
+implies(path(X, Y) & edge(Y, Z), path(X, Z))
 query(path(0, W))
 --- stdout
 path(0, 1)
@@ -298,7 +298,7 @@ exit: 1
 stderr: nonempty
 --- program.py
 from peye import *
-forward(p(X), q(X), X > 1 & X < 2)
+implies(q(X) & (X > 1 & X < 2), p(X))
 --- stdout
 
 === a head of step/4 is reserved
@@ -334,7 +334,7 @@ exit: 1
 stderr: nonempty
 --- program.py
 from peye import *
-backward(call('a'), 'true')
+implied_by(call('a'), 'true')
 --- stdout
 
 === true and false are heads of forward rules only
@@ -343,7 +343,7 @@ exit: 1
 stderr: nonempty
 --- program.py
 from peye import *
-backward('true', p(1))
+implied_by('true', p(1))
 --- stdout
 
 === a number cannot be a head
@@ -361,7 +361,7 @@ exit: 1
 stderr: nonempty
 --- program.py
 from peye import *
-backward(p, ['a'])
+implied_by(p, ['a'])
 --- stdout
 
 === a number is not a goal
@@ -370,16 +370,16 @@ exit: 1
 stderr: nonempty
 --- program.py
 from peye import *
-backward(p, 1)
+implied_by(p, 1)
 --- stdout
 
-=== a forward rule needs a body
+=== a forward rule needs a premise
 spec: 4.2
 exit: 1
 stderr: nonempty
 --- program.py
 from peye import *
-forward(p(1))
+implies(p(1))
 --- stdout
 
 === negation through a cycle is unstratified
@@ -388,8 +388,8 @@ exit: 1
 stderr: nonempty
 --- program.py
 from peye import *
-forward(p, ~q)
-forward(q, p)
+implies(~q, p)
+implies(p, q)
 --- stdout
 
 === collection through a cycle is unstratified
@@ -398,7 +398,7 @@ exit: 1
 stderr: nonempty
 --- program.py
 from peye import *
-forward(p(L), findall(Y, p(Y), L))
+implies(findall(Y, p(Y), L), p(L))
 --- stdout
 
 === a forward rule cannot reach a call of a variable
@@ -408,8 +408,8 @@ stderr: nonempty
 --- program.py
 from peye import *
 fact(p('a'))
-backward(apply(G), call(G))
-forward(q, apply(p('a')))
+implied_by(apply(G), call(G))
+implies(apply(p('a')), q)
 --- stdout
 
 === a backward rule may call a variable goal when asked from outside
@@ -418,7 +418,7 @@ args: program.py --goal "apply(p('a'))"
 --- program.py
 from peye import *
 fact(p('a'))
-backward(apply(G), call(G))
+implied_by(apply(G), call(G))
 --- stdout
 apply(p('a'))
 
@@ -427,8 +427,8 @@ spec: 4.5, 7.2
 --- program.py
 from peye import *
 fact(seed('a'), seed('b'))
-forward(clear(X), seed(X), ~blocked(X))
-forward(blocked(X), seed(X), danger(X))
+implies(seed(X) & ~blocked(X), clear(X))
+implies(seed(X) & danger(X), blocked(X))
 fact(danger('b'))
 --- stdout
 blocked('b')
@@ -439,7 +439,7 @@ spec: 4.5
 --- program.py
 from peye import *
 fact(t('a', 'seed', 'true'))
-forward(t(X, 'allowed', 'true'), t(X, 'seed', 'true'), ~t(X, 'blocked', 'true'))
-forward(t(X, 'blocked', 'true'), t(X, 'seed', 'true'))
+implies(t(X, 'seed', 'true') & ~t(X, 'blocked', 'true'), t(X, 'allowed', 'true'))
+implies(t(X, 'seed', 'true'), t(X, 'blocked', 'true'))
 --- stdout
 t('a', 'blocked', 'true')
