@@ -33,7 +33,7 @@ the topic of each.
 | [08-canonical-text.txt](08-canonical-text.txt) | 8 | 17 | The one spelling of atoms, numbers, variables, lists, compounds and operators |
 | [09-reading.txt](09-reading.txt) | 9 | 37 | What a document reader accepts, and what it must reject without running anything |
 | [10-proofs.txt](10-proofs.txt) | 10 | 16 | Proof documents for every kind of justification, step order and sharing |
-| [11-checking.txt](11-checking.txt) | 11, 12 | 46 | Valid proofs and proofs tampered with to break each of C1-C7, with their exact reports |
+| [11-checking.txt](11-checking.txt) | 11, 12 | 45 | Valid proofs and proofs tampered with to break each of C1-C7, with their exact reports |
 | [13-unused.txt](13-unused.txt) | 13 | 9 | Unused clauses, including those a negation or collection consults |
 | [14-command-line.txt](14-command-line.txt) | 14 | 21 | Options, their combinations, standard input, errors and exit codes |
 
@@ -56,7 +56,7 @@ same(1, 1)
 
 clause(1, fact(same(X, X)))
 
-step(same(1, 1), fact(1), {'X': 1}, [])
+step(same(1, 1), clause(1), {'X': 1}, [])
 ```
 
 | Setting | Meaning | Default |

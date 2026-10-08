@@ -15,10 +15,10 @@ clause(1, fact(p(1)))
 clause(2, fact(p(2)))
 clause(3, forward(q(X), p(X)))
 
-step(q(1), rule(3), {'X': 1}, [p(1)])
-step(p(1), fact(1), {}, [])
-step(q(2), rule(3), {'X': 2}, [p(2)])
-step(p(2), fact(2), {}, [])
+step(q(1), clause(3), {'X': 1}, [p(1)])
+step(p(1), clause(1), {}, [])
+step(q(2), clause(3), {'X': 2}, [p(2)])
+step(p(2), clause(2), {}, [])
 
 === a forward rule may conclude several heads joined with &
 spec: 4.2
@@ -34,9 +34,9 @@ b(1)
 clause(1, fact(p(1)))
 clause(2, forward(a(X) & b(X), p(X)))
 
-step(a(1), rule(2), {'X': 1}, [p(1)])
-step(p(1), fact(1), {}, [])
-step(b(1), rule(2), {'X': 1}, [p(1)])
+step(a(1), clause(2), {'X': 1}, [p(1)])
+step(p(1), clause(1), {}, [])
+step(b(1), clause(2), {'X': 1}, [p(1)])
 
 === a backward rule without a body is a fact
 spec: 4.2
@@ -49,7 +49,7 @@ p(1)
 
 clause(1, fact(p(1)))
 
-step(p(1), fact(1), {}, [])
+step(p(1), clause(1), {}, [])
 
 === a body conjunction is split into its goals
 spec: 4.2
@@ -65,9 +65,9 @@ clause(1, fact(p(1)))
 clause(2, fact(q(1)))
 clause(3, backward(r(X), p(X), q(X)))
 
-step(r(1), rule(3), {'X': 1}, [p(1), q(1)])
-step(p(1), fact(1), {}, [])
-step(q(1), fact(2), {}, [])
+step(r(1), clause(3), {'X': 1}, [p(1), q(1)])
+step(p(1), clause(1), {}, [])
+step(q(1), clause(2), {}, [])
 
 === query publishes each instance of its body
 spec: 4.2
@@ -128,8 +128,8 @@ q(1)
 clause(1, fact(p(1)))
 clause(2, forward(q(X), p(X)))
 
-step(q(1), rule(2), {'X': 1}, [p(1)])
-step(p(1), fact(1), {}, [])
+step(q(1), clause(2), {'X': 1}, [p(1)])
+step(p(1), clause(1), {}, [])
 
 === undefined lowercase names are predicates, even Python builtins
 spec: 4.3
@@ -352,7 +352,7 @@ exit: 1
 stderr: nonempty
 --- program.py
 from peye import *
-fact(42)
+clause(42)
 --- stdout
 
 === a list is not a goal

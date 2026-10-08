@@ -52,8 +52,8 @@ mortal('socrates')
 clause(1, fact(human('socrates')))
 clause(2, forward(mortal(X), human(X)))
 
-step(mortal('socrates'), rule(2), {'X': 'socrates'}, [human('socrates')])
-step(human('socrates'), fact(1), {}, [])
+step(mortal('socrates'), clause(2), {'X': 'socrates'}, [human('socrates')])
+step(human('socrates'), clause(1), {}, [])
 ```
 
 That proof is itself Python, one expression per line, and a checker that never

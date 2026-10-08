@@ -489,8 +489,7 @@ order. `By` is one of:
 
 | `By` | Meaning | `Bindings` | `Uses` |
 | --- | --- | --- | --- |
-| `fact(N)` | `Goal` is an instance of fact `N`. | the clause's variables | empty |
-| `rule(N)` | `Goal` is an instance of a head of rule `N`, whose body instance is `Uses`. | the clause's variables | the body instance |
+| `clause(N)` | `Goal` is an instance of a head of clause `N`, a fact or a rule, whose body instance is `Uses`. | the clause's variables | the body instance, empty for a fact |
 | `'builtin'` | `Goal` is a primitive that holds. | empty | empty |
 | `'control'` | `Goal` is `call`, `once` or a disjunction, solved by `Uses`. | empty | the solved goals |
 | `'absent'` | `Goal` is a negation taken on trust. | empty | empty |
@@ -521,10 +520,9 @@ respectively.
 
 ### 11.2 C1 Resolution
 
-For a `fact(N)` or `rule(N)` step, `N` MUST be a clause of the program, and
-`fact(N)` MUST name a fact. The clause, renamed apart, MUST satisfy: each
-binding names a distinct variable of the clause and unifies it with its
-value; and for one of the clause's heads (each conjunct of a forward rule's
+For a `clause(N)` step, `N` MUST be a clause of the program. The clause,
+renamed apart, MUST satisfy: each binding names a distinct variable of the
+clause and unifies it with its value; and for one of the clause's heads (each conjunct of a forward rule's
 head), the head unifies with `Goal` and the body, of the same length as
 `Uses`, unifies with `Uses` pairwise, such that afterwards the head is
 identical to `Goal` and each body goal to its use. A step's own terms MUST NOT
@@ -579,7 +577,7 @@ reachable from a conjunct of a claim through the conjuncts of uses.
 
 | Condition | Covered |
 | --- | --- |
-| C1 resolution | `fact` and `rule` steps that passed C1 |
+| C1 resolution | `clause` steps that passed C1 |
 | C2 well_founded | steps |
 | C3 justification | steps |
 | C4 coverage | claims plus uses |
@@ -762,9 +760,9 @@ clause(1, fact(type('socrates', 'human')))
 clause(2, fact(subclass_of('human', 'mortal')))
 clause(3, forward(type(S, B), type(S, A), subclass_of(A, B)))
 
-step(type('socrates', 'mortal'), rule(3), {'S': 'socrates', 'B': 'mortal', 'A': 'human'}, [type('socrates', 'human'), subclass_of('human', 'mortal')])
-step(type('socrates', 'human'), fact(1), {}, [])
-step(subclass_of('human', 'mortal'), fact(2), {}, [])
+step(type('socrates', 'mortal'), clause(3), {'S': 'socrates', 'B': 'mortal', 'A': 'human'}, [type('socrates', 'human'), subclass_of('human', 'mortal')])
+step(type('socrates', 'human'), clause(1), {}, [])
+step(subclass_of('human', 'mortal'), clause(2), {}, [])
 ```
 
 Its check report (Section 12):

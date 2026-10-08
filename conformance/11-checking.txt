@@ -17,9 +17,9 @@ clause(1, fact(p('a')))
 clause(2, forward(q(X), p(X)))
 clause(3, forward(r(X), q(X)))
 
-step(q('a'), rule(2), {'X': 'a'}, [p('a')])
-step(p('a'), fact(1), {}, [])
-step(r('a'), rule(3), {'X': 'a'}, [q('a')])
+step(q('a'), clause(2), {'X': 'a'}, [p('a')])
+step(p('a'), clause(1), {}, [])
+step(r('a'), clause(3), {'X': 'a'}, [q('a')])
 --- stdout
 condition('C1', 'resolution', 'ok', 3)
 condition('C2', 'well_founded', 'ok', 3)
@@ -46,8 +46,8 @@ forward(q(X), p(X))
 --- stdin
 q('a')
 
-step(q('a'), rule(2), {'X': 'a'}, [p('a')])
-step(p('a'), fact(1), {}, [])
+step(q('a'), clause(2), {'X': 'a'}, [p('a')])
+step(p('a'), clause(1), {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 2)
 condition('C2', 'well_founded', 'ok', 2)
@@ -77,8 +77,8 @@ q('a')
 
 clause(1, fact(p('b')))
 
-step(q('a'), rule(2), {'X': 'a'}, [p('a')])
-step(p('a'), fact(1), {}, [])
+step(q('a'), clause(2), {'X': 'a'}, [p('a')])
+step(p('a'), clause(1), {}, [])
 --- stdout
 condition('C1', 'resolution', failed(1), 2)
 condition('C2', 'well_founded', 'ok', 2)
@@ -109,8 +109,8 @@ q('a')
 
 clause(1, fact(p('a')))
 
-step(q('a'), rule(2), {'X': 'a'}, [p('a')])
-step(p('a'), fact(1), {}, [])
+step(q('a'), clause(2), {'X': 'a'}, [p('a')])
+step(p('a'), clause(1), {}, [])
 --- stdout
 condition('C1', 'resolution', failed(2), 1)
 condition('C2', 'well_founded', 'ok', 2)
@@ -140,8 +140,8 @@ forward(q(X), p(X))
 --- proof.py
 q('a')
 
-step(q('a'), rule(2), {'X': 'b'}, [p('a')])
-step(p('a'), fact(1), {}, [])
+step(q('a'), clause(2), {'X': 'b'}, [p('a')])
+step(p('a'), clause(1), {}, [])
 --- stdout
 condition('C1', 'resolution', failed(1), 1)
 condition('C2', 'well_founded', 'ok', 2)
@@ -170,8 +170,8 @@ forward(q(X), p(X))
 --- proof.py
 q('a')
 
-step(q('a'), rule(3), {'X': 'a'}, [p('b')])
-step(p('b'), fact(2), {}, [])
+step(q('a'), clause(3), {'X': 'a'}, [p('b')])
+step(p('b'), clause(2), {}, [])
 --- stdout
 condition('C1', 'resolution', failed(1), 1)
 condition('C2', 'well_founded', 'ok', 2)
@@ -200,38 +200,8 @@ forward(q(X), p(X))
 --- proof.py
 q('a')
 
-step(q('a'), rule(999), {'X': 'a'}, [p('a')])
-step(p('a'), fact(1), {}, [])
---- stdout
-condition('C1', 'resolution', failed(1), 1)
-condition('C2', 'well_founded', 'ok', 2)
-condition('C3', 'justification', 'ok', 2)
-condition('C4', 'coverage', 'ok', 2)
-condition('C5', 're_decision', 'ok', 0)
-condition('C6', 'boundary_consistency', 'ok', 0)
-condition('C7', 'relevance', 'ok', 3)
-failure('C1', q('a'), …)
-steps(2)
-verified(1)
-recomputed(0)
-composed(0)
-trusted(0)
-claims(1)
-verdict(failed(1))
-
-=== C1: a fact step must cite a fact
-spec: 11.2
-args: --check-proof proof.py program.py
-exit: 1
---- program.py
-from peye import *
-fact(p('a'))
-forward(q(X), p(X))
---- proof.py
-q('a')
-
-step(q('a'), fact(2), {'X': 'a'}, [p('a')])
-step(p('a'), fact(1), {}, [])
+step(q('a'), clause(999), {'X': 'a'}, [p('a')])
+step(p('a'), clause(1), {}, [])
 --- stdout
 condition('C1', 'resolution', failed(1), 1)
 condition('C2', 'well_founded', 'ok', 2)
@@ -259,7 +229,7 @@ fact(same(X, X))
 --- proof.py
 same('a', 'b')
 
-step(same('a', 'b'), fact(1), {}, [])
+step(same('a', 'b'), clause(1), {}, [])
 --- stdout
 condition('C1', 'resolution', failed(1), 0)
 condition('C2', 'well_founded', 'ok', 1)
@@ -287,7 +257,7 @@ backward(p, p)
 --- proof.py
 p()
 
-step(p(), rule(1), {}, [p()])
+step(p(), clause(1), {}, [p()])
 --- stdout
 condition('C1', 'resolution', 'ok', 1)
 condition('C2', 'well_founded', failed(1), 1)
@@ -343,8 +313,8 @@ fact(p('a'))
 --- proof.py
 p('a')
 
-step(p('a'), fact(1), {}, [])
-step(p('a'), fact(1), {}, [])
+step(p('a'), clause(1), {}, [])
+step(p('a'), clause(1), {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 1)
 condition('C2', 'well_founded', 'ok', 1)
@@ -372,7 +342,7 @@ fact(p('a'))
 --- proof.py
 p('a')
 
-step(p('a'), fact(1), 'broken', [])
+step(p('a'), clause(1), 'broken', [])
 --- stdout
 condition('C1', 'resolution', 'ok', 0)
 condition('C2', 'well_founded', 'ok', 0)
@@ -540,8 +510,8 @@ forward(r(X), q(X))
 q('a')
 r('a')
 
-step(p('a'), fact(1), {}, [])
-step(r('a'), rule(3), {'X': 'a'}, [q('a')])
+step(p('a'), clause(1), {}, [])
+step(r('a'), clause(3), {'X': 'a'}, [q('a')])
 --- stdout
 condition('C1', 'resolution', 'ok', 2)
 condition('C2', 'well_founded', 'ok', 2)
@@ -571,7 +541,7 @@ forward(q(X), p(X))
 --- proof.py
 q('a')
 
-step(q('a'), rule(2), {'X': 'a'}, [p('a')])
+step(q('a'), clause(2), {'X': 'a'}, [p('a')])
 --- stdout
 condition('C1', 'resolution', 'ok', 1)
 condition('C2', 'well_founded', 'ok', 1)
@@ -598,7 +568,7 @@ forward(twin(Y), item(Y), same(Y, Y))
 --- proof.py
 twin(1)
 
-step(twin(1), rule(3), {'Y': 1}, [item(1), same(1, 1)])
+step(twin(1), clause(3), {'Y': 1}, [item(1), same(1, 1)])
 --- stdout
 condition('C1', 'resolution', 'ok', 1)
 condition('C2', 'well_founded', 'ok', 1)
@@ -627,8 +597,8 @@ forward(q(X), p(X))
 q('a')
 unrelated('x')
 
-step(q('a'), rule(2), {'X': 'a'}, [p('a')])
-step(p('a'), fact(1), {}, [])
+step(q('a'), clause(2), {'X': 'a'}, [p('a')])
+step(p('a'), clause(1), {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 2)
 condition('C2', 'well_founded', 'ok', 2)
@@ -736,7 +706,7 @@ fact(p('a'))
 call(p('a'))
 
 step(call(p('a')), 'control', {}, [p('a')])
-step(p('a'), fact(1), {}, [])
+step(p('a'), clause(1), {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 1)
 condition('C2', 'well_founded', 'ok', 2)
@@ -791,7 +761,7 @@ fact(q('a'))
 p('a') | q('a')
 
 step(p('a') | q('a'), 'control', {}, [q('a')])
-step(q('a'), fact(1), {}, [])
+step(q('a'), clause(1), {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 1)
 condition('C2', 'well_founded', 'ok', 2)
@@ -821,13 +791,13 @@ ok(1)
 ok(2)
 all_of([1, 2])
 
-step(ok(1), rule(3), {'X': 1}, [p(1), ~blocked(1)])
-step(p(1), fact(1), {}, [])
+step(ok(1), clause(3), {'X': 1}, [p(1), ~blocked(1)])
+step(p(1), clause(1), {}, [])
 step(~blocked(1), 'absent', {}, [])
-step(ok(2), rule(3), {'X': 2}, [p(2), ~blocked(2)])
-step(p(2), fact(2), {}, [])
+step(ok(2), clause(3), {'X': 2}, [p(2), ~blocked(2)])
+step(p(2), clause(2), {}, [])
 step(~blocked(2), 'absent', {}, [])
-step(all_of([1, 2]), rule(4), {'L': [1, 2]}, [findall(X, p(X), [1, 2])])
+step(all_of([1, 2]), clause(4), {'L': [1, 2]}, [findall(X, p(X), [1, 2])])
 step(findall(X, p(X), [1, 2]), 'collected', {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 5)
@@ -859,8 +829,8 @@ forward(ok(X), p(X), ~blocked(X))
 --- proof.py
 ok(1)
 
-step(ok(1), rule(2), {'X': 1}, [p(1), ~blocked(1)])
-step(p(1), fact(1), {}, [])
+step(ok(1), clause(2), {'X': 1}, [p(1), ~blocked(1)])
+step(p(1), clause(1), {}, [])
 step(~blocked(1), 'absent', {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 2)
@@ -891,8 +861,8 @@ forward(ok(X), p(X), ~blocked(X))
 --- proof.py
 ok(1)
 
-step(ok(1), rule(2), {'X': 1}, [p(1), ~blocked(1)])
-step(p(1), fact(1), {}, [])
+step(ok(1), clause(2), {'X': 1}, [p(1), ~blocked(1)])
+step(p(1), clause(1), {}, [])
 step(~blocked(1), 'absent', {'X': 1}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 2)
@@ -923,7 +893,7 @@ forward(q, ~p('a'))
 --- proof.py
 'q'
 
-step('q', rule(2), {}, [~p('a')])
+step('q', clause(2), {}, [~p('a')])
 step(~p('a'), 'absent', {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 1)
@@ -953,7 +923,7 @@ forward(q, ~(struct('<', 1, 2)))
 --- proof.py
 'q'
 
-step('q', rule(1), {}, [~(1 < 2)])
+step('q', clause(1), {}, [~(1 < 2)])
 step(~(1 < 2), 'absent', {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 1)
@@ -986,9 +956,9 @@ forward(q(X), s(X), ~p(X))
 p(1)
 q(1)
 
-step(p(1), rule(2), {'X': 1}, [s(1)])
-step(s(1), fact(1), {}, [])
-step(q(1), rule(3), {'X': 1}, [s(1), ~p(1)])
+step(p(1), clause(2), {'X': 1}, [s(1)])
+step(s(1), clause(1), {}, [])
+step(q(1), clause(3), {'X': 1}, [s(1), ~p(1)])
 step(~p(1), 'absent', {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 3)
@@ -1019,7 +989,7 @@ forward(all_of(L), findall(X, p(X), L))
 --- proof.py
 all_of([1])
 
-step(all_of([1]), rule(3), {'L': [1]}, [findall(X, p(X), [1])])
+step(all_of([1]), clause(3), {'L': [1]}, [findall(X, p(X), [1])])
 step(findall(X, p(X), [1]), 'collected', {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 1)
@@ -1049,8 +1019,8 @@ backward(ok(X), p(X), ~(p(Y) & q(Y)))
 --- proof.py
 ok(1)
 
-step(ok(1), rule(3), {'X': 1}, [p(1), ~(p(Y) & q(Y))])
-step(p(1), fact(1), {}, [])
+step(ok(1), clause(3), {'X': 1}, [p(1), ~(p(Y) & q(Y))])
+step(p(1), clause(1), {}, [])
 step(~(p(Y) & q(Y)), 'absent', {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 2)
@@ -1079,7 +1049,7 @@ fact(p('a'))
 --- proof.py
 p('a')
 
-step(p('a'), fact(1), {}, [])
+step(p('a'), clause(1), {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 1)
 condition('C2', 'well_founded', 'ok', 1)
@@ -1106,7 +1076,7 @@ fact(p('a'))
 --- proof.py
 p('a')
 
-step(p('a'), fact(1), {}, [])
+step(p('a'), clause(1), {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 1)
 condition('C2', 'well_founded', 'ok', 1)
@@ -1133,7 +1103,7 @@ fact(p(X))
 --- proof.py
 p(Z)
 
-step(p(Z), fact(1), {'X': Z}, [])
+step(p(Z), clause(1), {'X': Z}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 1)
 condition('C2', 'well_founded', 'ok', 1)
@@ -1161,8 +1131,8 @@ fact(p('a'), s('z'))
 --- proof.py
 p('a')
 
-step(p('a'), fact(1), {}, [])
-step(s('z'), fact(2), {}, [])
+step(p('a'), clause(1), {}, [])
+step(s('z'), clause(2), {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 2)
 condition('C2', 'well_founded', 'ok', 2)
@@ -1190,8 +1160,8 @@ query(p(X), q(X))
 --- proof.py
 p(1) & q(1)
 
-step(p(1), fact(1), {}, [])
-step(q(1), fact(2), {}, [])
+step(p(1), clause(1), {}, [])
+step(q(1), clause(2), {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 2)
 condition('C2', 'well_founded', 'ok', 2)
@@ -1218,8 +1188,8 @@ contradiction(account(O, B), B < 0)
 --- proof.py
 'false'
 
-step('false', rule(2), {'O': 'bob', 'B': -5}, [account('bob', -5), -5 < 0])
-step(account('bob', -5), fact(1), {}, [])
+step('false', clause(2), {'O': 'bob', 'B': -5}, [account('bob', -5), -5 < 0])
+step(account('bob', -5), clause(1), {}, [])
 step(-5 < 0, 'builtin', {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 2)
@@ -1272,7 +1242,7 @@ fact(p('a'))
 --- proof.py
 p('a')
 
-step(p('a'), fact(1), {}, [])
+step(p('a'), clause(1), {}, [])
 --- stdout json
 {"valid": true, "steps": 1, "claims": 1, "verified": 1, "redecided": 0, "composed": 0, "uses": 0,
  "trusted": [], "failures": [],
@@ -1319,8 +1289,8 @@ big(3)
 clause(2, fact(n(3)))
 clause(3, forward(big(X), n(X), X > 2))
 
-step(big(3), rule(3), {'X': 3}, [n(3), 3 > 2])
-step(n(3), fact(2), {}, [])
+step(big(3), clause(3), {'X': 3}, [n(3), 3 > 2])
+step(n(3), clause(2), {}, [])
 step(3 > 2, 'builtin', {}, [])
 --- stdout
 condition('C1', 'resolution', 'ok', 2)

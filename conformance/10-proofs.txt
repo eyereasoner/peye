@@ -17,9 +17,9 @@ clause(1, fact(type('socrates', 'human')))
 clause(2, fact(subclass_of('human', 'mortal')))
 clause(3, forward(type(S, B), type(S, A), subclass_of(A, B)))
 
-step(type('socrates', 'mortal'), rule(3), {'S': 'socrates', 'B': 'mortal', 'A': 'human'}, [type('socrates', 'human'), subclass_of('human', 'mortal')])
-step(type('socrates', 'human'), fact(1), {}, [])
-step(subclass_of('human', 'mortal'), fact(2), {}, [])
+step(type('socrates', 'mortal'), clause(3), {'S': 'socrates', 'B': 'mortal', 'A': 'human'}, [type('socrates', 'human'), subclass_of('human', 'mortal')])
+step(type('socrates', 'human'), clause(1), {}, [])
+step(subclass_of('human', 'mortal'), clause(2), {}, [])
 
 === a proof of a goal claims the goal's answers
 spec: 10.1
@@ -32,7 +32,7 @@ p(1)
 
 clause(1, fact(p(1)))
 
-step(p(1), fact(1), {}, [])
+step(p(1), clause(1), {}, [])
 
 === a fact with variables binds them
 spec: 10.3
@@ -45,7 +45,7 @@ same(1, 1)
 
 clause(1, fact(same(X, X)))
 
-step(same(1, 1), fact(1), {'X': 1}, [])
+step(same(1, 1), clause(1), {'X': 1}, [])
 
 === only the clauses a proof cites are displayed, by number
 spec: 10.1
@@ -60,8 +60,8 @@ big(3)
 clause(2, fact(n(3)))
 clause(3, backward(big(X), n(X), X > 2))
 
-step(big(3), rule(3), {'X': 3}, [n(3), 3 > 2])
-step(n(3), fact(2), {}, [])
+step(big(3), clause(3), {'X': 3}, [n(3), 3 > 2])
+step(n(3), clause(2), {}, [])
 step(3 > 2, 'builtin', {}, [])
 
 === call and once are control steps
@@ -78,9 +78,9 @@ clause(1, fact(p(1)))
 clause(2, fact(q(2)))
 
 step(call(p(1)), 'control', {}, [p(1)])
-step(p(1), fact(1), {}, [])
+step(p(1), clause(1), {}, [])
 step(once(q(2)), 'control', {}, [q(2)])
-step(q(2), fact(2), {}, [])
+step(q(2), clause(2), {}, [])
 
 === a disjunction is a control step with the side that held
 spec: 10.3
@@ -94,7 +94,7 @@ p(2) | p(1)
 clause(1, fact(p(1)))
 
 step(p(2) | p(1), 'control', {}, [p(1)])
-step(p(1), fact(1), {}, [])
+step(p(1), clause(1), {}, [])
 
 === a conjunction inside a control step is split into uses
 spec: 10.3
@@ -109,8 +109,8 @@ clause(1, fact(p(1)))
 clause(2, fact(q(1)))
 
 step(call(p(1) & q(1)), 'control', {}, [p(1), q(1)])
-step(p(1), fact(1), {}, [])
-step(q(1), fact(2), {}, [])
+step(p(1), clause(1), {}, [])
+step(q(1), clause(2), {}, [])
 
 === a negation is an absent step
 spec: 10.3
@@ -125,8 +125,8 @@ ok(1)
 clause(1, fact(p(1)))
 clause(2, forward(ok(X), p(X), ~q(X)))
 
-step(ok(1), rule(2), {'X': 1}, [p(1), ~q(1)])
-step(p(1), fact(1), {}, [])
+step(ok(1), clause(2), {'X': 1}, [p(1), ~q(1)])
+step(p(1), clause(1), {}, [])
 step(~q(1), 'absent', {}, [])
 
 === a findall is a collected step
@@ -141,7 +141,7 @@ all_of([1, 2])
 
 clause(3, forward(all_of(L), findall(X, p(X), L)))
 
-step(all_of([1, 2]), rule(3), {'L': [1, 2], 'X': …}, [findall(…, p(…), [1, 2])])
+step(all_of([1, 2]), clause(3), {'L': [1, 2], 'X': …}, [findall(…, p(…), [1, 2])])
 step(findall(…, p(…), [1, 2]), 'collected', {}, [])
 
 === a query's claims are the instances of its body
@@ -157,8 +157,8 @@ p(1) & q(1)
 clause(1, fact(p(1)))
 clause(2, fact(q(1)))
 
-step(p(1), fact(1), {}, [])
-step(q(1), fact(2), {}, [])
+step(p(1), clause(1), {}, [])
+step(q(1), clause(2), {}, [])
 
 === a goal used twice has one step
 spec: 10.3
@@ -176,9 +176,9 @@ clause(1, fact(p(1)))
 clause(2, forward('a', p(1)))
 clause(3, forward('b', p(1)))
 
-step('a', rule(2), {}, [p(1)])
-step(p(1), fact(1), {}, [])
-step('b', rule(3), {}, [p(1)])
+step('a', clause(2), {}, [p(1)])
+step(p(1), clause(1), {}, [])
+step('b', clause(3), {}, [p(1)])
 
 === steps follow a depth-first walk from the claims
 spec: 10.3
@@ -196,9 +196,9 @@ clause(1, fact(a(1)))
 clause(2, forward(b(X), a(X)))
 clause(3, forward(c(X), b(X), a(X)))
 
-step(c(1), rule(3), {'X': 1}, [b(1), a(1)])
-step(b(1), rule(2), {'X': 1}, [a(1)])
-step(a(1), fact(1), {}, [])
+step(c(1), clause(3), {'X': 1}, [b(1), a(1)])
+step(b(1), clause(2), {'X': 1}, [a(1)])
+step(a(1), clause(1), {}, [])
 
 === a derived fact used by a backward rule cites its forward rule
 spec: 10.3
@@ -215,9 +215,9 @@ clause(1, fact(p(1)))
 clause(2, forward(q(X), p(X)))
 clause(3, backward(r(X), q(X)))
 
-step(r(1), rule(3), {'X': 1}, [q(1)])
-step(q(1), rule(2), {'X': 1}, [p(1)])
-step(p(1), fact(1), {}, [])
+step(r(1), clause(3), {'X': 1}, [q(1)])
+step(q(1), clause(2), {'X': 1}, [p(1)])
+step(p(1), clause(1), {}, [])
 
 === a halted run's proof claims what it derived and false
 spec: 10.1
@@ -233,8 +233,8 @@ contradiction(account(O, B), B < 0)
 clause(1, fact(account('bob', -5)))
 clause(2, forward('false', account(O, B), B < 0))
 
-step('false', rule(2), {'O': 'bob', 'B': -5}, [account('bob', -5), -5 < 0])
-step(account('bob', -5), fact(1), {}, [])
+step('false', clause(2), {'O': 'bob', 'B': -5}, [account('bob', -5), -5 < 0])
+step(account('bob', -5), clause(1), {}, [])
 step(-5 < 0, 'builtin', {}, [])
 
 === arithmetic in a step is the instance of the clause
@@ -248,7 +248,7 @@ double(4, 8)
 
 clause(1, backward(double(X, Y), is_(Y, X * 2)))
 
-step(double(4, 8), rule(1), {'X': 4, 'Y': 8}, [is_(8, 4 * 2)])
+step(double(4, 8), clause(1), {'X': 4, 'Y': 8}, [is_(8, 4 * 2)])
 step(is_(8, 4 * 2), 'builtin', {}, [])
 
 === a run with no conclusions has a proof of two empty lines

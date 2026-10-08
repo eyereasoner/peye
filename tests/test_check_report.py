@@ -34,14 +34,14 @@ class CheckReports(unittest.TestCase):
 
     def test_each_failed_condition_is_represented_with_counts_and_a_failure(self):
         cases = [
-            ('C1', "p = preds('p')\nfact(p('a'))", "p('b')\nstep(p('b'), fact(1), {}, [])"),
-            ('C2', "p = preds('p')\nbackward(p, p)", "p()\nstep(p(), rule(1), {}, [p()])"),
+            ('C1', "p = preds('p')\nfact(p('a'))", "p('b')\nstep(p('b'), clause(1), {}, [])"),
+            ('C2', "p = preds('p')\nbackward(p, p)", "p()\nstep(p(), clause(1), {}, [p()])"),
             ('C3', '', "p()\nstep(p(), 'magic', {}, [])"),
             ('C4', '', "missing()\ntrue()\nstep(true(), 'builtin', {}, [])"),
             ('C5', '', "is_(7, 2 + 3)\nstep(is_(7, 2 + 3), 'builtin', {}, [])"),
             ('C6', "p, q = preds('p q')\nfact(p('a'))\nforward(q, ~p('a'))",
-             "q()\nstep(q(), rule(2), {}, [~p('a')])\nstep(~p('a'), 'absent', {}, [])"),
-            ('C7', "p = preds('p')\nfact(p('a'))", "p('a')\nstep(p('a'), fact(1), {}, [])"),
+             "q()\nstep(q(), clause(2), {}, [~p('a')])\nstep(~p('a'), 'absent', {}, [])"),
+            ('C7', "p = preds('p')\nfact(p('a'))", "p('a')\nstep(p('a'), clause(1), {}, [])"),
         ]
         for condition_id, source, document in cases:
             with self.subTest(condition_id):

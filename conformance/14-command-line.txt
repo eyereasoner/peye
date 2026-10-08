@@ -95,7 +95,7 @@ p(1)
 
 clause(1, fact(p(1)))
 
-step(p(1), fact(1), {}, [])
+step(p(1), clause(1), {}, [])
 --- stdout
 
 === --check-proof cannot be combined with --proof

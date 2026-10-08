@@ -355,7 +355,7 @@ class Solver:
                 env.undo(point.mark)
                 continue
             if recording:
-                pending = Pending(point.goal, Struct('rule' if body else 'fact', (clause.id,)),
+                pending = Pending(point.goal, Struct('clause', (clause.id,)),
                                   list(names.items()), None)
             else:
                 pending = QUIET
@@ -415,7 +415,7 @@ class Solver:
                                 if claim_id not in self.reported:
                                     self.reported[claim_id] = (claim, children, clause.id)
                                 continue
-                            node = Node(conclusion, Struct('rule', (clause.id,)), bindings, children)
+                            node = Node(conclusion, Struct('clause', (clause.id,)), bindings, children)
                             if type(conclusion) is str and conclusion == 'false':
                                 self.derived.append(node)
                                 self.halt_code = 65

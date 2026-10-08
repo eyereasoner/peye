@@ -239,7 +239,7 @@ def _check_steps(program, steps, allow_trusted, fail, spell):
         for use in uses:
             if not covered(use):
                 fail('C4', f'unjustified use {text(use)}', goal)
-        if is_term(by, 'rule', 1) or is_term(by, 'fact', 1):
+        if is_term(by, 'clause', 1):
             if _check_resolution(program, step, fail):
                 tally['verified'] += 1
         elif by == BUILTIN_BY:
@@ -289,7 +289,7 @@ CONTROL_BY = 'control'
 
 
 def _check_resolution(program, step, fail):
-    """C1: a rule or fact step names a source clause, its bindings name
+    """C1: a clause step names a source clause, its bindings name
     distinct variables of that clause, and under them one of the clause's
     heads is the step's goal and its body is exactly the step's uses."""
     goal, by, bindings, uses = step['goal'], step['by'], step['bindings'], step['uses']
@@ -298,9 +298,6 @@ def _check_resolution(program, step, fail):
               if type(clause_id) is int and 1 <= clause_id <= len(program.clauses) else None)
     if clause is None:
         fail('C1', f'unknown clause {text(by)}', goal)
-        return False
-    if by.name == 'fact' and (clause.forward or clause.body):
-        fail('C1', 'fact justification cites a rule', goal)
         return False
     head, body, names = fresh_clause(clause, f'check{clause_id}')
     env = Env()

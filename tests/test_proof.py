@@ -33,7 +33,7 @@ class Proofs(unittest.TestCase):
         self.invalid(proof().replace("step(q('a')", "step(q('b')"), 'C1')
         self.invalid(proof().replace("[p('a')]", "[p('b')]"), 'C1')
         self.invalid(proof().replace("{'X': 'a'}", "{'X': 'b'}"), 'C1')
-        self.invalid(proof().replace('rule(2)', 'rule(999)'), 'C1')
+        self.invalid(proof().replace('clause(2)', 'clause(999)'), 'C1')
 
     def test_omitted_steps_missing_premises_and_unrelated_claims_fail_coverage(self):
         self.invalid(re.sub(r"^step\(q\('a'\).*\n", '', proof(), flags=re.M), 'C4')
@@ -41,15 +41,15 @@ class Proofs(unittest.TestCase):
         self.invalid('', 'C4')
 
     def test_unknown_duplicate_and_malformed_justifications_are_rejected(self):
-        self.invalid(proof().replace('rule(2)', "'magic'"), 'C3')
-        self.invalid(proof() + "step(q('a'), rule(2), {}, [])\n", 'C3')
-        self.invalid("q('a')\nstep(q('a'), rule(2), 'broken', [])", 'C3')
-        self.invalid("q('a')\nx = step(q('a'), rule(2), {}, [])", 'C3')
+        self.invalid(proof().replace('clause(2)', "'magic'"), 'C3')
+        self.invalid(proof() + "step(q('a'), clause(2), {}, [])\n", 'C3')
+        self.invalid("q('a')\nstep(q('a'), clause(2), 'broken', [])", 'C3')
+        self.invalid("q('a')\nx = step(q('a'), clause(2), {}, [])", 'C3')
         self.invalid("unterminated(", 'C3')
         self.invalid("__import__('os').system('true')", 'C3')
 
     def test_cyclic_certificates_cannot_justify_their_own_conclusions(self):
-        self.invalid("p()\nstep(p(), rule(1), {}, [p()])", 'C2', program("p = preds('p')\nbackward(p, p)"))
+        self.invalid("p()\nstep(p(), clause(1), {}, [p()])", 'C2', program("p = preds('p')\nbackward(p, p)"))
 
     def test_primitive_results_are_recomputed_with_no_theory_clauses(self):
         self.invalid('is_(7, 2 + 3)\nstep(is_(7, 2 + 3), \'builtin\', {}, [])', 'C5', program(''))
@@ -60,7 +60,7 @@ class Proofs(unittest.TestCase):
         self.assertEqual(report['redecided'], 1)
 
     def test_source_variable_sharing_cannot_be_forged(self):
-        self.invalid("same('a', 'b')\nstep(same('a', 'b'), fact(1), {}, [])", 'C1',
+        self.invalid("same('a', 'b')\nstep(same('a', 'b'), clause(1), {}, [])", 'C1',
                      program("same = preds('same')\nX = vars('X')\nfact(same(X, X))"))
 
     def test_absence_and_collection_obligations_remain_visible(self):
@@ -79,14 +79,14 @@ class Proofs(unittest.TestCase):
         self.assertTrue(check_proof(source, document)['valid'])
         self.invalid(document, 'C6', program(text + "fact(blocked('a'))"))
         self.invalid(document.replace("['a', 'b']", "['a']"), 'C6')
-        self.invalid("q()\nstep(q(), rule(1), {}, [~(1 < 2)])\nstep(~(1 < 2), 'absent', {}, [])", 'C6',
+        self.invalid("q()\nstep(q(), clause(1), {}, [~(1 < 2)])\nstep(~(1 < 2), 'absent', {}, [])", 'C6',
                      program("q = preds('q')\nforward(q, ~(struct('<', 1, 2)))"))
 
     def test_claims_must_answer_the_goal_asked_and_every_step_must_serve_a_claim(self):
         asked = run(SOURCE, goal='p(X)', proof=True).proof
         self.assertTrue(check_proof(SOURCE, asked, goals=['p(X)'])['valid'])
         self.invalid(asked, 'C7')
-        orphan = check_proof(SOURCE, asked + "step(q('a'), rule(2), {'X': 'a'}, [p('a')])\n", goals=['p(X)'])
+        orphan = check_proof(SOURCE, asked + "step(q('a'), clause(2), {'X': 'a'}, [p('a')])\n", goals=['p(X)'])
         self.assertEqual([failure['condition'] for failure in orphan['failures']], ['C7'])
 
 

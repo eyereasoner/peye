@@ -91,7 +91,7 @@ all: it already *is* a list of facts.
 forward(depends(G, U), step_of(G, By, Uses), member(U, Uses))
 forward(depends(G, W), depends(G, U), depends(U, W))
 
-forward(rests_on(D, F), decision(D), depends(D, F), step_of(F, struct('fact', _), []))
+forward(rests_on(D, F), decision(D), depends(D, F), step_of(F, clause(_), []))
 forward(assumes(D, A), decision(D), depends(D, A), step_of(A, 'absent', []))
 forward(at_risk(D, F), rests_on(D, F), evidence_of(F, 'self_declared'))
 ```

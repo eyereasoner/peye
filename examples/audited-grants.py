@@ -57,11 +57,10 @@ backward(member(X, [_, *T]), member(X, T))
 forward(depends(G, U), step_of(G, By, Uses), member(U, Uses))
 forward(depends(G, W), depends(G, U), depends(U, W))
 
-# The data a decision rests on are the policy's facts in its support, and
-# its assumptions are the absences the proof could only take on trust.
-# (A step justified by fact N is written struct('fact', N) here, because
-# fact(...) states a fact of this program.)
-forward(rests_on(D, F), decision(D), depends(D, F), step_of(F, struct('fact', _), []))
+# The data a decision rests on are the policy's facts in its support: the
+# steps justified by a clause that used nothing. Its assumptions are the
+# absences the proof could only take on trust.
+forward(rests_on(D, F), decision(D), depends(D, F), step_of(F, clause(_), []))
 forward(assumes(D, A), decision(D), depends(D, A), step_of(A, 'absent', []))
 
 # Was the policy's own reasoning certified, and on what conditions?
