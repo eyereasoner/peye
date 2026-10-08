@@ -39,6 +39,7 @@ expressions, one per line. The names match the source: `lists.py` has
 | [deep-taxonomy-10000.py](https://github.com/eyereasoner/peye/blob/main/examples/deep-taxonomy-10000.py) | The same taxonomy benchmark at ten thousand levels |
 | [dog-license.py](https://github.com/eyereasoner/peye/blob/main/examples/dog-license.py) | A licensing threshold based on collected dog counts |
 | [easter.py](https://github.com/eyereasoner/peye/blob/main/examples/easter.py) | Easter Sunday by the anonymous Gregorian algorithm, 2021 to 2050 |
+| [existential-rules.py](https://github.com/eyereasoner/peye/blob/main/examples/existential-rules.py) | Existential rules: a fresh witness per activation, never a clash |
 | [expression-eval.py](https://github.com/eyereasoner/peye/blob/main/examples/expression-eval.py) | Recursive expression graphs used in forward inference |
 | [family-cousins.py](https://github.com/eyereasoner/peye/blob/main/examples/family-cousins.py) | Generations, family branches and cousin relationships |
 | [fibonacci.py](https://github.com/eyereasoner/peye/blob/main/examples/fibonacci.py) | Fast doubling for exact Fibonacci numbers, and the golden ratio |
@@ -348,9 +349,8 @@ verification sits inside one negation, so its certificate is two steps plus an
 what the obligation names. `four-color.py` collects the countries with
 `findall` and rules out conflicts with negation, so it carries both kinds.
 
-Run `python -m unittest discover -s tests` for the full suite, or
-`python -m unittest discover -s tests -p test_examples.py` for this corpus;
-`PEYE_EXAMPLES=socrates,graphs` limits it to those examples. Every example
+Run `./test` for the full suite, or `./test examples` for this corpus;
+`./test -k socrates` limits it to the tests that mention socrates. Every example
 runs through the API, and a few through all three CLI modes. Tests compare
 results with saved artifacts and do not overwrite them.
 

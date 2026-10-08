@@ -25,6 +25,7 @@ Each example comes with a short card deck that explains it for a wide audience: 
 | [deep-taxonomy-10000](https://eyereasoner.github.io/peye/examples/deck/deep-taxonomy-10000) | The same taxonomy benchmark at ten thousand levels |
 | [dog-license](https://eyereasoner.github.io/peye/examples/deck/dog-license) | A licensing threshold based on collected dog counts |
 | [easter](https://eyereasoner.github.io/peye/examples/deck/easter) | Easter Sunday by the anonymous Gregorian algorithm, 2021 to 2050 |
+| [existential-rules](https://eyereasoner.github.io/peye/examples/deck/existential-rules) | Existential rules: a fresh witness per activation, never a clash |
 | [expression-eval](https://eyereasoner.github.io/peye/examples/deck/expression-eval) | Recursive expression graphs used in forward inference |
 | [family-cousins](https://eyereasoner.github.io/peye/examples/deck/family-cousins) | Generations, family branches and cousin relationships |
 | [fibonacci](https://eyereasoner.github.io/peye/examples/deck/fibonacci) | Fast doubling for exact Fibonacci numbers, and the golden ratio |

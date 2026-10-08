@@ -48,6 +48,11 @@
     "trusted": []
   },
   {
+    "name": "existential-rules",
+    "description": "Existential rules: a fresh witness per activation, never a clash",
+    "trusted": []
+  },
+  {
     "name": "reachability",
     "description": "Finite closure in a graph containing a cycle",
     "trusted": []

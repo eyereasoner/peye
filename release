@@ -35,7 +35,7 @@ git switch main
 git pull --ff-only
 
 # Test before anything is changed, so a failing build is never tagged.
-python3 -m unittest discover -s tests
+./test
 
 # Raise the version everywhere it is written: peye/__init__.py,
 # pyproject.toml, the README's PyPI badge and every "peye X.Y.Z" in the

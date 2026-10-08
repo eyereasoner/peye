@@ -82,8 +82,13 @@ checkout:
 python -m peye examples/socrates.py
 python -m peye --proof examples/socrates.py
 python -m peye --proof examples/socrates.py | python -m peye --check-proof - examples/socrates.py
-python -m unittest discover -s tests
+./test
 ```
+
+`./test` runs every test, one numbered line each: the unit tests, the
+examples (each must reproduce its saved output, proof and report), and the
+conformance suite, in process and through the command line. `./test examples`
+runs one section, and `./test -k skolem` only the tests that mention skolem.
 
 To use peye from anywhere, install it; an editable install keeps using the
 checkout, so your edits take effect at once:
@@ -341,7 +346,7 @@ a variable, so a goal with no arguments is written `p()` or `'p'`.
 
 ## The examples
 
-The [example collection](https://eyereasoner.github.io/peye/examples/) is 61
+The [example collection](https://eyereasoner.github.io/peye/examples/) is 62
 complete programs, each with its conclusions, proof and C1-C7 report saved
 beside it (`examples/output/`, `examples/proof/`, `examples/check/`), and a
 [card deck](https://eyereasoner.github.io/peye/examples/deck/) that explains it
@@ -351,9 +356,8 @@ These are meant to be edited: change a fact, run it, look at what changed.
 Because the artifacts are saved, you can see exactly what your change did:
 
 ```sh
-python -m unittest discover -s tests -v                      # everything, one line per test as it runs
+./test                                                       # every test, one numbered line each
 python tools/update_examples.py                              # regenerate artifacts after an intended change
-python tools/timings.py --sort                               # load, run, prove and check times, slowest first
 python conformance/run.py                                    # the conformance suite of SPEC.md
 ```
 
