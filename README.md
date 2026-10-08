@@ -14,7 +14,7 @@ reasoning and checkable proofs.
 **[Examples](https://eyereasoner.github.io/peye/examples/)** ·
 **[Example decks](https://eyereasoner.github.io/peye/examples/deck/)** ·
 **[Specification](https://eyereasoner.github.io/peye/SPEC)** ·
-**[Conformance suite](conformance/)** ([run it in your browser](https://eyereasoner.github.io/peye/playground/conformance.html)) ·
+**[Conformance suite](conformance/)** ([run it in your browser](https://eyereasoner.github.io/peye/playground/conformance)) ·
 **[PyPI](https://pypi.org/project/peye/)**
 
 Most software computes an answer and the reasoning evaporates. peye makes a

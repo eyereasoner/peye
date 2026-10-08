@@ -16,7 +16,7 @@ python conformance/run.py --in-process                 # peye from this checkout
 
 The suite also runs with peye's own tests, as `tests/test_conformance.py`,
 and in the browser, against the playground's peye, at
-[eyereasoner.github.io/peye/playground/conformance.html](https://eyereasoner.github.io/peye/playground/conformance.html),
+[eyereasoner.github.io/peye/playground/conformance](https://eyereasoner.github.io/peye/playground/conformance),
 where each case's files, expected output and peye's output can be inspected.
 `manifest.json` lists the case files in order, with the SPEC sections and
 the topic of each.
