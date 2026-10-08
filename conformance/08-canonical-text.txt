@@ -69,13 +69,13 @@ unify(Some_Var1, Some_Var1)
 unify(f(lowercase), f(lowercase))
 unify(g(struct), g(struct))
 
-=== a variable name starting with EYE_ is encoded
+=== a variable name starting with VAR_ is encoded
 spec: 8.1
-args: --goal "unify(EYE_X, EYE_X)"
+args: --goal "unify(VAR_X, VAR_X)"
 --- stdin
 from peye import *
 --- stdout
-unify(EYE_EYE__X, EYE_EYE__X)
+unify(VAR_VAR__X, VAR_VAR__X)
 
 === lists and open lists
 spec: 8.1

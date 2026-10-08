@@ -395,11 +395,11 @@ Every term has exactly one canonical text, which is a Python expression.
 - An integer is written in decimal; a float as Python's `repr` (for example
   `0.1`, `1e+22`, `2.0`).
 - A variable is written as its name when the name is a Python identifier,
-  not a keyword, not `_` and does not begin with `EYE_`. Any other name is
-  written `EYE_` followed by the name with every ASCII letter and digit kept,
+  not a keyword, not `_` and does not begin with `VAR_`. Any other name is
+  written `VAR_` followed by the name with every ASCII letter and digit kept,
   every `_` doubled and every other character `c` replaced by `_hex_` where
   `hex` is the lowercase hexadecimal code point of `c`. The variable `X#12`
-  is thus written `EYE_X_23_12`.
+  is thus written `VAR_X_23_12`.
 - A list is written `[I1, I2, ...]`; an open list ends with `, *Tail`.
 
 ### 8.2 Compounds

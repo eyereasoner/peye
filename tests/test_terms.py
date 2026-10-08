@@ -9,9 +9,9 @@ from helpers import program
 class Terms(unittest.TestCase):
     def test_fresh_variable_names_cannot_collide_with_source_names(self):
         self.assertNotEqual(write(Var('X#1')), write(Var('X_1')))
-        self.assertNotEqual(write(Var('X#1')), write(Var('EYE_X_23_1')))
-        self.assertEqual(write(Struct('p', (Var('X#1'), Var('X_1')))), 'p(EYE_X_23_1, X_1)')
-        self.assertEqual(write(Var('EYE_X_23_1')), 'EYE_EYE__X__23__1')
+        self.assertNotEqual(write(Var('X#1')), write(Var('VAR_X_23_1')))
+        self.assertEqual(write(Struct('p', (Var('X#1'), Var('X_1')))), 'p(VAR_X_23_1, X_1)')
+        self.assertEqual(write(Var('VAR_X_23_1')), 'VAR_VAR__X__23__1')
 
     def test_the_trail_restores_bindings_and_occurs_checks_use_aliases(self):
         env = Env()

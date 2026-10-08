@@ -35,17 +35,17 @@ def callable_name(name):
 
 def valid_variable_name(name):
     return (name.isidentifier() and not keyword.iskeyword(name) and name != '_'
-            and not name.startswith('EYE_'))
+            and not name.startswith('VAR_'))
 
 
 def encode_name(name):
     """An injective identifier for a variable name that is not a valid one.
 
-    X#12, the name a renamed-apart clause variable gets, becomes EYE_X_23_12:
+    X#12, the name a renamed-apart clause variable gets, becomes VAR_X_23_12:
     letters and digits stay, an underscore doubles and any other character
     becomes _hex_. Names already starting with the prefix are encoded too.
     """
-    out = ['EYE_']
+    out = ['VAR_']
     for ch in name:
         if ch.isascii() and ch.isalnum():
             out.append(ch)

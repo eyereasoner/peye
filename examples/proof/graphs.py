@@ -18,5 +18,5 @@ step(t('alice', 'parent_of', 'carol'), clause(4), {'S': 'alice', 'P': 'parent_of
 step(base('alice', 'parent_of', 'carol'), clause(2), {}, [])
 step(allowed('carol'), clause(6), {'C': 'carol'}, [t('carol', 'child_of', 'alice'), ~t('carol', 'blocked', 'true')])
 step(~t('carol', 'blocked', 'true'), 'absent', {}, [])
-step(children('alice', ['bob', 'carol']), clause(7), {'P': 'alice', 'Children': ['bob', 'carol'], '__anon0': 'bob', 'C': EYE_C_23_14}, [base('alice', 'parent_of', 'bob'), findall(EYE_C_23_14, t(EYE_C_23_14, 'child_of', 'alice'), ['bob', 'carol'])])
-step(findall(EYE_C_23_14, t(EYE_C_23_14, 'child_of', 'alice'), ['bob', 'carol']), 'collected', {}, [])
+step(children('alice', ['bob', 'carol']), clause(7), {'P': 'alice', 'Children': ['bob', 'carol'], '__anon0': 'bob', 'C': VAR_C_23_14}, [base('alice', 'parent_of', 'bob'), findall(VAR_C_23_14, t(VAR_C_23_14, 'child_of', 'alice'), ['bob', 'carol'])])
+step(findall(VAR_C_23_14, t(VAR_C_23_14, 'child_of', 'alice'), ['bob', 'carol']), 'collected', {}, [])
