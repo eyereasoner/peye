@@ -12,6 +12,18 @@ import keyword
 import re
 
 from .terms import EMPTY, PeyeError, Struct, Var
+from .writer import decode_name
+
+
+def _variable_name(text):
+    """The name of the variable an identifier writes: names starting VAR_ are
+    encoded (Section 8.1)."""
+    if not text.startswith('VAR_'):
+        return text
+    name = decode_name(text)
+    if name is None:
+        raise PeyeError(f'{text} is not the encoding of a variable name')
+    return name
 
 BINARY = {
     ast.Add: '+', ast.Sub: '-', ast.Mult: '*', ast.Div: '/', ast.FloorDiv: '//',
@@ -92,8 +104,8 @@ class _Build:
         if kind is ast.Name:
             if node.id == '_':
                 self.reader.anonymous += 1
-                return Var(f'__anon{self.reader.anonymous - 1}')
-            return Var(node.id)
+                return Var(f'_#{self.reader.anonymous - 1}')
+            return Var(_variable_name(node.id))
         if kind is ast.UnaryOp:
             if not args:
                 return -node.operand.value
@@ -313,8 +325,8 @@ def _parse_document(text, reader):
             if not at('('):
                 if text == '_':
                     reader.anonymous += 1
-                    return Var(f'__anon{reader.anonymous - 1}'), False
-                return Var(text), False
+                    return Var(f'_#{reader.anonymous - 1}'), False
+                return Var(_variable_name(text)), False
             pos += 1
             args = sequence(')')
             if text == 'struct':

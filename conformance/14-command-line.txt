@@ -42,31 +42,42 @@ contradiction(p)
 --- stdout
 'false'
 
-=== an invalid proof exits with 1 and prints its report
+=== an invalid proof exits with 2 and prints its report
 spec: 14
 args: --check-proof proof.py program.py
-exit: 1
+exit: 2
 stderr: empty
 --- program.py
 from peye import *
 fact(p(1))
 --- proof.py
+p(2)
 --- stdout
 condition('C1', 'resolution', 'ok', 0)
 condition('C2', 'well_founded', 'ok', 0)
 condition('C3', 'justification', 'ok', 0)
-condition('C4', 'coverage', failed(1), 0)
+condition('C4', 'coverage', failed(1), 1)
 condition('C5', 're_decision', 'ok', 0)
 condition('C6', 'boundary_consistency', 'ok', 0)
-condition('C7', 'relevance', 'ok', 0)
-failure('C4', 'proof_document', …)
+condition('C7', 'relevance', failed(1), 1)
+failure('C4', p(2), …)
+failure('C7', p(2), …)
 steps(0)
 verified(0)
 recomputed(0)
 composed(0)
 trusted(0)
-claims(0)
-verdict(failed(1))
+claims(1)
+verdict(failed(2))
+
+=== a run without conclusions has an empty proof that checks
+spec: 7.7, 10.1, 11.5, 14
+args: --proof program.py
+stdout-literal: '\n\n'
+--- program.py
+from peye import *
+fact(p(1))
+query(q(X))
 
 === errors are printed as peye: message and exit with 1
 spec: 14
@@ -130,6 +141,15 @@ from peye import *
 === --json requires --check-proof
 spec: 14
 args: --json program.py
+exit: 1
+stderr: prefix peye:
+--- program.py
+from peye import *
+--- stdout
+
+=== --strict-proof requires --check-proof
+spec: 14
+args: --strict-proof program.py
 exit: 1
 stderr: prefix peye:
 --- program.py

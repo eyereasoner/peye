@@ -61,21 +61,76 @@ d(-0.0)
 
 === a variable is written as its name
 spec: 8.1
-args: --goal "unify(Some_Var1, Some_Var1)" --goal "unify(f(lowercase), f(lowercase))" --goal "unify(g(struct), g(struct))"
+args: --proof
 --- stdin
 from peye import *
+Lower, Kw = vars('lowercase struct')
+fact(p(Some_Var1, Lower, Kw))
+query(p(A, B, C))
 --- stdout
-unify(Some_Var1, Some_Var1)
-unify(f(lowercase), f(lowercase))
-unify(g(struct), g(struct))
+p(A, B, C)
+
+clause(1, fact(p(Some_Var1, lowercase, struct)))
+
+step(p(A, B, C), clause(1), {'Some_Var1': A, 'lowercase': B, 'struct': C}, [])
 
 === a variable name starting with VAR_ is encoded
 spec: 8.1
-args: --goal "unify(VAR_X, VAR_X)"
+args: --proof
+--- stdin
+from peye import *
+Odd = vars('VAR_X')
+fact(p(Odd))
+query(p(A))
+--- stdout
+p(A)
+
+clause(1, fact(p(VAR_VAR__X)))
+
+step(p(A), clause(1), {'VAR_X': A}, [])
+
+=== an encoded variable name reads back as the variable it encodes
+spec: 8.1, 9
+args: --goal "unify(VAR_X, 1) & unify(X, Y)"
 --- stdin
 from peye import *
 --- stdout
-unify(VAR_VAR__X, VAR_VAR__X)
+unify(1, 1) & unify(1, 1)
+
+=== an identifier starting with VAR_ that encodes no name is rejected
+spec: 8.1, 9
+args: --goal "unify(VAR_a_b, 1)"
+exit: 1
+stderr: prefix peye:
+--- stdin
+from peye import *
+--- stdout
+
+=== variables in conclusions are named A, B, ... in order of first occurrence
+spec: 8.3
+args: --goal "unify(f(Y, X, Y), Z)" --goal "unify(g(P), Q)"
+--- stdin
+from peye import *
+--- stdout
+unify(f(A, B, A), f(A, B, A))
+unify(g(C), g(C))
+
+=== each _ of a clause is a variable named _0, _1, ... skipping names the clause uses
+spec: 4.4
+args: --proof --skolem-genid test
+--- stdin
+from peye import *
+fact(p(1))
+forward(q(X, _, [X, *_]), p(X), unify(_0, _))
+--- stdout
+q(1, 'https://eyereasoner.github.io/.well-known/genid/test#sk_0', [1, *'https://eyereasoner.github.io/.well-known/genid/test#sk_1'])
+
+clause(1, fact(p(1)))
+clause(2, forward(q(X, _1, [X, *_2]), p(X), unify(_0, _3)))
+
+step(q(1, 'https://eyereasoner.github.io/.well-known/genid/test#sk_0', [1, *'https://eyereasoner.github.io/.well-known/genid/test#sk_1']), clause(2), {'X': 1, '_1': 'https://eyereasoner.github.io/.well-known/genid/test#sk_0', '_2': 'https://eyereasoner.github.io/.well-known/genid/test#sk_1', '_0': A, '_3': A}, [p(1), unify(A, A)])
+step(p(1), clause(1), {}, [])
+step(unify(A, A), 'builtin', {}, [])
 
 === lists and open lists
 spec: 8.1
@@ -84,7 +139,7 @@ args: --goal "unify(L, [1, [2, 3], []])" --goal "unify(M, [1, *T])" --goal "unif
 from peye import *
 --- stdout
 unify([1, [2, 3], []], [1, [2, 3], []])
-unify([1, *T], [1, *T])
+unify([1, *A], [1, *A])
 unify([1, *'b'], [1, *'b'])
 
 === a compound named by an identifier is written as a call

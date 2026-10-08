@@ -58,25 +58,73 @@ fact(p(1))
 forward(p(X), p(X))
 --- stdout
 
-=== an unbound head variable becomes sk_0
+=== an unbound head variable becomes a Skolem atom of its own per activation
 spec: 7.2
+args: --skolem-genid test program.py
 --- program.py
 from peye import *
 fact(person('ann'), person('bob'))
 forward(has_parent(X, Y), person(X))
+forward(siblings(X, Y), has_parent(X, P), has_parent(Y, P), not_identical(X, Y))
 --- stdout
-has_parent('ann', 'sk_0')
-has_parent('bob', 'sk_0')
+has_parent('ann', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
+has_parent('bob', 'https://eyereasoner.github.io/.well-known/genid/test#sk_1')
+
+=== activations giving the same head instance share their Skolem atoms
+spec: 7.2
+args: --skolem-genid test program.py
+--- program.py
+from peye import *
+fact(p('a', 1), p('a', 2))
+forward(q(X, B), p(X, Y))
+--- stdout
+q('a', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
+
+=== each rule has Skolem atoms of its own
+spec: 7.2
+args: --skolem-genid test program.py
+--- program.py
+from peye import *
+fact(p('a', 1))
+forward(q(X, B), p(X, Y))
+forward(q2(X, B), p(X, Y))
+--- stdout
+q('a', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
+q2('a', 'https://eyereasoner.github.io/.well-known/genid/test#sk_1')
+
+=== a rule that keeps meeting new activations exceeds the bound
+spec: 7.2, 7.3
+args: --max-iterations 10 program.py
+exit: 1
+stderr: prefix peye:
+--- program.py
+from peye import *
+fact(person('ann'))
+forward(has_parent(X, P) & person(P), person(X))
+--- stdout
+
+=== the same activation in a later round gets the same Skolem atoms
+spec: 7.2
+args: --skolem-genid test program.py
+--- program.py
+from peye import *
+fact(person('ann'))
+forward(has_parent(X, Y), person(X))
+forward(known(X), has_parent(X, P))
+--- stdout
+has_parent('ann', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
+known('ann')
 
 === Skolem names are numbered by first occurrence and shared across heads
 spec: 7.2
+args: --skolem-genid test program.py
 --- program.py
 from peye import *
 fact(person('ann'))
 forward(r(X, Y, Z, Y) & s(Z), person(X))
 --- stdout
-r('ann', 'sk_0', 'sk_1', 'sk_0')
-s('sk_1')
+r('ann', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0', 'https://eyereasoner.github.io/.well-known/genid/test#sk_1', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
+s('https://eyereasoner.github.io/.well-known/genid/test#sk_1')
 
 === query reports each instance once
 spec: 7.2, 7.6
@@ -99,7 +147,7 @@ query(p(Y))
 q(2)
 p(1)
 
-=== without query output, the derived facts are the conclusions
+=== a query without answers concludes nothing
 spec: 7.6
 --- program.py
 from peye import *
@@ -107,7 +155,26 @@ fact(p(1))
 forward(q(X), p(X))
 query(r(X))
 --- stdout
-q(1)
+
+=== Skolem atoms cannot clash with the program's atoms
+spec: 7.2
+args: --skolem-genid test program.py
+--- program.py
+from peye import *
+fact(p('a'), knows('sk_0', 'x'))
+forward(q(X, Y), p(X))
+forward(r(X, Z), q(X, Y), knows(Y, Z))
+--- stdout
+q('a', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
+
+=== without a genid, each run's Skolem atoms have a random one
+spec: 7.2, 14
+--- program.py
+from peye import *
+fact(p('a'))
+forward(q(X, Y), p(X))
+--- stdout
+q('a', 'https://eyereasoner.github.io/.well-known/genid/…#sk_0')
 
 === query output replaces the derived facts
 spec: 7.6
@@ -224,7 +291,7 @@ stderr: nonempty
 --- program.py
 from peye import *
 fact(p(1))
-forward(q(X), p(X))
+forward(q(X), p(X), p(X))
 --- stdout
 
 === bounds large enough change nothing

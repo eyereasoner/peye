@@ -67,7 +67,7 @@ verdict('checked')
 === C1: a clause display that differs from the program fails
 spec: 11.1, 11.2
 args: --check-proof proof.py program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
@@ -99,7 +99,7 @@ verdict(failed(1))
 === C1: the program, not the display, is the authority
 spec: 11.2
 args: --check-proof proof.py program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('b'))
@@ -132,7 +132,7 @@ verdict(failed(2))
 === C1: a binding that disagrees with the goal fails
 spec: 11.2
 args: --check-proof proof.py program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
@@ -162,7 +162,7 @@ verdict(failed(1))
 === C1: a use that is not the rule's body fails
 spec: 11.2
 args: --check-proof proof.py program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'), p('b'))
@@ -192,7 +192,7 @@ verdict(failed(1))
 === C1: an unknown clause number fails
 spec: 11.2
 args: --check-proof proof.py program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
@@ -222,7 +222,7 @@ verdict(failed(1))
 === C1: variable sharing in a source clause cannot be forged
 spec: 11.2
 args: --check-proof proof.py --goal "same(A, B)" program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(same(X, X))
@@ -250,7 +250,7 @@ verdict(failed(1))
 === C2: a step that depends on itself fails
 spec: 11.3
 args: --check-proof proof.py --goal "p()" program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 backward(p, p)
@@ -276,9 +276,9 @@ claims(1)
 verdict(failed(1))
 
 === C3: an unknown justification fails
-spec: 11.1
+spec: 11.4
 args: --check-proof proof.py --goal "p(X)" program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
@@ -306,7 +306,7 @@ verdict(failed(1))
 === C3: two steps for one goal fail
 spec: 11.1
 args: --check-proof proof.py --goal "p(X)" program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
@@ -335,7 +335,7 @@ verdict(failed(1))
 === C3: bindings that are not a dictionary fail
 spec: 11.1
 args: --check-proof proof.py --goal "p(X)" program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
@@ -347,12 +347,11 @@ step(p('a'), clause(1), 'broken', [])
 condition('C1', 'resolution', 'ok', 0)
 condition('C2', 'well_founded', 'ok', 0)
 condition('C3', 'justification', failed(1), 0)
-condition('C4', 'coverage', failed(2), 1)
+condition('C4', 'coverage', failed(1), 1)
 condition('C5', 're_decision', 'ok', 0)
 condition('C6', 'boundary_consistency', 'ok', 0)
 condition('C7', 'relevance', 'ok', 1)
 failure('C3', p('a'), …)
-failure('C4', 'proof_document', …)
 failure('C4', p('a'), …)
 steps(0)
 verified(0)
@@ -360,12 +359,12 @@ recomputed(0)
 composed(0)
 trusted(0)
 claims(1)
-verdict(failed(3))
+verdict(failed(2))
 
 === C3: a builtin step has no uses
-spec: 11.1
+spec: 11.4
 args: --check-proof proof.py --goal "1 < 2" program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
@@ -391,9 +390,9 @@ claims(1)
 verdict(failed(1))
 
 === C3: a builtin step must name a primitive
-spec: 11.1
+spec: 11.4
 args: --check-proof proof.py --goal "p(X)" program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
@@ -418,10 +417,10 @@ trusted(0)
 claims(1)
 verdict(failed(1))
 
-=== C3: a document that does not read fails, and has nothing to cover
-spec: 9, 11.1, 11.4
+=== C3: a document that does not read fails
+spec: 9, 11.1
 args: --check-proof proof.py program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
@@ -431,24 +430,23 @@ x = 1
 condition('C1', 'resolution', 'ok', 0)
 condition('C2', 'well_founded', 'ok', 0)
 condition('C3', 'justification', failed(1), 0)
-condition('C4', 'coverage', failed(1), 0)
+condition('C4', 'coverage', 'ok', 0)
 condition('C5', 're_decision', 'ok', 0)
 condition('C6', 'boundary_consistency', 'ok', 0)
 condition('C7', 'relevance', 'ok', 0)
 failure('C3', 'proof_document', …)
-failure('C4', 'proof_document', …)
 steps(0)
 verified(0)
 recomputed(0)
 composed(0)
 trusted(0)
 claims(0)
-verdict(failed(2))
+verdict(failed(1))
 
 === C3: a document is never executed
 spec: 9, 11.1, 15
 args: --check-proof proof.py program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
@@ -458,37 +456,11 @@ __import__('os').system('echo executed')
 condition('C1', 'resolution', 'ok', 0)
 condition('C2', 'well_founded', 'ok', 0)
 condition('C3', 'justification', failed(1), 0)
-condition('C4', 'coverage', failed(1), 0)
+condition('C4', 'coverage', 'ok', 0)
 condition('C5', 're_decision', 'ok', 0)
 condition('C6', 'boundary_consistency', 'ok', 0)
 condition('C7', 'relevance', 'ok', 0)
 failure('C3', 'proof_document', …)
-failure('C4', 'proof_document', …)
-steps(0)
-verified(0)
-recomputed(0)
-composed(0)
-trusted(0)
-claims(0)
-verdict(failed(2))
-
-=== C4: an empty document fails
-spec: 11.4
-args: --check-proof proof.py program.py
-exit: 1
---- program.py
-from peye import *
-fact(p('a'))
---- proof.py
---- stdout
-condition('C1', 'resolution', 'ok', 0)
-condition('C2', 'well_founded', 'ok', 0)
-condition('C3', 'justification', 'ok', 0)
-condition('C4', 'coverage', failed(1), 0)
-condition('C5', 're_decision', 'ok', 0)
-condition('C6', 'boundary_consistency', 'ok', 0)
-condition('C7', 'relevance', 'ok', 0)
-failure('C4', 'proof_document', …)
 steps(0)
 verified(0)
 recomputed(0)
@@ -497,10 +469,33 @@ trusted(0)
 claims(0)
 verdict(failed(1))
 
-=== C4: a claim and a use without a step fail
-spec: 11.4
+=== C4: an empty document claims nothing, and so checks
+spec: 11.5
 args: --check-proof proof.py program.py
-exit: 1
+--- program.py
+from peye import *
+fact(p('a'))
+--- proof.py
+--- stdout
+condition('C1', 'resolution', 'ok', 0)
+condition('C2', 'well_founded', 'ok', 0)
+condition('C3', 'justification', 'ok', 0)
+condition('C4', 'coverage', 'ok', 0)
+condition('C5', 're_decision', 'ok', 0)
+condition('C6', 'boundary_consistency', 'ok', 0)
+condition('C7', 'relevance', 'ok', 0)
+steps(0)
+verified(0)
+recomputed(0)
+composed(0)
+trusted(0)
+claims(0)
+verdict('checked')
+
+=== C4: a claim and a use without a step fail
+spec: 11.5
+args: --check-proof proof.py program.py
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
@@ -532,7 +527,7 @@ claims(2)
 verdict(failed(3))
 
 === C4: a use may be a fact of the program without a step
-spec: 11.4
+spec: 11.5
 args: --check-proof proof.py program.py
 --- program.py
 from peye import *
@@ -559,7 +554,7 @@ claims(1)
 verdict('checked')
 
 === C4: a use may be an instance of a fact with variables
-spec: 11.4
+spec: 11.5
 args: --check-proof proof.py program.py
 --- program.py
 from peye import *
@@ -586,9 +581,9 @@ claims(1)
 verdict('checked')
 
 === C4 and C7: an unrelated claim fails
-spec: 11.4, 11.7
+spec: 11.5, 11.8
 args: --check-proof proof.py program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
@@ -618,7 +613,7 @@ claims(2)
 verdict(failed(2))
 
 === C5: a primitive is recomputed
-spec: 11.5
+spec: 11.6
 args: --check-proof proof.py --goal "is_(5, 2 + 3)" program.py
 --- program.py
 from peye import *
@@ -643,9 +638,9 @@ claims(1)
 verdict('checked')
 
 === C5: a primitive that does not hold fails
-spec: 11.5
+spec: 11.6
 args: --check-proof proof.py --goal "is_(7, 2 + 3)" program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 --- proof.py
@@ -670,9 +665,9 @@ claims(1)
 verdict(failed(1))
 
 === C5: a primitive that would need to bind something fails
-spec: 11.5
+spec: 11.6
 args: --check-proof proof.py --goal "is_(X, 2 + 3)" program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 --- proof.py
@@ -697,7 +692,7 @@ claims(1)
 verdict(failed(1))
 
 === C5: a control step is composed of its uses
-spec: 11.5
+spec: 11.6
 args: --check-proof proof.py --goal "call(p(X))" program.py
 --- program.py
 from peye import *
@@ -724,9 +719,9 @@ claims(1)
 verdict('checked')
 
 === C5: a control step must follow from its uses
-spec: 11.5
+spec: 11.6
 args: --check-proof proof.py --goal "call(p(X))" program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
@@ -752,7 +747,7 @@ claims(1)
 verdict(failed(1))
 
 === C5: either side of a disjunction composes it
-spec: 11.5
+spec: 11.6
 args: --check-proof proof.py --goal "p(X) | q(X)" program.py
 --- program.py
 from peye import *
@@ -779,7 +774,7 @@ claims(1)
 verdict('checked')
 
 === obligations are listed and make the verdict conditional
-spec: 11.6, 12
+spec: 11.7, 12
 args: --check-proof proof.py program.py
 --- program.py
 from peye import *
@@ -819,9 +814,9 @@ claims(3)
 verdict('checked_with_obligations')
 
 === strict checking forbids trusted boundaries
-spec: 11.5, 14
+spec: 11.6, 14
 args: --strict-proof --check-proof proof.py program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p(1))
@@ -851,9 +846,9 @@ claims(1)
 verdict(failed(1))
 
 === C3: a trusted boundary has no bindings or uses
-spec: 11.1
+spec: 11.4
 args: --check-proof proof.py program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p(1))
@@ -883,9 +878,9 @@ claims(1)
 verdict(failed(1))
 
 === C6: an absence contradicted by a program fact fails
-spec: 11.6
+spec: 11.7
 args: --check-proof proof.py program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
@@ -914,9 +909,9 @@ claims(1)
 verdict(failed(1))
 
 === C6: an absence contradicted by a primitive fails
-spec: 11.6
+spec: 11.7
 args: --check-proof proof.py program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 forward(q, ~(struct('<', 1, 2)))
@@ -944,9 +939,9 @@ claims(1)
 verdict(failed(1))
 
 === C6: an absence contradicted by a step of the proof fails
-spec: 11.6
+spec: 11.7
 args: --check-proof proof.py program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(s(1))
@@ -979,9 +974,9 @@ claims(2)
 verdict(failed(1))
 
 === C6: a collection missing a solution fails
-spec: 11.6
+spec: 11.7
 args: --check-proof proof.py program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p(1), p(2))
@@ -1010,7 +1005,7 @@ claims(1)
 verdict(failed(1))
 
 === C6: an absence over a conjunction with shared variables stays undecided
-spec: 11.6
+spec: 11.7
 args: --check-proof proof.py --goal "ok(X)" program.py
 --- program.py
 from peye import *
@@ -1040,9 +1035,9 @@ claims(1)
 verdict('checked_with_obligations')
 
 === C7: a claim must answer the question asked
-spec: 11.7
+spec: 11.8
 args: --check-proof proof.py program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'))
@@ -1068,7 +1063,7 @@ claims(1)
 verdict(failed(1))
 
 === C7: goals asked from outside are the questions
-spec: 11.7
+spec: 11.8
 args: --check-proof proof.py --goal "p(X)" program.py
 --- program.py
 from peye import *
@@ -1094,9 +1089,9 @@ claims(1)
 verdict('checked')
 
 === C7: a claim must be an instance of the question, not more general
-spec: 11.7
+spec: 11.8
 args: --check-proof proof.py --goal "p('a')" program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p(X))
@@ -1122,9 +1117,9 @@ claims(1)
 verdict(failed(1))
 
 === C7: a step that serves no claim fails
-spec: 11.7
+spec: 11.8
 args: --check-proof proof.py --goal "p(X)" program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 fact(p('a'), s('z'))
@@ -1151,7 +1146,7 @@ claims(1)
 verdict(failed(1))
 
 === C7: a query's body is a question
-spec: 11.7
+spec: 11.8
 args: --check-proof proof.py program.py
 --- program.py
 from peye import *
@@ -1179,7 +1174,7 @@ claims(1)
 verdict('checked')
 
 === a halted proof is checked against the forward heads
-spec: 11.7
+spec: 11.8
 args: --check-proof proof.py --goal "p(X)" program.py
 --- program.py
 from peye import *
@@ -1210,7 +1205,7 @@ verdict('checked')
 === a report's variables are lettered in order of appearance
 spec: 12
 args: --check-proof proof.py --goal "p(X, Y)" program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 --- proof.py
@@ -1219,11 +1214,10 @@ p(Zebra, Aardvark)
 condition('C1', 'resolution', 'ok', 0)
 condition('C2', 'well_founded', 'ok', 0)
 condition('C3', 'justification', 'ok', 0)
-condition('C4', 'coverage', failed(2), 1)
+condition('C4', 'coverage', failed(1), 1)
 condition('C5', 're_decision', 'ok', 0)
 condition('C6', 'boundary_consistency', 'ok', 0)
 condition('C7', 'relevance', 'ok', 1)
-failure('C4', 'proof_document', …)
 failure('C4', p(A, B), …)
 steps(0)
 verified(0)
@@ -1231,7 +1225,7 @@ recomputed(0)
 composed(0)
 trusted(0)
 claims(1)
-verdict(failed(2))
+verdict(failed(1))
 
 === a report as JSON
 spec: 12, 14
@@ -1257,7 +1251,7 @@ step(p('a'), clause(1), {}, [])
 === a failing report as JSON
 spec: 12, 14
 args: --json --check-proof proof.py --goal "is_(7, 2 + 3)" program.py
-exit: 1
+exit: 2
 --- program.py
 from peye import *
 --- proof.py

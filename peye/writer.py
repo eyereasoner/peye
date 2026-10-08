@@ -10,6 +10,7 @@ name is not a Python identifier is written ``struct('name', Arg, ...)``.
 """
 import functools
 import keyword
+import re
 
 from .terms import Struct, Var, deref
 
@@ -56,6 +57,32 @@ def encode_name(name):
     return ''.join(out)
 
 
+_ENCODED = re.compile(r'([A-Za-z0-9])|__|_([0-9a-f]+)_')
+
+
+def decode_name(text):
+    """The variable name an identifier written by encode_name stands for, or
+    None when the identifier is not such an encoding."""
+    out = []
+    position = 4
+    while position < len(text):
+        match = _ENCODED.match(text, position)
+        if match is None:
+            return None
+        if match.group(1):
+            out.append(match.group(1))
+        elif match.group(2):
+            code = int(match.group(2), 16)
+            if code > 0x10FFFF:
+                return None
+            out.append(chr(code))
+        else:
+            out.append('_')
+        position = match.end()
+    name = ''.join(out)
+    return name if encode_name(name) == text else None
+
+
 @functools.lru_cache(maxsize=4096)
 def variable_text(name):
     return name if valid_variable_name(name) else encode_name(name)
@@ -79,6 +106,42 @@ def _ambiguous_prefix(term):
     # -(1) would read back as the number -1.
     arg = term.args[0]
     return term.name == '-' and (type(arg) is int or type(arg) is float)
+
+
+def letter_name(n):
+    """The nth name of A, B, ..., Z, A1, ..., Z1, A2, ..."""
+    return chr(65 + n % 26) + (str(n // 26) if n >= 26 else '')
+
+
+class Lettering(dict):
+    """Names for write(): each variable met is named A, B, ..., Z, A1, ... in
+    the order the writing meets it, across every write sharing the lettering."""
+
+    def get(self, name, default=None):
+        letter = dict.get(self, name)
+        if letter is None:
+            letter = self[name] = letter_name(len(self))
+        return letter
+
+
+class _Spy:
+    """Names for write() that name nothing but notice a variable."""
+    __slots__ = ('seen',)
+
+    def __init__(self):
+        self.seen = False
+
+    def get(self, name, default=None):
+        self.seen = True
+        return None
+
+
+def write_noting_variables(term):
+    """The canonical text of a term, and whether it has a variable."""
+    spy = _Spy()
+    out = []
+    _format(term, None, spy, out)
+    return ''.join(out), spy.seen
 
 
 def write(term, env=None, names=None):

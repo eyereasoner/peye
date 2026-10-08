@@ -80,8 +80,9 @@ only when, they appear in all capitals.
   (Section 8) are equal; variables are identical only to themselves.
 - **Ground**: containing no variable.
 - **Conclusion**: a term a run reports (Section 7.6).
-- **Document**: text holding one expression per line (Sections 9-12).
-- **Reasoner**: an implementation of Sections 4-8 and 10.
+- **Document**: text holding a sequence of expressions (Sections 9-12).
+- **Reasoner**: an implementation of Sections 3-10, which checks its own
+  proofs as Section 11 describes.
 - **Checker**: an implementation of Sections 9, 11 and 12.
 
 ## 3. Terms
@@ -117,8 +118,11 @@ pairwise.
 then atoms, then compounds. Numbers are ordered by value, compared exactly
 across integers and floats; a float precedes an integer of equal value.
 Atoms are ordered by the code points of their characters. Compounds are
-ordered by arity, then name, then arguments from left to right. Two distinct
-variables are ordered by their first occurrence within one comparison.
+ordered by arity, then name, then arguments from left to right. Distinct
+variables are ordered by the code points of their names, so the order is the
+same in every comparison. The names of renamed-apart variables (Section 7.1)
+are implementation-specific, so a program SHOULD NOT depend on the relative
+order of two distinct unbound variables.
 
 ## 4. Programs
 
@@ -195,11 +199,19 @@ Within a program, a Python `str` is an atom, an `int` or `float` a number, a
 Python list a list, and `[H, *T]` the list with head `H` and tail `T`.
 `struct('name', A1, ...)` builds a compound with any name, and
 `struct('name')` the atom. Every occurrence of `_` in a clause is a distinct
-variable. Python operators on variables and compounds build compound terms
+variable, an **anonymous variable**: the occurrences are named `_0`, `_1`,
+... in the order of the clause's text, skipping names the clause already
+uses, and clause displays and bindings (Section 10) show these names. A
+program SHOULD NOT name its own variables `_` followed by digits, which
+Section 5.1 treats as anonymous.
+
+Python operators on variables and compounds build compound terms
 (Section 8.2), for example `X + 1` builds `'+'(X, 1)` and `X < Y` builds
 `'<'(X, Y)`. A term MUST NOT be used as a Python truth value; an
 implementation MUST raise an error when it is, which catches a chained
-comparison such as `X > 1 & Y < 2`.
+comparison such as `X > 1 & Y < 2`. An operator applied only to plain Python
+values is Python's own: `1 < 2` is the Python `True`, which is not a term,
+and stating it is an error.
 
 ### 4.5 Stratification
 
@@ -228,10 +240,14 @@ name MAY have different ranks.
 | --- | --- | --- |
 | `A & B` | `','(A, B)` | Conjunction: solve `A`, then `B`. |
 | `A \| B` | `';'(A, B)` | Disjunction: the solutions of `A`, then those of `B`. |
-| `~G` | `'~'(G)` | Negation: succeeds once, binding nothing, when `G` has no solution. `G` MUST be ground when the negation is solved. |
+| `~G` | `'~'(G)` | Negation: succeeds once, binding nothing, when `G` has no solution. When the negation is solved, every variable of `G` MUST be bound except anonymous ones, which stand for any value: `~q(X, _)` succeeds when `q(X, Y)` has no solution for any `Y`. A named unbound variable is an error. |
 | `call(G)` | `call(G)` | The solutions of `G`. |
 | `once(G)` | `once(G)` | The first solution of `G`. |
 | `findall(T, G, L)` | `findall(T, G, L)` | Unifies `L` with the list of instances of `T`, one per solution of `G`, in order, each renamed apart. |
+
+A variable is anonymous when its name, up to any `#` a renaming apart
+(Section 7.1) adds, is `_` followed by digits (Section 4.4), or is one a
+reader made for a `_` (Section 9).
 
 In a program (Section 4), `not_(G1, G2, ...)` builds `~(G1 & G2 & ...)`, and
 `call` and `once` with several goals build `call(G1 & G2 & ...)` and
@@ -269,7 +285,10 @@ primitive called outside its patterns raises an error.
 | `atom_concat` | `atom_concat(+A, +B, ?AB)`, `atom_concat(?A, ?B, +AB)` | `AB` is `A` followed by `B`; with `AB` given, every split, shortest `A` first. |
 
 Every primitive except `atom_concat` has at most one solution. Primitives
-MUST be pure: their solutions depend only on their arguments.
+MUST be pure: their solutions depend only on their arguments. A primitive
+given an argument of the wrong kind for its patterns raises an error, as
+`atom_length(123, N)` does; one given arguments of the right kinds that has
+no solution fails, as `arg(5, f(1), A)` does.
 
 A goal whose name and arity are neither a control, a primitive nor the head
 of any clause has no solution.
@@ -297,11 +316,14 @@ Python:
 Integers are exact and unbounded. An evaluation MUST raise an error, rather
 than produce a value, when the operation raises one in Python (such as a
 division by zero or `sqrt(-1)`), when the result is not a finite real number,
-or when a power or left shift would need more than 2^26 bits. A boolean result
-is the integer 0 or 1.
+or when a power or left shift would need more than 2^26 bits: for a power
+of integers `A ** B` with `B > 0` and `abs(A) > 1`, when `B` times the bit
+length of `A` exceeds 2^26; for a shift `A << B` of integers, when `B` exceeds
+2^26.
 
-Comparison primitives compare values exactly, including across integers and
-floats.
+Comparisons are primitives (Section 5.2), not arithmetic functions: `'<'` and
+the other comparisons in an expression are an error. Comparison primitives
+compare values exactly, including across integers and floats.
 
 ## 7. Reasoning
 
@@ -316,6 +338,10 @@ Goals are solved depth-first, left to right. A goal is solved, in order:
    arity, in clause order, each renamed apart before it is unified with the
    goal; a rule's body is then solved in its place.
 
+Renaming a clause apart gives each of its variables a fresh variable whose
+name is the variable's name followed by `#` and an implementation-specific
+suffix. Such names never appear in the documents a run writes (Section 8.3).
+
 An implementation MAY index clauses, provided the order above is kept.
 
 ### 7.2 Forward reasoning
@@ -326,9 +352,21 @@ each rule in clause order is renamed apart and its body solved against the
 current state; all solutions of the body are collected first, then each is
 concluded:
 
-- a head variable the solution leaves unbound is bound to the atom `'sk_0'`,
-  `'sk_1'`, ... in order of first occurrence within that solution's
-  conclusions, so variables shared between heads stay shared;
+- a head variable the solution leaves unbound is bound to a Skolem atom.
+  An activation is the rule together with the instance of its heads the
+  solution gives, up to renaming of the unbound variables. The first time an
+  activation is met, each of its unbound variables, in order of first
+  occurrence, gets a fresh **Skolem atom**
+  `'https://eyereasoner.github.io/.well-known/genid/' + G + '#sk_' + N`,
+  where `N` counts from 0 over the whole run and `G` is the run's genid;
+  meeting the same activation again, in this round or a later one, gives the
+  same atoms. A run's genid is a random UUID unless one is given
+  (Section 14), so the Skolem atoms of a run clash neither with the atoms of
+  the program nor with those of another run, including those that a program
+  reads from an earlier run's output. Variables shared between heads stay
+  shared, different activations never share an atom, and a rule that keeps
+  meeting new activations does not terminate (Section 7.3). Derived facts
+  are therefore ground;
 - a head `'true'` reports the instance of the rule's body, as a conjunction,
   once per distinct instance (by identity of canonical text);
 - a head `'false'` records the conclusion `'false'` and stops all reasoning
@@ -365,8 +403,8 @@ The conclusions of a run are, in order:
 1. when it halted: every derived fact, in the order derived, ending with
    `'false'`;
 2. otherwise, when it was given goals: the reported instances of its goals;
-3. otherwise, when a rule with head `'true'` reported anything: the reported
-   instances, in order of first report;
+3. otherwise, when the program has a forward rule with a head `'true'`: the
+   reported instances, in order of first report, which MAY be none;
 4. otherwise: every derived fact, in the order derived.
 
 The output of a run is the canonical text (Section 8) of each conclusion,
@@ -380,7 +418,10 @@ record is kept), by a primitive, by a control, by an absence (a negation) or
 by a collection (`findall`). For each conclusion the first derivation found
 is recorded. A reasoner MUST check every proof it generates (Section 11)
 before returning it, and MUST fail with an error rather than return a proof
-that does not pass. A goal such as `is_var(X)` followed by `unify(X, 'a')`
+that does not pass. A run without conclusions has a proof without claims,
+which is valid and certifies nothing.
+
+A goal such as `is_var(X)` followed by `unify(X, 'a')`
 cannot be recorded faithfully by its final substitution, so such a run
 cannot produce a proof.
 
@@ -399,7 +440,8 @@ Every term has exactly one canonical text, which is a Python expression.
   written `VAR_` followed by the name with every ASCII letter and digit kept,
   every `_` doubled and every other character `c` replaced by `_hex_` where
   `hex` is the lowercase hexadecimal code point of `c`. The variable `X#12`
-  is thus written `VAR_X_23_12`.
+  is thus written `VAR_X_23_12`. A reader decodes such a name back
+  (Section 9).
 - A list is written `[I1, I2, ...]`; an open list ends with `, *Tail`.
 
 ### 8.2 Compounds
@@ -429,15 +471,33 @@ otherwise. Arguments are separated by `, `.
 
 A conjunction built left to right, `','(','(A, B), C)`, is written `A & B & C`.
 
+### 8.3 Variables in written documents
+
+The conclusions a run writes, its proof documents (Section 10) and check
+reports (Section 12) do not show the names variables have inside a run. In
+the conclusions of a run and in a proof document, the variables are named
+`A`, `B`, ..., `Z`, `A1`, ..., `Z1`, `A2`, ... in the order the document
+first shows them, across the whole document, the conclusions written first;
+the clause displays of a proof keep the program's names. A check report
+names the variables of each fact anew (Section 12). The bindings an
+implementation reports for each answer to a goal SHOULD name its variables as
+the answer does.
+
 ## 9. Reading Documents
 
-A document is UTF-8 text holding one Python expression statement per
-statement. A reader MUST build terms from the syntax tree of the text and
-MUST NOT execute it. It accepts exactly:
+A document is UTF-8 text holding a sequence of Python expression
+statements. As in Python, a statement MAY span lines inside brackets,
+statements on one line MAY be separated by `;`, and comments and blank lines
+are ignored; each term records the line on which its statement begins. The
+documents peye writes hold one statement per line. A reader MUST build terms
+from the syntax tree of the text and MUST NOT execute it. It accepts
+exactly:
 
 - a string literal, or adjacent string literals: the atom; an integer or
   float literal: the number;
-- a name: the variable of that name, where each `_` is a new variable;
+- a name: the variable of that name, where each `_` is a new anonymous
+  variable (Section 5.1) and a name starting with `VAR_` is decoded
+  (Section 8.1), or rejected when it encodes no name;
 - a call of a plain name with positional arguments only: the compound, or
   the atom when there are no arguments; `struct('name', ...)` as in
   Section 8.2;
@@ -482,7 +542,12 @@ authority: a checker MUST compare each with the program it checks against.
 
 ### 10.3 Steps
 
-`Goal` is the justified goal. Steps appear in the order a depth-first walk
+`Goal` is the justified goal as it stands once the whole solution is found:
+the goal with every variable the solution bound replaced by its value. The
+program's goal `unify(Y, 6)`, solved with `Y` unbound, thus has the step
+`step(unify(6, 6), 'builtin', {}, [])`; the value `Y` received is recorded in
+the bindings of the step that cites the clause, as `{'Y': 6}`. Steps appear
+in the order a depth-first walk
 from the claims first meets each goal, and each distinct goal (by canonical
 text) has one step. `Uses` is the list of the goals that justify `Goal`, in
 order. `By` is one of:
@@ -496,7 +561,11 @@ order. `By` is one of:
 | `'collected'` | `Goal` is a `findall` taken on trust. | empty | empty |
 
 `Bindings` is a dictionary from each variable name of the cited clause, as
-the program wrote it, to its value in this step: `{'X': 'socrates'}`.
+the program wrote it, to its value in this step: `{'X': 'socrates'}`. A
+reasoner writes every variable of the clause, in order of first occurrence;
+a checker MUST accept any subset, since the goal and uses determine the
+rest. A primitive has no variables of its own, so `'builtin'` steps have
+empty bindings.
 
 ## 11. Proof Checking
 
@@ -506,40 +575,45 @@ reasoner to supply a missing step; it MAY recompute primitives. It
 establishes seven conditions and records each failure with its condition, a
 detail and, where there is one, the term concerned.
 
-### 11.1 C3 Justification
+### 11.1 Reading the document
 
-The document MUST read (Section 9). Each `clause(N, Display)` MUST name a
-clause of the program whose display (Section 10.2) is identical to `Display`;
-otherwise C1 fails. Each `step` MUST have bindings that read as a list of
-`'='/2` pairs, as a dictionary display does, and a list of uses, and no two
-steps may have identical goals. `By` MUST be one of the
-forms of Section 10.3; a `'builtin'` step MUST have no bindings and no uses
-and a goal that is a primitive; an `'absent'` or `'collected'` step MUST have
-no bindings and no uses and a goal that is a negation or a `findall`,
-respectively.
+The document MUST read (Section 9); otherwise C3 fails and the document has
+no claims and no steps. Each `clause(N, Display)` MUST name a clause of the
+program whose display (Section 10.2) is identical to `Display`; otherwise C1
+fails. Each `step` MUST have bindings that read as a list of `'='/2` pairs,
+as a dictionary display does, and a list of uses, and no two steps may have
+identical goals; otherwise C3 fails and the step is set aside. Every other
+statement is a claim (Section 10.1).
 
 ### 11.2 C1 Resolution
 
 For a `clause(N)` step, `N` MUST be a clause of the program. The clause,
 renamed apart, MUST satisfy: each binding names a distinct variable of the
-clause and unifies it with its value; and for one of the clause's heads (each conjunct of a forward rule's
-head), the head unifies with `Goal` and the body, of the same length as
-`Uses`, unifies with `Uses` pairwise, such that afterwards the head is
-identical to `Goal` and each body goal to its use. A step's own terms MUST NOT
-need further instantiation to match: a source clause `same(X, X)` cannot
-justify `same('a', 'b')`.
+clause and unifies it with its value; and for one of the clause's heads
+(each conjunct of a forward rule's head), the head unifies with `Goal` and
+the body, of the same length as `Uses`, unifies with `Uses` pairwise, such
+that afterwards the head is identical to `Goal` and each body goal to its
+use. A step's own terms MUST NOT need further instantiation to match: a
+source clause `same(X, X)` cannot justify `same('a', 'b')`.
 
 ### 11.3 C2 Well-foundedness
 
 No step MAY depend on itself through the uses of steps.
 
-### 11.4 C4 Coverage
+### 11.4 C3 Justification
 
-The document MUST have at least one claim and one step. Each conjunct of
-each claim MUST have a step. Each use, and each conjunct of a use, MUST have a
-step or be identical to an instance of a fact of the program.
+`By` MUST be one of the forms of Section 10.3. A `'builtin'` step MUST have
+no bindings and no uses and a goal that is a primitive; an `'absent'` or
+`'collected'` step MUST have no bindings and no uses and a goal that is a
+negation or a `findall`, respectively.
 
-### 11.5 C5 Re-decision
+### 11.5 C4 Coverage
+
+Each conjunct of each claim MUST have a step. Each use, and each conjunct of
+a use, MUST have a step or be identical to an instance of a fact of the
+program. A document without claims is valid and certifies nothing.
+
+### 11.6 C5 Re-decision
 
 A `'builtin'` step's goal, solved as a primitive with no prior bindings, MUST
 succeed without binding anything. A `'control'` step MUST have no bindings,
@@ -547,7 +621,7 @@ and its uses MUST be identical, in order, to the conjuncts of the argument of
 `call` or `once`, or of one side of a disjunction. When trusted boundaries are
 forbidden ("strict"), each `'absent'` or `'collected'` step fails C5.
 
-### 11.6 C6 Boundary consistency
+### 11.7 C6 Boundary consistency
 
 A trusted boundary cannot be proved, but the evidence at hand can refute it.
 The evidence for a goal is: when the goal is a ground primitive, the goal
@@ -557,23 +631,24 @@ steps with the same name and arity.
 
 - An absence `~G` is decided when `G` is a single goal, or a ground
   conjunction, whose every goal has evidence. It fails C6 when every goal of
-  `G` unifies with some of its evidence.
+  `G` unifies with some of its evidence; the anonymous variables of `G`
+  unify with anything.
 - A collection `findall(T, G, L)` fails C6 when `L` is not a list, and is
   decided when `G` is a single goal with evidence. It fails C6 when an
   instance of `T` for some evidence of `G` unifies with no element of `L`.
 
 A boundary that is not refuted remains an obligation (Section 12).
 
-### 11.7 C7 Relevance
+### 11.8 C7 Relevance
 
 When goals were given and no claim is `'false'`, the questions are the goals.
 Otherwise the questions are, for each forward rule, each head other than
 `'true'`, and the rule's body as a conjunction when one of its heads is
 `'true'` and no claim is `'false'`. Each claim MUST be an instance of a
-question that is identical to the claim after unification. Each step MUST be
-reachable from a conjunct of a claim through the conjuncts of uses.
+question. Each step MUST be reachable from a conjunct of a claim through the
+conjuncts of uses.
 
-### 11.8 Counts and validity
+### 11.9 Counts and validity
 
 | Condition | Covered |
 | --- | --- |
@@ -585,8 +660,21 @@ reachable from a conjunct of a claim through the conjuncts of uses.
 | C6 boundary_consistency | boundaries decided |
 | C7 relevance | claims plus steps |
 
+A check also counts the **steps** it read, the **claims**, the `clause` steps
+**verified** by C1, the `'builtin'` steps **recomputed** by C5, the
+`'control'` steps **composed** by C5, and the `'absent'` and `'collected'`
+steps **trusted**.
+
 A proof is **valid** when no condition failed. A valid proof with trusted
 boundaries is valid *conditional on* them.
+
+### 11.10 What a valid proof establishes
+
+A valid proof establishes that each of its claims follows from the program
+by the recorded steps, given its trusted boundaries. It does not establish
+that the claims are all the conclusions of the program, that the program
+derives no `'false'`, or that the program is the one intended: a proof MAY
+leave conclusions out, and a run's own proof holds exactly its conclusions.
 
 ## 12. Check Reports
 
@@ -597,20 +685,41 @@ line:
    `'ok'` or `failed(N)`, `N` the number of that condition's failures;
 2. `failure(Condition, Subject, Detail)` per failure, where `Subject` is the
    term concerned or `'proof_document'`, and `Detail` an atom;
-3. `obligation(Kind, 'theory_scoped', Goal)` per trusted boundary, where
-   `Kind` is `'absent'` or `'collected'`;
+3. `obligation(Kind, 'theory_scoped', Goal)` per trusted boundary, in step
+   order, where `Kind` is `'absent'` or `'collected'`;
 4. `steps(N)`, `verified(N)`, `recomputed(N)`, `composed(N)`, `trusted(N)`,
-   `claims(N)`;
+   `claims(N)`, the counts of Section 11.9;
 5. `verdict(V)`, where `V` is `failed(N)` when `N` failures were recorded,
    otherwise `'checked_with_obligations'` when there are obligations,
    otherwise `'checked'`.
+
+Failures are listed in the order they are found: those of reading the
+document (Section 11.1), in document order; C4 for each claim, in claim
+order; then for each step, in document order, C4 for its uses and the C1, C3
+or C5 failure of its justification; C6 for each boundary, in step order; C7
+for each claim, then for each step; and C2.
+
+`Detail` is a short human-readable text that names what failed, often with
+the canonical text of a term; it is informative, and implementations MAY word
+it differently. peye's details are, by condition:
+
+| Condition | Details |
+| --- | --- |
+| C1 | `clause display differs from source`, `unknown clause ...`, `not an instance of source clause N: ...` |
+| C2 | `cyclic derivation at ...` |
+| C3 | the reader's error, `step bindings must be a dictionary and uses a list`, `duplicate justification for ...`, `invalid builtin justification`, `trusted boundaries cannot have bindings or uses`, `unknown justification ...` |
+| C4 | `unjustified claim ...`, `unjustified use ...` |
+| C5 | `primitive disagrees: ...`, `control step does not follow from its uses: ...`, `trusted boundary forbidden: absent` or `collected` |
+| C6 | `absence contradicted by evidence: ...`, `collected result is not a proper list: ...`, `collection misses ...: ...` |
+| C7 | `claim answers no goal: ...`, `step serves no claim: ...` |
 
 The variables of each fact are renamed `A`, `B`, ..., `Z`, `A1`, ... in order
 of first occurrence. A report is ordinary data: `facts_from` (Section 4.2)
 states it as facts.
 
 The JSON form of a report is an object with `valid` (boolean), `steps`,
-`claims`, `verified`, `redecided`, `composed`, `uses` (integers), `trusted`
+`claims`, `verified`, `redecided` (the count `recomputed`), `composed`,
+`uses` (the number of uses of all steps, integers), `trusted`
 (a list of `{kind, conclusion}`), `failures` (a list of
 `{condition, detail, conclusion?}`) and `conditions` (a list of
 `{id, name, covered, failed}`), where `conclusion` is a canonical text.
@@ -627,10 +736,18 @@ Unused clauses are reported one per line, in clause order, as
 `unused(line(L), Display)`, where `L` is the clause's line (Section 4.2) and
 `Display` as in Section 10.2.
 
+"Unused" is relative to the recorded derivations, which are the first ones
+found (Section 7.7). A clause that only offers a second derivation of a
+conclusion, such as a duplicate rule, is unused, though leaving out the
+clause that offers the first one would make it used; leaving out several
+unused clauses together can therefore change the conclusions. A
+`contradiction` rule that never fires changes no conclusion and is unused,
+though it guards the program against data that would make it fire.
+
 ## 14. Command Line
 
 ```text
-peye [--proof | --check-proof FILE] [--goal GOAL] [FILE ...]
+peye [OPTION ...] [FILE ...]
 ```
 
 | Option | Meaning |
@@ -643,16 +760,22 @@ peye [--proof | --check-proof FILE] [--goal GOAL] [FILE ...]
 | `--strict-proof` | With `--check-proof`, forbid trusted boundaries. |
 | `--unused` | Print the unused clauses (Section 13). |
 | `--stats` | Print reasoning statistics as JSON to standard error. |
+| `--skolem-genid G` | Use the nonempty `G` as the genid of the run's Skolem atoms (Section 7.2) instead of a random one. |
 | `--max-depth N`, `--max-iterations N`, `--max-inferences N` | The bounds of Section 7.3; `N` MUST be a positive integer. |
 | `--version`, `--help` | Print the version, or the usage. |
 
 `--check-proof` MUST NOT be combined with `--proof`, nor `--unused` with
-either. Given a proof document as a program, the command line MUST say how to
-check it instead.
+either, and `--json` and `--strict-proof` need `--check-proof`. A program
+text that has a line starting with `step(` and none starting with
+`from peye import *` is a proof document; given one as a program, the command
+line MUST say how to check it instead.
 
-The exit code is 0 on success, 65 when the run halted (Section 7.5), and 1
-for an error or a check that is not valid. Errors are printed to standard
-error as `peye: message`.
+| Exit code | Meaning |
+| --- | --- |
+| 0 | Success, including a check that found the proof valid. |
+| 1 | An error, printed to standard error as `peye: message`. |
+| 2 | A check that found the proof not valid; the report is printed as usual. |
+| 65 | The run halted (Section 7.5). |
 
 A program module whose top level contains `from peye import *` MAY be run as
 a Python script: it is then loaded and reasoned over with the command line's
@@ -678,18 +801,22 @@ proofs SHOULD additionally bound document size, nesting depth and running
 time.
 
 A valid proof establishes that its claims follow from the program supplied
-to the checker. It does not establish that the program is correct, and a
-proof with obligations holds only conditional on them.
+to the checker (Section 11.10). It does not establish that the program is
+correct or that the claims are all its conclusions, and a proof with
+obligations holds only conditional on them.
 
 ## 16. Conformance
 
-A conforming **reasoner** implements Sections 3 to 8 and 10, produces
+A conforming **reasoner** implements Sections 3 to 10, produces
 conclusions and proof documents in the canonical text, and checks every proof
-it produces. A conforming **checker** implements Sections 9, 11 and 12 and
-does not depend on a reasoner. For the same program, a conforming reasoner
-and checker MUST produce the same conclusions, proof documents and reports
-as peye 0.1.22, byte for byte, except where Python's floating-point library
-functions differ in the last digit.
+it produces as Section 11 describes. A conforming **checker** implements
+Sections 9, 11 and 12 and does not depend on a reasoner. For the same
+program, a conforming reasoner and checker MUST produce the same
+conclusions, proof documents and reports as peye 0.1.22, byte for byte,
+except for the `Detail` texts of failures (Section 12), the internal names of
+variables where Section 3 says so, the random genid of Skolem atoms when none
+is given (Section 7.2), and where Python's floating-point library functions
+differ in the last digit.
 
 The conformance suite in the repository's `conformance/` directory tests an
 implementation against this document through its command line, case by case,
@@ -703,11 +830,14 @@ saved conclusions (`examples/output/`), proofs (`examples/proof/`) and reports
 ## Appendix A. Document Grammar
 
 The documents of Sections 9 to 12 use this subset of Python's grammar, in the
-ABNF style of RFC 5234, with whitespace between tokens allowed as in Python.
+ABNF style of RFC 5234, with whitespace between tokens allowed as in Python;
+as in Python, an expression MAY continue onto following lines inside
+brackets.
 
 ```abnf
 document    = *( line LF ) [ line ]
-line        = "" / expression
+line        = [ expression *( ";" expression ) [ ";" ] ] [ comment ]
+comment     = "#" *<any character except LF>
 expression  = bitor [ compare-op bitor ]
 compare-op  = "<" / "<=" / ">" / ">="
 bitor       = bitxor *( "|" bitxor )
@@ -837,6 +967,17 @@ terms, two relations sharing a predicate name can occupy different strata when
 their argument patterns do not overlap — which is exactly what you need when
 everything is `t/3`. Positive cycles stay in one stratum; closed dependency
 cycles are rejected, as are dynamic calls reachable from forward rules.
+
+**Forward rounds are semi-naive.** After a forward rule's first search, a
+rule whose body goals are all answered by facts alone (or are primitives,
+negations or collections) is searched only for activations that use a fact
+derived since its previous search: once for each body goal that has such
+facts, that goal limited to them and the goals before it to the older ones.
+The activations found are then sorted into the order a full search would
+find them, by the fact or clause each body goal took, so the conclusions,
+their order and their proofs are those of Section 7.2. A transitive closure
+over a chain of 150 edges needs 11,476 inferences this way instead of
+1,136,575.
 
 **Proof steps record the first derivation found** for each conclusion, and are
 recorded only when a proof is asked for: without one, the search keeps just what

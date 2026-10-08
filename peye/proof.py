@@ -17,7 +17,7 @@ from .terms import (
     Env, PeyeError, Struct, Var, conjunction, copy_resolved, deref, flatten_conjunction,
     fresh_term, is_callable, is_ground, is_term, key, proper_list_items, unify,
 )
-from .writer import write
+from .writer import Lettering, letter_name, write, write_noting_variables
 
 
 def clause_display(clause):
@@ -67,12 +67,18 @@ class _Spellings:
     def __call__(self, term):
         entry = self.memo.get(id(term))
         if entry is None:
-            entry = self.memo[id(term)] = (term, text(term))
+            entry = self.memo[id(term)] = (term, *write_noting_variables(term))
         return entry[1]
 
+    def lettered(self, term, lettering):
+        """The text of a term with its variables named by the lettering."""
+        self(term)
+        _, spelling, has_variables = self.memo[id(term)]
+        return write(term, names=lettering) if has_variables else spelling
 
-def _bindings_text(bindings):
-    return '{' + ', '.join(f'{name!r}: {write(value)}' for name, value in bindings) + '}'
+
+def _bindings_text(bindings, lettering):
+    return '{' + ', '.join(f'{name!r}: {write(value, names=lettering)}' for name, value in bindings) + '}'
 
 
 def render_proof(program, claims, roots):
@@ -90,14 +96,18 @@ def render_proof(program, claims, roots):
             cited.add(node.by.args[0])
         for child in reversed(node.children):
             pending.append(child)
-    lines = [text(claim) for claim in claims]
+    # Variables are named A, B, ... in the order the document first shows
+    # them, the claims written first, as in the run's conclusions.
+    lettering = Lettering()
+    lines = [spell.lettered(claim, lettering) for claim in claims]
     lines.append('')
     for clause_id in sorted(cited):
         lines.append(text(Struct('clause', (clause_id, clause_display(program.clauses[clause_id - 1])))))
     lines.append('')
     for node in steps.values():
-        uses = '[' + ', '.join(spell(child.goal) for child in node.children) + ']'
-        lines.append(f'step({spell(node.goal)}, {text(node.by)}, {_bindings_text(node.bindings)}, {uses})')
+        uses = '[' + ', '.join(spell.lettered(child.goal, lettering) for child in node.children) + ']'
+        lines.append(f'step({spell.lettered(node.goal, lettering)}, {text(node.by)}, '
+                     f'{_bindings_text(node.bindings, lettering)}, {uses})')
     return '\n'.join(lines) + '\n'
 
 
@@ -125,8 +135,6 @@ def check_proof(program, document, goals=None, allow_trusted=True):
     fail = _Failures()
     spell = _Spellings()
     claims, steps = _read_document(program, document, fail, spell)
-    if not steps or not claims:
-        fail('C4', 'a proof needs claims and steps')
     for claim in claims:
         if not all(spell(part) in steps for part in flatten_conjunction(claim)):
             fail('C4', f'unjustified claim {text(claim)}', claim)
@@ -505,8 +513,7 @@ def _lettered(term):
     def visit(t):
         if type(t) is Var:
             if t.name not in names:
-                n = len(names)
-                names[t.name] = Var(chr(65 + n % 26) + (str(n // 26) if n >= 26 else ''))
+                names[t.name] = Var(letter_name(len(names)))
             return names[t.name]
         if type(t) is Struct:
             return Struct(t.name, tuple(visit(arg) for arg in t.args))

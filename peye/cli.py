@@ -3,7 +3,7 @@ import json
 import sys
 import threading
 
-HELP = """Usage: peye [--proof | --check-proof FILE] [--goal GOAL] [FILE ...]
+HELP = """Usage: peye [OPTION ...] [FILE ...]
 Programs are Python; forward rules run to a fixpoint.
   --proof             Print the claims with clause(...) and step(...) records
   --check-proof FILE  Print a C1-C7 check report of a proof (- for stdin)
@@ -16,9 +16,11 @@ Programs are Python; forward rules run to a fixpoint.
   --max-depth N       Bound backward recursion (default 1000000)
   --max-iterations N  Bound forward rounds per stratum (default 1000)
   --max-inferences N  Bound reasoning work (default 1000000)
+  --skolem-genid G    Use G in Skolem IRIs instead of a random genid
   --version           Print the version
   --help              Print this help
 Source defaults to stdin; multiple files form one program.
+Exit codes: 0 success, 1 error, 2 invalid proof, 65 contradiction.
 """
 
 LIMITS = {'--max-depth': 'max_depth', '--max-iterations': 'max_iterations',
@@ -68,7 +70,7 @@ def main(argv, sources=None, stdout=None, stderr=None):
                 as_json = True
             elif arg == '--unused':
                 unused = True
-            elif arg in ('--check-proof', '--goal', *LIMITS):
+            elif arg in ('--check-proof', '--goal', '--skolem-genid', *LIMITS):
                 i += 1
                 if i >= len(argv):
                     raise UsageError(f'{arg} needs a value')
@@ -77,6 +79,10 @@ def main(argv, sources=None, stdout=None, stderr=None):
                     proof_file = value
                 elif arg == '--goal':
                     goals.append(value)
+                elif arg == '--skolem-genid':
+                    if not value:
+                        raise UsageError('--skolem-genid needs a nonempty value')
+                    options['skolem_genid'] = value
                 else:
                     try:
                         number = int(value)
@@ -92,6 +98,8 @@ def main(argv, sources=None, stdout=None, stderr=None):
             i += 1
         if as_json and proof_file is None:
             raise UsageError('--json requires --check-proof')
+        if strict and proof_file is None:
+            raise UsageError('--strict-proof requires --check-proof')
         if proof_file is not None and options.get('proof'):
             raise UsageError('--check-proof cannot be combined with --proof')
         if unused and (proof_file is not None or options.get('proof')):
@@ -116,7 +124,8 @@ def main(argv, sources=None, stdout=None, stderr=None):
                     document = handle.read()
             report = check_proof(program, document, goals=goals, allow_trusted=not strict)
             stdout.write(json.dumps(public_report(report), indent=2) + '\n' if as_json else check_report(report))
-            return 0 if report['valid'] else 1
+            # An invalid proof is a result, not an error: it has its own exit code.
+            return 0 if report['valid'] else 2
         if unused:
             stdout.write(unused_clauses(program, goals=goals, **options))
             return 0

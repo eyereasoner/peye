@@ -26,7 +26,13 @@ def _term(value):
         return value
     if kind is list:
         return _from_python_list(value)
-    if kind is bool or value is None:
+    if kind is bool:
+        # A comparison of two numbers, such as 1 < 2, is decided by Python
+        # before peye sees it.
+        raise PeyeError(f'{value!r} is not a term: a comparison or test of plain Python values is '
+                        f'decided by Python before peye sees it; compare terms or variables, or '
+                        f'write an atom such as \'true\'')
+    if value is None:
         raise PeyeError(f'{value!r} is not a term; write an atom such as \'true\' instead')
     to_term = getattr(value, '__peye_term__', None)
     if to_term is not None:
@@ -364,6 +370,26 @@ def copy_resolved(term, env):
     return done[id(root)]
 
 
+def is_anonymous(var):
+    """Whether a variable stands for a _ of a program or a document: _0, _1,
+    ... in a clause, renamed apart or not, or one a reader made."""
+    base = var.name.partition('#')[0]
+    return base == '_' or (len(base) > 1 and base[0] == '_' and base[1:].isdigit())
+
+
+def is_ground_but_anonymous(term, env):
+    """Whether every variable left in term, read through env, is anonymous."""
+    pending = [term]
+    while pending:
+        item = deref(pending.pop(), env)
+        if type(item) is Var:
+            if not is_anonymous(item):
+                return False
+        elif type(item) is Struct:
+            pending.extend(item.args)
+    return True
+
+
 def is_ground(term, env=None):
     pending = [term]
     seen = None
@@ -401,12 +427,11 @@ def variables(term, result=None):
 
 # Standard order: variables < numbers < atoms < compound terms. Numbers are
 # ordered by value, and a float precedes an integer of equal value. Distinct
-# variables are ranked by first encounter within one comparison.
+# variables are ordered by name, so the order is the same in every comparison.
 _ORDER = {Var: 0, int: 1, float: 1, str: 2, Struct: 3}
 
 
 def compare_terms(left, right):
-    ranks = {}
     pending = [left, right]
     while pending:
         right = pending.pop()
@@ -423,11 +448,8 @@ def compare_terms(left, right):
             if lt is not rt:
                 return 1 if lt is int else -1
         elif lt is Var:
-            if left.name == right.name:
-                continue
-            a = ranks.setdefault(left.name, len(ranks))
-            b = ranks.setdefault(right.name, len(ranks))
-            return -1 if a < b else 1
+            if left.name != right.name:
+                return -1 if left.name < right.name else 1
         elif lt is str:
             if left != right:
                 return -1 if left < right else 1

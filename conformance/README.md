@@ -27,15 +27,15 @@ the topic of each.
 | --- | --- | --- | --- |
 | [03-terms.txt](03-terms.txt) | 3 | 20 | Unification, the occurs check, integers and floats, lists, the standard order |
 | [04-programs.txt](04-programs.txt) | 4 | 40 | Statements, clause numbering, names a program leaves undefined, rejected clauses, stratification |
-| [05-controls-and-primitives.txt](05-controls-and-primitives.txt) | 5 | 43 | Every control and primitive, and the errors of their flow patterns |
+| [05-controls-and-primitives.txt](05-controls-and-primitives.txt) | 5 | 47 | Every control and primitive, and the errors of their flow patterns |
 | [06-arithmetic.txt](06-arithmetic.txt) | 6 | 28 | Python's meaning of every operator and function, exact integers, and each error |
-| [07-reasoning.txt](07-reasoning.txt) | 7 | 24 | Search order, forward rounds, Skolem names, conclusions, halting, bounds |
-| [08-canonical-text.txt](08-canonical-text.txt) | 8 | 17 | The one spelling of atoms, numbers, variables, lists, compounds and operators |
+| [07-reasoning.txt](07-reasoning.txt) | 7 | 30 | Search order, forward rounds, Skolem names, conclusions, halting, bounds |
+| [08-canonical-text.txt](08-canonical-text.txt) | 8 | 21 | The one spelling of atoms, numbers, variables, lists, compounds and operators |
 | [09-reading.txt](09-reading.txt) | 9 | 37 | What a document reader accepts, and what it must reject without running anything |
 | [10-proofs.txt](10-proofs.txt) | 10 | 16 | Proof documents for every kind of justification, step order and sharing |
 | [11-checking.txt](11-checking.txt) | 11, 12 | 45 | Valid proofs and proofs tampered with to break each of C1-C7, with their exact reports |
 | [13-unused.txt](13-unused.txt) | 13 | 9 | Unused clauses, including those a negation or collection consults |
-| [14-command-line.txt](14-command-line.txt) | 14 | 21 | Options, their combinations, standard input, errors and exit codes |
+| [14-command-line.txt](14-command-line.txt) | 14 | 23 | Options, their combinations, standard input, errors and exit codes |
 
 ## Case format
 
@@ -78,8 +78,7 @@ step(same(1, 1), clause(1), {'X': 1}, [])
 Trailing empty lines of a block are not part of it; every block that is not
 empty ends with one line break. In an expected output line, `…` matches any
 text: the specification leaves some text to the implementation, such as the
-wording of a failure's detail and the names a reasoner gives to variables it
-renames apart.
+wording of a failure's detail and the random genid of a run's Skolem atoms.
 
 ## Writing cases
 

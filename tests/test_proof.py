@@ -38,7 +38,11 @@ class Proofs(unittest.TestCase):
     def test_omitted_steps_missing_premises_and_unrelated_claims_fail_coverage(self):
         self.invalid(re.sub(r"^step\(q\('a'\).*\n", '', proof(), flags=re.M), 'C4')
         self.invalid(proof() + "unrelated('a')\n", 'C4')
-        self.invalid('', 'C4')
+
+    def test_a_document_that_claims_nothing_is_valid_and_certifies_nothing(self):
+        report = check_proof(SOURCE, '')
+        self.assertTrue(report['valid'])
+        self.assertEqual((report['claims'], report['steps']), (0, 0))
 
     def test_unknown_duplicate_and_malformed_justifications_are_rejected(self):
         self.invalid(proof().replace('clause(2)', "'magic'"), 'C3')
@@ -81,6 +85,13 @@ class Proofs(unittest.TestCase):
         self.invalid(document.replace("['a', 'b']", "['a']"), 'C6')
         self.invalid("q()\nstep(q(), clause(1), {}, [~(1 < 2)])\nstep(~(1 < 2), 'absent', {}, [])", 'C6',
                      program("q = preds('q')\nforward(q, ~(struct('<', 1, 2)))"))
+
+    def test_an_absence_with_anonymous_variables_is_refuted_by_any_instance(self):
+        text = "fact(p('a'), p('b'), q('b', 1))\nforward(s(X), p(X), ~q(X, _))\n"
+        document = run(program(text), proof=True).proof
+        self.assertIn("~q('a', A)", document)
+        self.assertTrue(check_proof(program(text), document)['valid'])
+        self.invalid(document, 'C6', program(text + "fact(q('a', 2))"))
 
     def test_claims_must_answer_the_goal_asked_and_every_step_must_serve_a_claim(self):
         asked = run(SOURCE, goal='p(X)', proof=True).proof

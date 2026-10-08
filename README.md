@@ -177,8 +177,13 @@ clauses.
 **Domains get representations, not syntax.** peye has no built-in notion of
 RDF or of anything else: IRIs, typed literals, triples and quoted graphs are
 just terms, such as `literal(V, lang(L))` or `triple(S, P, O)`. A forward head
-may contain variables its body never binds; they become `'sk_0'`, `'sk_1'`, ...
-within each conclusion, which keeps conclusions deduplicated and stable.
+may contain variables its body never binds; each activation of the rule
+gives them fresh Skolem atoms, and the same activation in a later round gets
+the same ones, which keeps conclusions deduplicated without letting two
+unknowns pass for one. Skolem atoms are IRIs such as
+`'https://eyereasoner.github.io/.well-known/genid/<genid>#sk_0'`, with a
+random genid per run, so they clash neither with your atoms nor with another
+run's; `--skolem-genid G` fixes the genid for reproducible output.
 
 ## Proofs, and what checking one means
 
@@ -222,7 +227,7 @@ verdict('checked')
 ```
 
 Failures appear as `failed(N)` outcomes with `failure(Condition, Conclusion,
-Detail)` facts, an invalid proof gives `verdict(failed(N))` and exit code 1,
+Detail)` facts, an invalid proof gives `verdict(failed(N))` and exit code 2,
 and `--json` gives the same report as JSON. Proofs are read with Python's `ast`
 module and never executed, so checking a proof from someone else runs none of
 their code. Every proof peye generates is checked before it is returned.
@@ -255,10 +260,12 @@ terms rather than predicate names, so `t(X, 'type', Y)` and
 everything is a triple. A goal that is a variable, reachable from a forward
 rule, is rejected, because nobody can tell what it depends on.
 
-**Negate only ground goals.** `~G` must be ground when it is solved. With a
-variable, as in `~p(X)`, the question would quietly become "is there no `X`
-at all?", so peye stops with an error instead. Bind the variables first:
-`applicant(P), income(P, I), I < 2500, ~already_received(P)`.
+**Negate only what is bound.** The variables of `~G` must be bound when it
+is solved. With a variable, as in `~p(X)`, the question would quietly become
+"is there no `X` at all?", so peye stops with an error instead. Bind the
+variables first: `applicant(P), income(P, I), I < 2500,
+~already_received(P)`. When "no value at all" is what you mean, say so with
+`_`: `~q(X, _)` holds when `q(X, Y)` has no solution for any `Y`.
 
 **Say what was taken on trust.** A search that found nothing cannot be proved
 the way a derivation can. So a proof records each negation as an `'absent'`

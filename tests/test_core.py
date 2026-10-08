@@ -35,14 +35,67 @@ forward(path(X, Z), path(X, Y), edge(Y, Z))
         result = proven(self, example('terms'))
         self.assertEqual(len(result.answers), 2)
         self.assertTrue(result.answers[0].startswith('found(triple'))
-        self.assertTrue(result.answers[1].endswith("'sk_0')"))
+        self.assertTrue(result.answers[1].endswith("#sk_0')"))
         source = program('''
 in_, pair = preds('in_ pair')
 X, Y = vars('X Y')
 fact(in_('a'))
 forward(pair(X, Y, Y), in_(X))
 ''')
-        self.assertEqual(proven(self, source).answers, ["pair('a', 'sk_0', 'sk_0')"])
+        sk = "'https://eyereasoner.github.io/.well-known/genid/g#sk_0'"
+        self.assertEqual(proven(self, source, skolem_genid='g').answers, [f"pair('a', {sk}, {sk})"])
+
+    def test_each_activation_gets_skolem_atoms_of_its_own(self):
+        source = program('''
+fact(person('a'), person('b'), knows('sk_1', 'x'))
+forward(has_parent(X, P), person(X))
+forward(siblings(X, Y), has_parent(X, P), has_parent(Y, P), not_identical(X, Y))
+forward(known(X), has_parent(X, P))
+''')
+        result = run(source, proof=True, skolem_genid='g')
+        self.assertTrue(result.proof_report['valid'])
+        genid = 'https://eyereasoner.github.io/.well-known/genid/g#'
+        self.assertEqual(result.answers, [f"has_parent('a', '{genid}sk_0')", f"has_parent('b', '{genid}sk_1')",
+                                          "known('a')", "known('b')"])
+        self.assertNotEqual(run(source).answers[0], run(source).answers[0])
+
+    def test_semi_naive_forward_reasoning_concludes_and_proves_as_a_full_search_does(self):
+        import random
+        from peye import engine
+        rng = random.Random(7)
+        full = lambda solver, clause: None  # noqa: E731
+        for trial in range(12):
+            nodes = rng.randint(3, 8)
+            edges = sorted({(rng.randrange(nodes), rng.randrange(nodes)) for _ in range(rng.randint(2, 12))})
+            source = program(''.join(f'fact(edge({a}, {b}))\n' for a, b in edges) + '''
+fact(node(0))
+forward(node(Y), node(X), edge(X, Y))
+forward(path(X, Y), edge(X, Y))
+forward(path(X, Z), path(X, Y), path(Y, Z))
+forward(loop(X) & mark(X, M), path(X, X), is_(M, X * 2))
+forward(witness(X, W), node(X), X > 1)
+forward(tagged(W, X), witness(X, W))
+forward(hub(X, L), node(X), findall(Y, edge(X, Y), L))
+forward(isolated(X), node(X), ~edge(X, _))
+''')
+            semi = run(source, proof=True, skolem_genid='g')
+            saved = engine.Solver.direct_keys
+            engine.Solver.direct_keys = full
+            try:
+                naive = run(source, proof=True, skolem_genid='g')
+            finally:
+                engine.Solver.direct_keys = saved
+            with self.subTest(trial):
+                self.assertEqual((semi.stdout, semi.proof), (naive.stdout, naive.proof))
+                self.assertLessEqual(semi.stats['inferences'], naive.stats['inferences'])
+
+    def test_answers_name_their_variables_as_their_bindings_do(self):
+        result = run(program("backward(r(Y, Z), unify(Y, f(_, Z)))"), goal='r(P, Q)')
+        self.assertEqual(result.answers, ['r(f(A, B), B)'])
+        self.assertEqual(result.bindings, [{'P': 'f(A, B)', 'Q': 'B'}])
+
+    def test_a_query_without_answers_concludes_nothing(self):
+        self.assertEqual(run(program("fact(p(1))\nforward(q(X), p(X))\nquery(r(X))")).answers, [])
 
     def test_recursive_arithmetic_and_goal(self):
         self.assertEqual(proven(self, example('fibonacci'), goal='fib(10, F)').answers, ['fib(10, 55)'])
@@ -123,8 +176,8 @@ forward(t(X, 'blocked', 'true'), t(X, 'seed', 'true'))
             run(program("p = preds('p')\nN, M = vars('N M')\nfact(p(0))\nforward(p(N), p(M), is_(N, M + 1))"),
                 max_iterations=3)
         with self.assertRaisesRegex(PeyeError, 'max_inferences'):
-            run(program("p, q = preds('p q')\nX = vars('X')\nfact(p('a'))\nforward(q(X), p(X))"), max_inferences=1)
-        with self.assertRaisesRegex(PeyeError, 'ground'):
+            run(program("p, q = preds('p q')\nX = vars('X')\nfact(p('a'))\nforward(q(X), p(X), p(X))"), max_inferences=1)
+        with self.assertRaisesRegex(PeyeError, 'negation requires a goal whose variables are bound'):
             run(program(''), goal='~p(X)')
         with self.assertRaisesRegex(PeyeError, 'reserved'):
             program("fact(struct('step', 1, 2, 3, 4))")

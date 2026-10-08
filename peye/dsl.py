@@ -16,7 +16,6 @@ Atoms are strings, numbers are ints and floats, lists are lists, and
 ``[H, *T]`` is a list with head H and tail T. Each call states one clause, in
 source order; ``load`` runs the module and collects them into a Program.
 """
-import itertools
 import keyword
 import os
 import re
@@ -35,7 +34,6 @@ class Builder:
 
     def __init__(self):
         self.sources = []
-        self.anonymous = itertools.count()
         # Where each clause was stated, as (code, offset) until finish().
         self.places = []
 
@@ -43,9 +41,11 @@ class Builder:
         place = None
         if line is None:
             place = _caller()
-        anonymous = self.anonymous
-        head = _rename_anonymous(_term(head), anonymous)
-        body = [_rename_anonymous(_term(goal), anonymous) for goal in body]
+        head = _term(head)
+        body = [_term(goal) for goal in body]
+        anonymous = _Anonymous([head, *body])
+        head = _rename_anonymous(head, anonymous)
+        body = [_rename_anonymous(goal, anonymous) for goal in body]
         for goal in body:
             if type(goal) is not Var and type(goal) is not str and type(goal) is not Struct:
                 raise PeyeError(f'line {_line_now()}: a goal must be an atom, a compound term or a '
@@ -72,12 +72,38 @@ class Builder:
         return self.sources
 
 
+class _Anonymous:
+    """Names for the _ of one clause: _0, _1, ..., skipping names the clause
+    already uses, which are looked up only once a _ is met."""
+
+    def __init__(self, terms):
+        self.terms = terms
+        self.used = None
+        self.count = 0
+
+    def __next__(self):
+        if self.used is None:
+            self.used = set()
+            pending = list(self.terms)
+            while pending:
+                term = pending.pop()
+                if type(term) is Var:
+                    self.used.add(term.name)
+                elif type(term) is Struct:
+                    pending.extend(term.args)
+        while True:
+            name = f'_{self.count}'
+            self.count += 1
+            if name not in self.used:
+                return name
+
+
 def _rename_anonymous(term, counter):
     """Every _ in a clause is a variable of its own. A term without one is
     returned as it is."""
     kind = type(term)
     if kind is Var:
-        return Var(f'__anon{next(counter)}') if term.name == '_' else term
+        return Var(next(counter)) if term.name == '_' else term
     if kind is not Struct:
         return term
     args = None

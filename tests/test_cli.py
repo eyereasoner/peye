@@ -29,7 +29,7 @@ class CommandLine(unittest.TestCase):
         self.assertEqual(as_json.returncode, 0)
         self.assertTrue(json.loads(as_json.stdout)['valid'])
         self.assertEqual(len(json.loads(as_json.stdout)['conditions']), 7)
-        self.assertEqual(cli(['--check-proof', '-', 'examples/socrates.py'], generated.stdout + "bogus()\n").returncode, 1)
+        self.assertEqual(cli(['--check-proof', '-', 'examples/socrates.py'], generated.stdout + "bogus()\n").returncode, 2)
 
     def test_a_proof_document_given_as_a_program_says_how_to_check_it(self):
         ran = cli(['examples/proof/socrates.py'])
@@ -74,13 +74,13 @@ class CommandLine(unittest.TestCase):
     def test_failed_and_strict_checks_print_verdicts_and_exit_unsuccessfully(self):
         failed = cli(['--check-proof', '-', '--goal', 'is_(7, 2 + 3)', 'examples/socrates.py'],
                      "is_(7, 2 + 3)\nstep(is_(7, 2 + 3), 'builtin', {}, [])\n")
-        self.assertEqual(failed.returncode, 1)
+        self.assertEqual(failed.returncode, 2)
         self.assertEqual(failed.stderr, '')
         self.assertIn("condition('C5', 're_decision', failed(1), 0)\n", failed.stdout)
         self.assertIn("failure('C5', is_(7, 2 + 3),", failed.stdout)
         self.assertIn('verdict(failed(1))\n', failed.stdout)
         strict = cli(['--strict-proof', '--check-proof', 'examples/proof/permissions.py', 'examples/permissions.py'])
-        self.assertEqual(strict.returncode, 1)
+        self.assertEqual(strict.returncode, 2)
         self.assertIn("obligation('absent', 'theory_scoped',", strict.stdout)
         self.assertIn('verdict(failed(', strict.stdout)
         self.assertEqual(cli(['--json', 'examples/socrates.py']).returncode, 1)

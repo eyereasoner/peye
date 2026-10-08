@@ -13,6 +13,17 @@ class Terms(unittest.TestCase):
         self.assertEqual(write(Struct('p', (Var('X#1'), Var('X_1')))), 'p(VAR_X_23_1, X_1)')
         self.assertEqual(write(Var('VAR_X_23_1')), 'VAR_VAR__X__23__1')
 
+    def test_encoded_variable_names_read_back_as_the_names_they_encode(self):
+        for name in ['X#12', 'VAR_X', '_', 'a b', 'é#3', 'x__y', '_0#1', '']:
+            with self.subTest(name):
+                self.assertEqual(read_term(write(Var(name))).name, name)
+        with self.assertRaises(PeyeError):
+            read_term('VAR_a_b')
+
+    def test_distinct_variables_are_ordered_by_name_in_every_comparison(self):
+        x, y = Var('X'), Var('Y')
+        self.assertEqual((compare_terms(x, y), compare_terms(y, x)), (-1, 1))
+
     def test_the_trail_restores_bindings_and_occurs_checks_use_aliases(self):
         env = Env()
         x, y = Var('X'), Var('Y')

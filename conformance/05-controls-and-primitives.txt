@@ -28,7 +28,7 @@ fact(p(1))
 --- stdout
 ~p(2)
 
-=== negation needs a ground goal
+=== negation needs its named variables bound
 spec: 5.1
 args: program.py --goal "~p(X)"
 exit: 1
@@ -37,6 +37,51 @@ stderr: nonempty
 from peye import *
 fact(p(1))
 --- stdout
+
+=== a variable a negation's clause binds nowhere else must still be anonymous
+spec: 5.1
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+fact(p('a'), q('a', 1))
+forward(s(X), p(X), ~q(X, Y))
+--- stdout
+
+=== the anonymous variables of a negation stand for any value
+spec: 4.4, 5.1
+--- program.py
+from peye import *
+fact(p('a'), p('b'), q('a', 1))
+forward(s(X), p(X), ~q(X, _))
+--- stdout
+s('b')
+
+=== in goal text, _ in a negation stands for any value
+spec: 5.1, 9
+args: program.py --goal "~q('b', _)" --goal "~q('a', _)"
+--- program.py
+from peye import *
+fact(q('a', 1))
+--- stdout
+~q('b', A)
+
+=== a negation with anonymous variables is an absent step that checks
+spec: 5.1, 10.3, 11.7
+args: --proof
+--- stdin
+from peye import *
+fact(p('a'), p('b'), q('a', 1))
+forward(s(X), p(X), ~q(X, _))
+--- stdout
+s('b')
+
+clause(2, fact(p('b')))
+clause(4, forward(s(X), p(X), ~q(X, _0)))
+
+step(s('b'), clause(4), {'X': 'b', '_0': A}, [p('b'), ~q('b', A)])
+step(p('b'), clause(2), {}, [])
+step(~q('b', A), 'absent', {}, [])
 
 === not_ in a program negates the conjunction of its goals
 spec: 5.1
@@ -120,7 +165,7 @@ args: program.py --goal "findall(X, p(X), L)"
 from peye import *
 fact(p(3), p(1), p(2))
 --- stdout
-findall(X, p(X), [3, 1, 2])
+findall(A, p(A), [3, 1, 2])
 
 === findall collects the empty list when nothing holds
 spec: 5.1
@@ -128,7 +173,7 @@ args: --goal "findall(X, missing(X), L)"
 --- stdin
 from peye import *
 --- stdout
-findall(X, missing(X), [])
+findall(A, missing(A), [])
 
 === findall renames each collected instance apart
 spec: 5.1
@@ -177,7 +222,7 @@ args: --goal "not_unify(f(X, 'b'), f('a', 'c'))" --goal "not_unify(X, 'a')"
 --- stdin
 from peye import *
 --- stdout
-not_unify(f(X, 'b'), f('a', 'c'))
+not_unify(f(A, 'b'), f('a', 'c'))
 
 === identical compares without binding
 spec: 5.2
@@ -185,8 +230,8 @@ args: --goal "identical(f(X), f(X))" --goal "identical(f(X), f(Y))" --goal "not_
 --- stdin
 from peye import *
 --- stdout
-identical(f(X), f(X))
-not_identical(X, Y)
+identical(f(A), f(A))
+not_identical(A, B)
 
 === is_ evaluates and unifies
 spec: 5.2
@@ -241,7 +286,7 @@ args: --goal "is_var(X)" --goal "is_var(1)" --goal "is_nonvar('a')" --goal "is_n
 --- stdin
 from peye import *
 --- stdout
-is_var(X)
+is_var(A)
 is_nonvar('a')
 is_ground(f(1))
 

@@ -130,7 +130,7 @@ args: --goal "compare(O, X, 1)" --goal "compare(O, 99, 'a')" --goal "compare(O, 
 --- stdin
 from peye import *
 --- stdout
-compare('<', X, 1)
+compare('<', A, 1)
 compare('<', 99, 'a')
 compare('<', 'zzz', f('a'))
 
@@ -155,14 +155,15 @@ compare('>', g('a', 'b'), f('a'))
 compare('<', f('b'), g('a'))
 compare('<', f('a', 'b'), f('a', 'c'))
 
-=== standard order: distinct variables by first occurrence
+=== standard order: distinct variables by name
 spec: 3
-args: --goal "compare(O, f(X), f(Y))" --goal "compare(O, X, X)"
+args: --goal "compare(O, f(X), f(Y))" --goal "compare(O, f(Y), f(X))" --goal "compare(O, X, X)"
 --- stdin
 from peye import *
 --- stdout
-compare('<', f(X), f(Y))
-compare('=', X, X)
+compare('<', f(A), f(B))
+compare('>', f(B), f(A))
+compare('=', A, A)
 
 === integers are unbounded
 spec: 3
