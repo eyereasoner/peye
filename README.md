@@ -368,7 +368,7 @@ a variable, so a goal with no arguments is written `p()` or `'p'`.
 
 ## The examples
 
-The [example collection](https://eyereasoner.github.io/peye/examples/) is 62
+The [example collection](https://eyereasoner.github.io/peye/examples/) is 63
 complete programs, each with its conclusions, proof and C1-C7 report saved
 beside it (`examples/output/`, `examples/proof/`, `examples/check/`), and a
 [card deck](https://eyereasoner.github.io/peye/examples/deck/) that explains it

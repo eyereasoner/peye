@@ -23,6 +23,7 @@ Each example comes with a short card deck that explains it for a wide audience: 
 | [deep-taxonomy-100](https://eyereasoner.github.io/peye/examples/deck/deep-taxonomy-100) | The same taxonomy benchmark at a hundred levels |
 | [deep-taxonomy-1000](https://eyereasoner.github.io/peye/examples/deck/deep-taxonomy-1000) | The same taxonomy benchmark at a thousand levels |
 | [deep-taxonomy-10000](https://eyereasoner.github.io/peye/examples/deck/deep-taxonomy-10000) | The same taxonomy benchmark at ten thousand levels |
+| [deep-taxonomy-100000](https://eyereasoner.github.io/peye/examples/deck/deep-taxonomy-100000) | The same taxonomy benchmark at a hundred thousand levels |
 | [dog-license](https://eyereasoner.github.io/peye/examples/deck/dog-license) | A licensing threshold based on collected dog counts |
 | [easter](https://eyereasoner.github.io/peye/examples/deck/easter) | Easter Sunday by the anonymous Gregorian algorithm, 2021 to 2050 |
 | [existential-rules](https://eyereasoner.github.io/peye/examples/deck/existential-rules) | Existential rules: a fresh witness per activation, never a clash |

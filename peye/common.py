@@ -9,8 +9,18 @@ def text(term, env=None):
 
 
 def fresh_clause(clause, suffix):
-    """Rename a clause apart: head and body share one set of fresh variables."""
+    """Rename a clause apart: head and body share one set of fresh variables,
+    listed in the order the clause is written (a forward rule's body first)."""
     renamed = renaming(clause)
+    if renamed is None:
+        names = {}
+        if clause.forward:
+            body = [fresh_term(goal, suffix, names) for goal in clause.body]
+            head = fresh_term(clause.head, suffix, names)
+        else:
+            head = fresh_term(clause.head, suffix, names)
+            body = [fresh_term(goal, suffix, names) for goal in clause.body]
+        return head, body, names
     suffix = str(suffix)
     values = [Var(prefix + suffix) for prefix in renamed.prefixes]
     names = dict(zip(renamed.names, values))
@@ -31,10 +41,19 @@ class Renaming:
 
 
 def renaming(clause):
+    """How to rename a clause apart quickly, or None while it has been used
+    too seldom to be worth working out: most clauses of a large program are
+    used once, and renaming those directly is cheaper."""
     renamed = clause.renaming
     if renamed is None:
+        clause.uses += 1
+        if clause.uses < _WORK_OUT_AFTER:
+            return None
         renamed = clause.renaming = _renaming(clause)
     return renamed
+
+
+_WORK_OUT_AFTER = 3
 
 
 # A clause renamed this often gets code generated to build its renamed terms;

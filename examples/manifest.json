@@ -25,6 +25,11 @@
     "trusted": []
   },
   {
+    "name": "deep-taxonomy-100000",
+    "description": "The same taxonomy benchmark at a hundred thousand levels",
+    "trusted": []
+  },
+  {
     "name": "backward",
     "description": "Backward definitions inside forward bodies",
     "trusted": []

@@ -37,6 +37,7 @@ expressions, one per line. The names match the source: `lists.py` has
 | [deep-taxonomy-100.py](https://github.com/eyereasoner/peye/blob/main/examples/deep-taxonomy-100.py) | The same taxonomy benchmark at a hundred levels |
 | [deep-taxonomy-1000.py](https://github.com/eyereasoner/peye/blob/main/examples/deep-taxonomy-1000.py) | The same taxonomy benchmark at a thousand levels |
 | [deep-taxonomy-10000.py](https://github.com/eyereasoner/peye/blob/main/examples/deep-taxonomy-10000.py) | The same taxonomy benchmark at ten thousand levels |
+| [deep-taxonomy-100000.py](https://github.com/eyereasoner/peye/blob/main/examples/deep-taxonomy-100000.py) | The same taxonomy benchmark at a hundred thousand levels |
 | [dog-license.py](https://github.com/eyereasoner/peye/blob/main/examples/dog-license.py) | A licensing threshold based on collected dog counts |
 | [easter.py](https://github.com/eyereasoner/peye/blob/main/examples/easter.py) | Easter Sunday by the anonymous Gregorian algorithm, 2021 to 2050 |
 | [existential-rules.py](https://github.com/eyereasoner/peye/blob/main/examples/existential-rules.py) | Existential rules: a fresh witness per activation, never a clash |
@@ -113,10 +114,12 @@ obligations.
 The `deep-taxonomy` examples are the deep-taxonomy benchmark: one individual, a
 chain of subclass rules, and two sibling branches at every level that lead
 nowhere. The goal has to follow the single productive branch the whole way
-down, so the chain length is also the backward recursion depth. The four sizes
-run from ten to ten thousand levels, and each costs exactly one resolution
-step per level, which `--stats` reports and the saved check report confirms:
-`deep-taxonomy-10000` verifies 10001 steps. Backward search is an explicit
+down, so the chain length is also the backward recursion depth. The five sizes
+run from ten to a hundred thousand levels, and each costs exactly one
+resolution step per level, which `--stats` reports and the saved check report
+confirms: `deep-taxonomy-100000` verifies 100001 steps. Each program states
+its rules with a Python loop rather than one by one, which keeps even the
+largest a few lines long instead of 14 MB. Backward search is an explicit
 machine, so the depth costs heap rather than host stack.
 
 ```sh

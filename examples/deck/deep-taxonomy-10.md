@@ -22,18 +22,15 @@ categories that lead nowhere.
 
 ## What we tell peye
 
-One fact, and three rules per level:
+One fact, and three rules per level, which a loop states — the program is
+Python, so it can compute its own rules:
 
 ```python
 fact(type('ind', 'n0'))
-implied_by(type(X, 'n1'), type(X, 'n0'))
-implied_by(type(X, 'i1'), type(X, 'n0'))
-implied_by(type(X, 'j1'), type(X, 'n0'))
-implied_by(type(X, 'n2'), type(X, 'n1'))
-# … the same pattern for levels 3 to 9 …
-implied_by(type(X, 'n10'), type(X, 'n9'))
-implied_by(type(X, 'i10'), type(X, 'n9'))
-implied_by(type(X, 'j10'), type(X, 'n9'))
+for level in range(1, 11):
+    implied_by(type(X, f'n{level}'), type(X, f'n{level - 1}'))
+    implied_by(type(X, f'i{level}'), type(X, f'n{level - 1}'))
+    implied_by(type(X, f'j{level}'), type(X, f'n{level - 1}'))
 query(type(X, 'n10'))
 ```
 
@@ -79,15 +76,15 @@ Verdict: **checked**. All 11 steps verified, nothing taken on trust.
 
 ---
 
-## One of four sizes
+## One of five sizes
 
 This is the smallest of a well-known benchmark, the deep taxonomy, that
-peye ships at four sizes:
+peye ships at five sizes:
 
-- `deep-taxonomy-10` (this one), `-100`, `-1000` and `-10000` levels.
+- `deep-taxonomy-10` (this one), `-100`, `-1000`, `-10000` and `-100000` levels.
 
 Each costs exactly one step per level, plus one for the fact. The
-ten-thousand-level version verifies 10001 steps. Time, proof size and
+hundred-thousand-level version verifies 100001 steps. Time, proof size and
 checking all grow in proportion to the depth, so a longer chain costs
 more, but never disproportionately more.
 

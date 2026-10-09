@@ -1,5 +1,6 @@
 """Backward resolution, forward fixpoints and proof recording."""
 import json
+from bisect import bisect_left
 
 from .builtins import PRIMITIVE_KEYS, primitive
 from .common import fresh_clause, renaming, text, variant
@@ -7,7 +8,8 @@ from .writer import Lettering, write
 from .program import CONTROL_KEYS, Program
 from .terms import (
     Env, PeyeError, Struct, Var, conjunction, copy_resolved, deref, flatten_conjunction,
-    fresh_term, is_callable, is_ground, is_ground_but_anonymous, is_term, key, list_from_items, unify, variables,
+    fresh_term, identity, is_callable, is_ground, is_ground_but_anonymous, is_term, key, list_from_items, unify,
+    variables,
 )
 
 BUILTIN = 'builtin'
@@ -18,10 +20,13 @@ COLLECTED = 'collected'
 
 class Node:
     """One proof step: a goal, how it was justified, and the steps it used."""
-    __slots__ = ('goal', 'by', 'bindings', 'children', 'collected_uses')
+    __slots__ = ('goal', 'by', 'bindings', 'children', 'collected_uses', 'final')
 
-    def __init__(self, goal, by, bindings=(), children=(), collected_uses=None):
+    def __init__(self, goal, by, bindings=(), children=(), collected_uses=None, final=False):
         self.goal = goal
+        # A derived fact's node is resolved once and for all when the fact is
+        # derived, so whatever uses the fact shares the node, derivation and all.
+        self.final = final
         self.by = by
         self.bindings = bindings
         self.children = children
@@ -56,12 +61,13 @@ class Frame:
 
 class Point:
     """A choice point: the frame it was made in and its untried alternatives:
-    the derived facts from start to stop, then the source clauses."""
+    the derived facts from start to stop, then the source clauses. With an
+    order, the facts are those at the indexes order[start:stop]."""
     __slots__ = ('kind', 'frame', 'mark', 'goal', 'alternatives', 'facts', 'clauses',
-                 'position', 'iterator', 'start', 'stop')
+                 'position', 'iterator', 'start', 'stop', 'order')
 
     def __init__(self, kind, frame, mark, goal, alternatives=(), facts=(), clauses=(), iterator=None,
-                 start=0, stop=None):
+                 start=0, stop=None, order=None):
         self.kind = kind
         self.frame = frame
         self.mark = mark
@@ -71,8 +77,13 @@ class Point:
         self.clauses = clauses
         self.position = 0
         self.iterator = iterator
-        self.start = start
-        self.stop = len(facts) if stop is None else stop
+        self.order = order
+        if order is None:
+            self.start = start
+            self.stop = len(facts) if stop is None else stop
+        else:
+            self.start = bisect_left(order, start)
+            self.stop = len(order) if stop is None else bisect_left(order, stop)
 
     def count(self):
         if self.kind == 'branch':
@@ -93,12 +104,19 @@ def _resolve_one(node, env):
 
 def resolve_node(node, env):
     """Resolve a proof forest with an explicit stack: a derivation chain is as
-    deep as the search that produced it."""
+    deep as the search that produced it. A derived fact's node is already
+    final and is shared rather than copied, which keeps a long forward chain
+    from being copied again at every step."""
+    if node.final:
+        return node
     root = _resolve_one(node, env)
     pending = [(node, root)]
     while pending:
         source, target = pending.pop()
         for index, child in enumerate(source.children):
+            if child.final:
+                target.children[index] = child
+                continue
             copy = _resolve_one(child, env)
             target.children[index] = copy
             if child.children:
@@ -179,6 +197,10 @@ class Solver:
         self.recording = bool(options.get('proof'))
         self.serial = 0
         self.facts = {}
+        # Derived facts indexed by argument: for each name and arity, one map
+        # per argument position from an atom or number to the indexes, in
+        # order, of the facts with that value there.
+        self.fact_index = {}
         self.fact_keys = set(program.ground_fact_keys)
         self.derived = []
         self.reported = {}
@@ -335,19 +357,60 @@ class Solver:
             start, stop, with_clauses = self.window[frame.index]
             point = Point('resolve', frame, env.mark(), goal, facts=self.facts.get(goal_key, NO_NODES),
                           clauses=self.program.candidates(goal, env, goal_key) if with_clauses else NO_NODES,
-                          start=start, stop=stop)
+                          start=start, stop=stop, order=self.fact_order(goal, env, goal_key))
         else:
             # Derived facts are tried before source clauses. Neither list
             # changes while a search runs.
             point = Point('resolve', frame, env.mark(), goal,
                           facts=self.facts.get(goal_key, NO_NODES),
-                          clauses=self.program.candidates(goal, env, goal_key))
+                          clauses=self.program.candidates(goal, env, goal_key),
+                          order=self.fact_order(goal, env, goal_key))
         step = self.retry(point, env)
         if step is None:
             return None
         if point.kind == 'primitive' or point.position < point.count():
             choices.append(point)
         return step
+
+    def add_fact(self, goal_key, node):
+        facts = self.facts.setdefault(goal_key, [])
+        number = len(facts)
+        facts.append(node)
+        if goal_key[1]:
+            positions = self.fact_index.get(goal_key)
+            if positions is None:
+                positions = self.fact_index[goal_key] = [{} for _ in range(goal_key[1])]
+            for position, arg in enumerate(node.goal.args):
+                kind = type(arg)
+                if kind is str or kind is int or kind is float:
+                    bucket = positions[position].get(arg)
+                    if bucket is None:
+                        positions[position][arg] = [number]
+                    else:
+                        bucket.append(number)
+
+    def fact_order(self, goal, env, goal_key):
+        """The indexes of the derived facts a goal could match, in order, when
+        an argument of the goal narrows them down; None to try them all. A
+        bucket may hold more than the matches (1 and 1.0 share one), never
+        fewer: a derived fact is ground, so it has a value at every position."""
+        positions = self.fact_index.get(goal_key)
+        if positions is None:
+            return None
+        best = None
+        size = len(self.facts[goal_key])
+        for position, arg in enumerate(goal.args):
+            if type(arg) is Var and env is not None:
+                arg = deref(arg, env)
+            kind = type(arg)
+            if kind is str or kind is int or kind is float:
+                bucket = positions[position].get(arg, NO_NODES)
+                if len(bucket) < size:
+                    best = bucket
+                    size = len(bucket)
+                    if not size:
+                        break
+        return best
 
     def retry(self, point, env):
         """Take the next untried alternative of a choice point, or None. The
@@ -370,10 +433,13 @@ class Solver:
                                         self.control_pending(point.goal, None), point.frame.depth + 1)
             in_window = point.stop - point.start
             if position < in_window:
-                fact = point.facts[point.start + position]
+                index = point.start + position
+                if point.order is not None:
+                    index = point.order[index]
+                fact = point.facts[index]
                 if unify(point.goal, fact.goal, env):
                     if windowed:
-                        self.chosen[point.frame.index] = (0, point.start + position)
+                        self.chosen[point.frame.index] = (0, index)
                     return self.advance(point.frame, fact)
                 env.undo(point.mark)
                 continue
@@ -384,6 +450,15 @@ class Solver:
             # The body is renamed only once the head unifies: many candidate
             # clauses of a goal fail on their head.
             renamed = clause.renaming or renaming(clause)
+            if renamed is None:
+                names = {}
+                if not unify(point.goal, fresh_term(clause.head, self.serial, names), env):
+                    env.undo(point.mark)
+                    continue
+                body = [fresh_term(goal, self.serial, names) for goal in clause.body]
+                pending = (Pending(point.goal, Struct('clause', (clause.id,)), list(names.items()), None)
+                           if recording else QUIET)
+                return self.child_frame(point.frame, body, pending, point.frame.depth + 1)
             suffix = str(self.serial)
             prefixes = renamed.prefixes
             values = [Var(prefixes[i] + suffix) for i in range(renamed.head_count)]
@@ -440,11 +515,14 @@ class Solver:
             now = {goal_key: len(self.facts.get(goal_key, NO_NODES)) for goal_key in keys if goal_key}
             previous = self.snapshots.get(clause.id)
             self.snapshots[clause.id] = now
+        if previous is not None:
+            positions = [i for i, goal_key in enumerate(keys) if goal_key and now[goal_key] > previous[goal_key]]
+            if not any(self.may_match_new(clause.body[i], keys[i], previous, now) for i in positions):
+                return []  # nothing derived since its last search can be used, so nothing new follows
         self.serial += 1
         head, body, names = fresh_clause(clause, self.serial)
         if previous is None:
             return [found for found, _ in self.scan(clause, head, body, names)]
-        positions = [i for i, goal_key in enumerate(keys) if goal_key and now[goal_key] > previous[goal_key]]
         found = []
         for delta in positions:
             window = []
@@ -465,6 +543,16 @@ class Solver:
         found.sort(key=lambda item: item[1])
         return [activation for activation, _ in found]
 
+    def may_match_new(self, goal, goal_key, previous, now):
+        """Whether a body goal, as the rule writes it, could match a fact
+        derived since the rule's last search. The goal's own atoms and numbers
+        narrow the facts down before the rule is renamed and searched."""
+        order = self.fact_order(goal, None, goal_key)
+        if order is None:
+            return True
+        first = bisect_left(order, previous[goal_key])
+        return first < len(order) and order[first] < now[goal_key]
+
     def scan(self, clause, head, body, names):
         """Each solution of a renamed rule's body, as what it concludes, with
         the alternatives its goals took when the body is searched in a window.
@@ -483,7 +571,10 @@ class Solver:
             if unresolved:
                 for value, witness in zip(unresolved.values(), skolem_terms(clause, head, unresolved, answer_env)):
                     unify(value, witness, answer_env)
-            conclusions = [copy_resolved(item, answer_env) for item in flatten_conjunction(head)]
+            if unresolved:
+                conclusions = [copy_resolved(item, answer_env) for item in flatten_conjunction(head)]
+            else:
+                conclusions = flatten_conjunction(resolved)
             if self.recording:
                 children = [resolve_node(node, answer_env) for node in nodes]
                 bindings = [(name, copy_resolved(value, answer_env)) for name, value in names.items()]
@@ -527,16 +618,16 @@ class Solver:
                                 if claim_id not in self.reported:
                                     self.reported[claim_id] = (claim, children, clause.id)
                                 continue
-                            node = Node(conclusion, Struct('clause', (clause.id,)), bindings, children)
+                            node = Node(conclusion, Struct('clause', (clause.id,)), bindings, children, final=True)
                             if type(conclusion) is str and conclusion == 'false':
                                 self.derived.append(node)
                                 self.halt_code = 65
                                 return
-                            conclusion_id = text(conclusion)
+                            conclusion_id = identity(conclusion)
                             if conclusion_id in self.fact_keys:
                                 continue
                             self.fact_keys.add(conclusion_id)
-                            self.facts.setdefault(key(conclusion), []).append(node)
+                            self.add_fact(key(conclusion), node)
                             self.derived.append(node)
                             self.stats['derived'] += 1
                             changed = True
@@ -580,6 +671,11 @@ class Result:
     def __init__(self, **fields):
         self.__dict__.update(fields)
 
+    @property
+    def inferred(self):
+        """The derived facts as text, written only when asked for."""
+        return [text(node.goal) for node in self.derived]
+
     def __repr__(self):
         return f'Result(answers={self.answers!r}, halt_code={self.halt_code!r})'
 
@@ -616,7 +712,7 @@ def _goal_term(goal):
 
 
 def _reason(program, goals, options):
-    from .proof import check_proof, render_proof
+    from .proof import check_rendered, render_proof
     solver = Solver(program, options)
     goals = [_goal_term(goal) for goal in goals]
     solver.forward(not goals)
@@ -651,7 +747,8 @@ def _reason(program, goals, options):
     lettering = Lettering()
     answers = [write(claim, names=lettering) for claim in claims]
     bindings = [{name: write(value, names=lettering) for name, value in answer.items()} for answer in bindings]
-    document = render_proof(program, claims, roots) if options['proof'] else None
+    rendered = render_proof(program, claims, roots, checkable=True) if options['proof'] else None
+    document = rendered[0] if rendered is not None else None
     # A rule that reports a claim is used by it, though a proof records only
     # the claim's support.
     used = clauses_used(roots) if options['proof'] else None
@@ -661,13 +758,13 @@ def _reason(program, goals, options):
     report = None
     if document is not None:
         # The generated proof is checked before it is returned.
-        report = check_proof(program, document, goals=goals)
+        report = check_rendered(program, rendered[1], goals=goals)
         if not report['valid']:
             raise PeyeError(f"cannot certify this result: {report['failures'][0]['detail']}")
     return Result(
         answers=answers,
         bindings=bindings,
-        inferred=[text(node.goal) for node in solver.derived],
+        derived=solver.derived,
         clauses_used=sorted(used) if used is not None else None,
         clauses_behind_boundaries=(sorted(set(clauses_behind_boundaries(program, roots)) - used)
                                    if used is not None else None),

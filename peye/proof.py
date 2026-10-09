@@ -86,7 +86,10 @@ def _bindings_text(bindings, lettering):
     return '{' + ', '.join(f'{name!r}: {write(value, names=lettering)}' for name, value in bindings) + '}'
 
 
-def render_proof(program, claims, roots):
+def render_proof(program, claims, roots, checkable=False):
+    """The proof document of a run's claims and their derivations. With
+    checkable, also what check_rendered() needs to check it without reading
+    the document back: the document and that, as a pair."""
     spell = _Spellings()
     steps = {}
     cited = set()
@@ -113,17 +116,30 @@ def render_proof(program, claims, roots):
         uses = '[' + ', '.join(spell.lettered(child.goal, lettering) for child in node.children) + ']'
         lines.append(f'step({spell.lettered(node.goal, lettering)}, {text(node.by)}, '
                      f'{_bindings_text(node.bindings, lettering)}, {uses})')
-    return '\n'.join(lines) + '\n'
+    document = '\n'.join(lines) + '\n'
+    if not checkable:
+        return document
+    # The steps as reading the document would give them: bindings as '='/2
+    # pairs, uses as goals. Their variables keep the run's names, which the
+    # document only spells differently, so the checks come out the same; what
+    # a report shows of a term is spelled as the document spells it.
+    read = {}
+    for node_id, node in steps.items():
+        read[node_id] = {'goal': node.goal, 'by': node.by,
+                         'bindings': [Struct('=', (name, value)) for name, value in node.bindings],
+                         'uses': [child.goal for child in node.children]}
+    return document, (list(claims), read, spell, lambda term: spell.lettered(term, lettering))
 
 
 class _Failures:
-    def __init__(self):
+    def __init__(self, name=text):
         self.items = []
+        self.name = name
 
     def __call__(self, condition, detail, term=None):
         record = {'condition': condition, 'detail': detail}
         if term is not None:
-            record['conclusion'] = text(term)
+            record['conclusion'] = self.name(term)
         # The term itself stays out of JSON but is kept for the term report.
         self.items.append((record, term))
 
@@ -140,10 +156,23 @@ def check_proof(program, document, goals=None, allow_trusted=True):
     fail = _Failures()
     spell = _Spellings()
     claims, steps = _read_document(program, document, fail, spell)
+    return _check(program, claims, steps, goals, allow_trusted, fail, spell, text)
+
+
+def check_rendered(program, checkable, goals=None, allow_trusted=True):
+    """Check a proof as render_proof(..., checkable=True) gave it: the report
+    check_proof() gives for its document, without reading the document back.
+    A reasoner checks its own proofs this way; their text is covered by the
+    tests that what is written reads back as the same terms."""
+    claims, steps, spell, name = checkable
+    return _check(program, claims, steps, goals, allow_trusted, _Failures(name), spell, name)
+
+
+def _check(program, claims, steps, goals, allow_trusted, fail, spell, name):
     for claim in claims:
         if not all(spell(part) in steps for part in flatten_conjunction(claim)):
             fail('C4', f'unjustified claim {text(claim)}', claim)
-    tally = _check_steps(program, steps, allow_trusted, fail, spell)
+    tally = _check_steps(program, steps, allow_trusted, fail, spell, name)
     confronted = _check_boundaries(program, steps, tally['boundaries'], fail)
     _check_relevance(program, claims, steps, goals or [], fail, spell)
     _check_well_founded(steps, fail, spell)
@@ -224,7 +253,7 @@ def _read_document(program, document, fail, spell):
     return claims, steps
 
 
-def _check_steps(program, steps, allow_trusted, fail, spell):
+def _check_steps(program, steps, allow_trusted, fail, spell, name):
     """C4, C1, C3 and C5 for each step: every use is justified, and the step is
     an instance of the clause it cites, a recomputed primitive, a control
     composed of its uses, or a trusted boundary the later checks confront."""
@@ -289,7 +318,7 @@ def _check_steps(program, steps, allow_trusted, fail, spell):
             if bindings or uses:
                 fail('C3', 'trusted boundaries cannot have bindings or uses', goal)
             tally['boundaries'].append(goal)
-            tally['trusted'].append(({'kind': by, 'conclusion': text(goal)}, goal))
+            tally['trusted'].append(({'kind': by, 'conclusion': name(goal)}, goal))
             if not allow_trusted:
                 fail('C5', f'trusted boundary forbidden: {by}', goal)
         else:

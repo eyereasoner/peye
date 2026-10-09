@@ -21,15 +21,14 @@ leads further.
 
 ## What we tell peye
 
-One fact and 300 rules. The first few:
+One fact and 300 rules, three per level, which a loop states:
 
 ```python
 fact(type('ind', 'n0'))
-implied_by(type(X, 'n1'), type(X, 'n0'))
-implied_by(type(X, 'i1'), type(X, 'n0'))
-implied_by(type(X, 'j1'), type(X, 'n0'))
-implied_by(type(X, 'n2'), type(X, 'n1'))
-# … the same pattern down to n100 …
+for level in range(1, 101):
+    implied_by(type(X, f'n{level}'), type(X, f'n{level - 1}'))
+    implied_by(type(X, f'i{level}'), type(X, f'n{level - 1}'))
+    implied_by(type(X, f'j{level}'), type(X, f'n{level - 1}'))
 query(type(X, 'n100'))
 ```
 
@@ -81,7 +80,7 @@ Verdict: **checked**. 101 steps, all verified, nothing taken on trust.
 
 ## One of a family
 
-The same benchmark comes in four sizes:
+The same benchmark comes in five sizes:
 
 | Example | Levels | Proof steps |
 | --- | --- | --- |
@@ -89,6 +88,7 @@ The same benchmark comes in four sizes:
 | deep-taxonomy-100 | 100 | 101 |
 | deep-taxonomy-1000 | 1,000 | 1,001 |
 | deep-taxonomy-10000 | 10,000 | 10,001 |
+| deep-taxonomy-100000 | 100,000 | 100,001 |
 
 The cost grows in a straight line with the depth: each level costs exactly
 one step. `--stats` reports 101 inferences for this one.

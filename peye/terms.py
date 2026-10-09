@@ -385,12 +385,56 @@ def fresh_term(term, suffix, names=None):
     return term if copied is None else Struct(term.name, tuple(copied))
 
 
+class _Deep(Exception):
+    pass
+
+
+# Terms nested deeper than this are copied iteratively instead.
+_COPY_DEPTH = 200
+
+
 def copy_resolved(term, env):
     """The term with every bound variable replaced by its value.
 
-    Deeply nested terms are copied iteratively, and shared subterms stay
-    shared in the copy; a subterm that resolves to itself is not copied.
+    A subterm that resolves to itself is not copied, and a value bound to a
+    variable is copied once however often it is used, so shared subterms stay
+    shared. Most terms are shallow and copied by a quick recursion; a deeply
+    nested one is copied iteratively.
     """
+    try:
+        return _copy(term, env, {}, 0)
+    except _Deep:
+        return _copy_iteratively(term, env)
+
+
+def _copy(term, env, memo, depth):
+    kind = type(term)
+    if kind is Var:
+        value = deref(term, env)
+        if type(value) is not Struct:
+            return value
+        copied = memo.get(id(value))
+        if copied is None:
+            copied = memo[id(value)] = _copy(value, env, memo, depth)
+        return copied
+    if kind is not Struct:
+        return term
+    if depth > _COPY_DEPTH:
+        raise _Deep
+    args = term.args
+    copied = None
+    for position, arg in enumerate(args):
+        kind = type(arg)
+        value = _copy(arg, env, memo, depth + 1) if kind is Var or kind is Struct else arg
+        if copied is None:
+            if value is arg:
+                continue
+            copied = list(args[:position])
+        copied.append(value)
+    return term if copied is None else Struct(term.name, tuple(copied))
+
+
+def _copy_iteratively(term, env):
     root = deref(term, env)
     if type(root) is not Struct:
         return root
@@ -461,6 +505,37 @@ def is_ground(term, env=None):
             seen.add(id(item))
             pending.extend(item.args)
     return True
+
+
+def identity(term):
+    """A key that two terms share exactly when their canonical texts are
+    equal, cheaper to make than the text: the term's nodes in prefix order,
+    each with a tag, as one flat tuple, so that even a very long list needs no
+    recursion to make or to hash. Floats are keyed by their spelling, which
+    keeps 0.0 and -0.0 apart as their texts do."""
+    out = []
+    pending = [term]
+    while pending:
+        item = pending.pop()
+        kind = type(item)
+        if kind is Struct:
+            out.append(0)
+            out.append(item.name)
+            out.append(len(item.args))
+            pending.extend(reversed(item.args))
+        elif kind is str:
+            out.append(1)
+            out.append(item)
+        elif kind is int:
+            out.append(2)
+            out.append(item)
+        elif kind is float:
+            out.append(3)
+            out.append(repr(item))
+        else:
+            out.append(4)
+            out.append(item.name)
+    return tuple(out)
 
 
 def variables(term, result=None):

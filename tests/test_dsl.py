@@ -99,6 +99,8 @@ query(path(0, W))
         for source in sources:
             with self.subTest(source[:60]):
                 scanned = _scan_names_in_statements(source, exported, wanted)
+                if scanned is None:
+                    continue  # an f-string or a lambda: the syntax tree decides instead
                 self.assertEqual(scanned, _ast_names_in_statements(source, '<program>', exported) & wanted)
         for source in ["fact(p(f'{sum(1)}'))", "fact(p(lambda type: 1))"]:
             self.assertIsNone(_scan_names_in_statements(source, exported, wanted))

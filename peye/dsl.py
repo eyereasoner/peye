@@ -33,6 +33,9 @@ class Builder:
         self.sources = []
         # Where each clause was stated, as (code, offset) until finish().
         self.places = []
+        # Whether a statement may hold a _ to rename; a program whose source
+        # cannot reach _ spares every clause that search.
+        self.anonymous = True
 
     def add(self, kind, head, body, line=None, file=None):
         place = None
@@ -40,15 +43,16 @@ class Builder:
             place = _caller()
         head = _term(head)
         body = [_term(goal) for goal in body]
-        anonymous = _Anonymous([head, *body])
-        # In the order the statement writes them: a forward rule, implies(),
-        # writes its premise first.
-        if kind != 'backward':
-            body = [_rename_anonymous(goal, anonymous) for goal in body]
-            head = _rename_anonymous(head, anonymous)
-        else:
-            head = _rename_anonymous(head, anonymous)
-            body = [_rename_anonymous(goal, anonymous) for goal in body]
+        if self.anonymous:
+            anonymous = _Anonymous([head, *body])
+            # In the order the statement writes them: a forward rule, implies(),
+            # writes its premise first.
+            if kind != 'backward':
+                body = [_rename_anonymous(goal, anonymous) for goal in body]
+                head = _rename_anonymous(head, anonymous)
+            else:
+                head = _rename_anonymous(head, anonymous)
+                body = [_rename_anonymous(goal, anonymous) for goal in body]
         for goal in body:
             if type(goal) is not Var and type(goal) is not str and type(goal) is not Struct:
                 raise PeyeError(f'line {_line_now()}: a goal must be an atom, a compound term or a '
@@ -519,6 +523,8 @@ def _statements_nothing(source, filename, names):
 _RENAMED = {'forward': 'implies(Premise, Conclusion), premise first',
             'backward': 'implied_by(Conclusion, Premise)'}
 
+_MAY_REACH_ANONYMOUS = re.compile(r'(?<![\w.])_(?!\w)|^[ \t]*import\b|^[ \t]*from\b(?! peye import \*)',
+                                  re.MULTILINE)
 _RENAMED_CALL = re.compile(r'^[ \t]*(forward|backward)[ \t]*\(', re.MULTILINE)
 _LEADING_CALL = re.compile(r'^([^\W\d]\w*)[ \t]*\(', re.MULTILINE)
 
@@ -541,11 +547,17 @@ def _exec_program(source, filename):
     except ValueError as error:  # before Python 3.12, a null character
         raise PeyeError(str(error)) from None
     _statements_nothing(source, filename, names)
+    builder = _builders[-1] if _builders else None
+    if builder is not None:
+        # Only a source that names _ or imports other code can state a _.
+        builder.anonymous = bool(_MAY_REACH_ANONYMOUS.search(source))
     namespace = {'__name__': '__peye__', '__file__': filename, '__builtins__': __builtins__}
     namespace.update(names)
     try:
         exec(code, namespace)
     except Exception as error:
+        if builder is not None:
+            builder.anonymous = True
         # An error is reported at the line of the program that raised it,
         # unless it already names one.
         import traceback
@@ -557,6 +569,8 @@ def _exec_program(source, filename):
                 raise
             raise PeyeError(f'{where}{error}') from None
         raise PeyeError(f'{where}{type(error).__name__}: {error}') from None
+    if builder is not None:
+        builder.anonymous = True
 
 
 def _imports_everything(source, filename):

@@ -19,10 +19,10 @@ show all ten thousand steps — and have them checked?
 
 ---
 
-## A benchmark, at four sizes
+## A benchmark, at five sizes
 
 This is the *deep-taxonomy benchmark*, a standard stress test for reasoners.
-The collection has it at four depths, and this is the largest:
+The collection has it at five depths:
 
 | Example | Levels | Proof steps |
 | --- | --- | --- |
@@ -30,6 +30,7 @@ The collection has it at four depths, and this is the largest:
 | deep-taxonomy-100 | 100 | 101 |
 | deep-taxonomy-1000 | 1000 | 1001 |
 | **deep-taxonomy-10000** | **10000** | **10001** |
+| deep-taxonomy-100000 | 100000 | 100001 |
 
 Same shape each time; only the length of the chain changes.
 
@@ -37,18 +38,14 @@ Same shape each time; only the length of the chain changes.
 
 ## What we tell peye
 
-One fact, then three rules per level — 30,000 rules in all:
+One fact, then three rules per level — 30,000 rules in all, stated by a loop:
 
 ```python
 fact(type('ind', 'n0'))
-implied_by(type(X, 'n1'), type(X, 'n0'))
-implied_by(type(X, 'i1'), type(X, 'n0'))
-implied_by(type(X, 'j1'), type(X, 'n0'))
-implied_by(type(X, 'n2'), type(X, 'n1'))
-# … and so on, down to
-implied_by(type(X, 'n10000'), type(X, 'n9999'))
-implied_by(type(X, 'i10000'), type(X, 'n9999'))
-implied_by(type(X, 'j10000'), type(X, 'n9999'))
+for level in range(1, 10001):
+    implied_by(type(X, f'n{level}'), type(X, f'n{level - 1}'))
+    implied_by(type(X, f'i{level}'), type(X, f'n{level - 1}'))
+    implied_by(type(X, f'j{level}'), type(X, f'n{level - 1}'))
 query(type(X, 'n10000'))
 ```
 
@@ -99,7 +96,7 @@ that:
 
 Verdict: **checked**. All 10,001 steps verified, and nothing taken on trust.
 
-The source is about 1.3 MB and its proof about 1.4 MB: a proof records every
+The program is a few lines and its proof about 1.4 MB: a proof records every
 step it claims.
 
 ---

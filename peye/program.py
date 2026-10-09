@@ -1,7 +1,7 @@
 """A program: its clauses, validated, indexed and stratified."""
 from .builtins import PRIMITIVE_KEYS
 from .terms import (
-    Env, PeyeError, Struct, Var, deref, flatten_conjunction, fresh_term, is_callable,
+    Env, PeyeError, Struct, Var, deref, flatten_conjunction, fresh_term, identity, is_callable,
     is_ground, is_term, key, unify,
 )
 
@@ -14,7 +14,7 @@ FORWARD_KINDS = {'forward': 'a forward rule', 'query': 'query()', 'contradiction
 
 
 class Clause:
-    __slots__ = ('id', 'head', 'heads', 'body', 'forward', 'line', 'renaming')
+    __slots__ = ('id', 'head', 'heads', 'body', 'forward', 'line', 'renaming', 'uses')
 
     def __init__(self, id, head, heads, body, forward, line):
         self.id = id
@@ -24,7 +24,8 @@ class Clause:
         self.body = body
         self.forward = forward
         self.line = line
-        self.renaming = None  # how to rename it apart, worked out when first needed
+        self.renaming = None  # how to rename it apart, worked out once it is used often
+        self.uses = 0
 
 
 class Source:
@@ -96,13 +97,12 @@ class Program:
         self.indexes = {}
         for group_key, clauses in self.groups.items():
             self.indexes[group_key] = _position_indexes(clauses, lambda clause: clause.head, group_key[1])
-        # Ground source facts are compared against forward conclusions by text,
-        # so render them once here rather than on every run.
-        from .common import text
+        # Ground source facts are compared against forward conclusions by
+        # identity (terms.identity), so work those out once here.
         self.ground_fact_keys = set()
         for clause in self.clauses:
             if not clause.forward and not clause.body and is_ground(clause.head):
-                self.ground_fact_keys.add(text(clause.head))
+                self.ground_fact_keys.add(identity(clause.head))
         self.strata = _stratify(self.clauses, stratifying)
 
     def candidates(self, goal, env, goal_key):

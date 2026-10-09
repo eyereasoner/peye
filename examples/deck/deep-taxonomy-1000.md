@@ -19,10 +19,10 @@ show every one of the thousand steps?
 
 ---
 
-## A benchmark, at four sizes
+## A benchmark, at five sizes
 
 This is the *deep-taxonomy benchmark*, a standard stress test for reasoners.
-The collection has it at four depths:
+The collection has it at five depths:
 
 | Example | Levels | Proof steps |
 | --- | --- | --- |
@@ -30,6 +30,7 @@ The collection has it at four depths:
 | deep-taxonomy-100 | 100 | 101 |
 | **deep-taxonomy-1000** | **1000** | **1001** |
 | deep-taxonomy-10000 | 10000 | 10001 |
+| deep-taxonomy-100000 | 100000 | 100001 |
 
 Same shape each time; only the length of the chain changes.
 
@@ -37,18 +38,14 @@ Same shape each time; only the length of the chain changes.
 
 ## What we tell peye
 
-One fact, then three rules per level — 3000 rules in all:
+One fact, then three rules per level — 3000 rules in all, stated by a loop:
 
 ```python
 fact(type('ind', 'n0'))
-implied_by(type(X, 'n1'), type(X, 'n0'))
-implied_by(type(X, 'i1'), type(X, 'n0'))
-implied_by(type(X, 'j1'), type(X, 'n0'))
-implied_by(type(X, 'n2'), type(X, 'n1'))
-# … and so on, down to
-implied_by(type(X, 'n1000'), type(X, 'n999'))
-implied_by(type(X, 'i1000'), type(X, 'n999'))
-implied_by(type(X, 'j1000'), type(X, 'n999'))
+for level in range(1, 1001):
+    implied_by(type(X, f'n{level}'), type(X, f'n{level - 1}'))
+    implied_by(type(X, f'i{level}'), type(X, f'n{level - 1}'))
+    implied_by(type(X, f'j{level}'), type(X, f'n{level - 1}'))
 query(type(X, 'n1000'))
 ```
 
@@ -98,7 +95,7 @@ that:
 
 Verdict: **checked**. All 1001 steps verified, and nothing taken on trust.
 
-The source is about 126 KB and its proof about 128 KB: a proof records every
+The program is a few lines and its proof about 128 KB: a proof records every
 step it claims.
 
 ---

@@ -990,6 +990,19 @@ their order and their proofs are those of Section 7.2. A transitive closure
 over a chain of 150 edges needs 11,476 inferences this way instead of
 1,136,575.
 
+**Derived facts are indexed by argument.** For each predicate, every
+argument position maps an atom or number to the derived facts holding it
+there, in derivation order, so a goal with such an argument meets only the
+facts that can match it, as source clauses already do. Before a rule is
+searched again in a later round, its own atoms check against this index
+whether any new fact could match at all.
+
+**A reasoner checks its own proofs in memory.** The proof a run builds is
+checked as the structures it was written from, which gives exactly the
+report reading the written document back would give, without reading it;
+`--check-proof` reads and checks the text. That writing and reading agree is
+what the conformance suite and the tests of saved documents establish.
+
 **Proof steps record the first derivation found** for each conclusion, and are
 recorded only when a proof is asked for: without one, the search keeps just what
 it needs to find answers. Nodes carry the terms they were built from and are
