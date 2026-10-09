@@ -29,7 +29,7 @@ the topic of each.
 | [04-programs.txt](04-programs.txt) | 4 | 40 | Statements, clause numbering, names a program leaves undefined, rejected clauses, stratification |
 | [05-controls-and-primitives.txt](05-controls-and-primitives.txt) | 5 | 47 | Every control and primitive, and the errors of their flow patterns |
 | [06-arithmetic.txt](06-arithmetic.txt) | 6 | 28 | Python's meaning of every operator and function, exact integers, and each error |
-| [07-reasoning.txt](07-reasoning.txt) | 7 | 30 | Search order, forward rounds, Skolem names, conclusions, halting, bounds |
+| [07-reasoning.txt](07-reasoning.txt) | 7 | 29 | Search order, forward rounds, Skolem terms, conclusions, halting, bounds |
 | [08-canonical-text.txt](08-canonical-text.txt) | 8 | 21 | The one spelling of atoms, numbers, variables, lists, compounds and operators |
 | [09-reading.txt](09-reading.txt) | 9 | 37 | What a document reader accepts, and what it must reject without running anything |
 | [10-proofs.txt](10-proofs.txt) | 10 | 16 | Proof documents for every kind of justification, step order and sharing |
@@ -78,7 +78,7 @@ step(same(1, 1), clause(1), {'X': 1}, [])
 Trailing empty lines of a block are not part of it; every block that is not
 empty ends with one line break. In an expected output line, `…` matches any
 text: the specification leaves some text to the implementation, such as the
-wording of a failure's detail and the random genid of a run's Skolem atoms.
+wording of a failure's detail.
 
 ## Writing cases
 

@@ -26,7 +26,7 @@ d(-0.5)
 --- stdout
 d('plain')
 d("it's")
-d([1, [2, 3], *…])
+d([1, [2, 3], *A])
 d(struct('hello world', 1))
 d(1 + 2 * 3)
 d((1 + 2) * 3)

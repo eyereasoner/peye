@@ -58,39 +58,36 @@ fact(p(1))
 implies(p(X), p(X))
 --- stdout
 
-=== an unbound head variable becomes a Skolem atom of its own per activation
+=== an unbound head variable becomes a Skolem term of its own per activation
 spec: 7.2
-args: --skolem-genid test program.py
 --- program.py
 from peye import *
 fact(person('ann'), person('bob'))
 implies(person(X), has_parent(X, Y))
 implies(has_parent(X, P) & has_parent(Y, P) & not_identical(X, Y), siblings(X, Y))
 --- stdout
-has_parent('ann', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
-has_parent('bob', 'https://eyereasoner.github.io/.well-known/genid/test#sk_1')
+has_parent('ann', skolem(3, 'Y', ['ann']))
+has_parent('bob', skolem(3, 'Y', ['bob']))
 
-=== activations giving the same head instance share their Skolem atoms
+=== activations giving the same head instance share their Skolem terms
 spec: 7.2
-args: --skolem-genid test program.py
 --- program.py
 from peye import *
 fact(p('a', 1), p('a', 2))
 implies(p(X, Y), q(X, B))
 --- stdout
-q('a', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
+q('a', skolem(3, 'B', ['a']))
 
-=== each rule has Skolem atoms of its own
+=== each rule has Skolem terms of its own
 spec: 7.2
-args: --skolem-genid test program.py
 --- program.py
 from peye import *
 fact(p('a', 1))
 implies(p(X, Y), q(X, B))
 implies(p(X, Y), q2(X, B))
 --- stdout
-q('a', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
-q2('a', 'https://eyereasoner.github.io/.well-known/genid/test#sk_1')
+q('a', skolem(2, 'B', ['a']))
+q2('a', skolem(3, 'B', ['a']))
 
 === a rule that keeps meeting new activations exceeds the bound
 spec: 7.2, 7.3
@@ -103,28 +100,26 @@ fact(person('ann'))
 implies(person(X), has_parent(X, P) & person(P))
 --- stdout
 
-=== the same activation in a later round gets the same Skolem atoms
+=== the same activation in a later round gets the same Skolem terms
 spec: 7.2
-args: --skolem-genid test program.py
 --- program.py
 from peye import *
 fact(person('ann'))
 implies(person(X), has_parent(X, Y))
 implies(has_parent(X, P), known(X))
 --- stdout
-has_parent('ann', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
+has_parent('ann', skolem(2, 'Y', ['ann']))
 known('ann')
 
-=== Skolem names are numbered by first occurrence and shared across heads
+=== Skolem terms are shared across the heads of one activation
 spec: 7.2
-args: --skolem-genid test program.py
 --- program.py
 from peye import *
 fact(person('ann'))
 implies(person(X), r(X, Y, Z, Y) & s(Z))
 --- stdout
-r('ann', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0', 'https://eyereasoner.github.io/.well-known/genid/test#sk_1', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
-s('https://eyereasoner.github.io/.well-known/genid/test#sk_1')
+r('ann', skolem(2, 'Y', ['ann']), skolem(2, 'Z', ['ann']), skolem(2, 'Y', ['ann']))
+s(skolem(2, 'Z', ['ann']))
 
 === query reports each instance once
 spec: 7.2, 7.6
@@ -156,25 +151,14 @@ implies(p(X), q(X))
 query(r(X))
 --- stdout
 
-=== Skolem atoms cannot clash with the program's atoms
-spec: 7.2
-args: --skolem-genid test program.py
+=== a Skolem term has the values of the head's other variables as arguments
+spec: 4.4, 7.2
 --- program.py
 from peye import *
-fact(p('a'), knows('sk_0', 'x'))
-implies(p(X), q(X, Y))
-implies(q(X, Y) & knows(Y, Z), r(X, Z))
+fact(edge('a', 'b', 3))
+implies(edge(X, Y, W), via(Y, _, X))
 --- stdout
-q('a', 'https://eyereasoner.github.io/.well-known/genid/test#sk_0')
-
-=== without a genid, each run's Skolem atoms have a random one
-spec: 7.2, 14
---- program.py
-from peye import *
-fact(p('a'))
-implies(p(X), q(X, Y))
---- stdout
-q('a', 'https://eyereasoner.github.io/.well-known/genid/…#sk_0')
+via('b', skolem(2, '_0', ['b', 'a']), 'a')
 
 === query output replaces the derived facts
 spec: 7.6

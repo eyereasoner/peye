@@ -15,7 +15,7 @@ clause(12, implied_by(calculate('sub', L, R, Value), is_(Value, L - R)))
 clause(13, implied_by(calculate('mul', L, R, Value), is_(Value, L * R)))
 clause(14, implies(root(Name, Node) & value(Node, Value), result(Name, Value)))
 
-step(result('example', 12), clause(14), {'Name': 'example', 'Value': 12, 'Node': 'total'}, [root('example', 'total'), value('total', 12)])
+step(result('example', 12), clause(14), {'Name': 'example', 'Node': 'total', 'Value': 12}, [root('example', 'total'), value('total', 12)])
 step(root('example', 'total'), clause(8), {}, [])
 step(value('total', 12), clause(10), {'Node': 'total', 'Value': 12, 'Operation': 'add', 'Left': 'product', 'Right': 'difference', 'L': 6, 'R': 6}, [expression('total', 'add', 'product', 'difference'), value('product', 6), value('difference', 6), calculate('add', 6, 6, 12)])
 step(expression('total', 'add', 'product', 'difference'), clause(7), {}, [])

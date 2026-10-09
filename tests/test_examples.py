@@ -11,7 +11,7 @@ from peye.cli import with_deep_stack
 from helpers import ROOT, cli
 
 sys.path.insert(0, os.path.join(ROOT, 'tools'))
-from corpus import KINDS, SKOLEM_GENID, artifact_path, certify, load_example, read_manifest, source_path  # noqa: E402
+from corpus import KINDS, artifact_path, certify, load_example, read_manifest, source_path  # noqa: E402
 
 MANIFEST = read_manifest()
 # PEYE_EXAMPLES=socrates,graphs limits the corpus to those examples.
@@ -36,7 +36,7 @@ class Examples(unittest.TestCase):
 
     def check_example(self, entry):
         program = load_example(entry)
-        output = run(program, skolem_genid=SKOLEM_GENID)
+        output = run(program)
         proved = certify(entry, program, output)
         saved = {kind: read(artifact_path(kind, entry)) for kind in KINDS}
         self.assertEqual(output.stdout, saved['output'], CHANGED.format('output'))

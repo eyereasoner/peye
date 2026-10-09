@@ -117,18 +117,18 @@ unify(g(C), g(C))
 
 === each _ of a clause is a variable named _0, _1, ... skipping names the clause uses
 spec: 4.4
-args: --proof --skolem-genid test
+args: --proof
 --- stdin
 from peye import *
 fact(p(1))
 implies(p(X) & unify(_0, _), q(X, _, [X, *_]))
 --- stdout
-q(1, 'https://eyereasoner.github.io/.well-known/genid/test#sk_0', [1, *'https://eyereasoner.github.io/.well-known/genid/test#sk_1'])
+q(1, skolem(2, '_2', [1]), [1, *skolem(2, '_3', [1])])
 
 clause(1, fact(p(1)))
-clause(2, implies(p(X) & unify(_0, _3), q(X, _1, [X, *_2])))
+clause(2, implies(p(X) & unify(_0, _1), q(X, _2, [X, *_3])))
 
-step(q(1, 'https://eyereasoner.github.io/.well-known/genid/test#sk_0', [1, *'https://eyereasoner.github.io/.well-known/genid/test#sk_1']), clause(2), {'X': 1, '_1': 'https://eyereasoner.github.io/.well-known/genid/test#sk_0', '_2': 'https://eyereasoner.github.io/.well-known/genid/test#sk_1', '_0': A, '_3': A}, [p(1), unify(A, A)])
+step(q(1, skolem(2, '_2', [1]), [1, *skolem(2, '_3', [1])]), clause(2), {'X': 1, '_0': A, '_1': A, '_2': skolem(2, '_2', [1]), '_3': skolem(2, '_3', [1])}, [p(1), unify(A, A)])
 step(p(1), clause(1), {}, [])
 step(unify(A, A), 'builtin', {}, [])
 

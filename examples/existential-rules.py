@@ -1,7 +1,7 @@
 # Existential rules: a rule whose conclusion mentions something its body never
 # names says that such a thing exists. peye names each such unknown with a
-# Skolem atom: one per activation of the rule, the same one when the same
-# activation comes back, and never one that could stand for anything else.
+# Skolem term, a function of the rule's activation: the same term when the
+# same activation comes back, and never one that could stand for anything else.
 
 from peye import *
 

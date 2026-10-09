@@ -59,15 +59,15 @@ implies(quoted(X), witness(X, W))
 
 ```python
 found(triple(iri('https://example.org/s'), iri('https://example.org/p'), literal('hello', lang('en'))))
-witness(graph([triple(iri('https://example.org/s'), iri('https://example.org/p'), literal('hello', lang('en')))]), 'https://eyereasoner.github.io/.well-known/genid/examples#sk_0')
+witness(graph([triple(iri('https://example.org/s'), iri('https://example.org/p'), literal('hello', lang('en')))]), skolem(6, 'W', [graph([triple(iri('https://example.org/s'), iri('https://example.org/p'), literal('hello', lang('en')))])]))
 ```
 
 - The one triple inside the quotation has been found.
-- In the `witness`, the unknown `W` became a **Skolem atom** ending in
-  `#sk_0`: a placeholder name meaning "something exists here". peye invents
-  such names when a conclusion mentions something the rule never pinned
-  down. Each run uses a random genid in them, `examples` here, so they never
-  clash with names of yours or of another run; `--skolem-genid` fixes it.
+- In the `witness`, the unknown `W` became a **Skolem term**,
+  `skolem(6, 'W', [the graph])`: a name meaning "the `W` that rule 6 says
+  exists for this graph". peye invents such names when a conclusion mentions
+  something the rule never pinned down; the same graph always gives the same
+  name, and nothing else can.
 
 ---
 
@@ -83,7 +83,7 @@ For `found`:
    triple*.
 
 For `witness`: the quoted graph exists (fact 1), so the `witness` rule fires
-with X the graph and W the Skolem atom `…#sk_0`.
+with X the graph and W the Skolem term `skolem(6, 'W', [X])`.
 
 ---
 

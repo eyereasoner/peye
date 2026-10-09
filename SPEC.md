@@ -352,21 +352,19 @@ each rule in clause order is renamed apart and its body solved against the
 current state; all solutions of the body are collected first, then each is
 concluded:
 
-- a head variable the solution leaves unbound is bound to a Skolem atom.
-  An activation is the rule together with the instance of its heads the
-  solution gives, up to renaming of the unbound variables. The first time an
-  activation is met, each of its unbound variables, in order of first
-  occurrence, gets a fresh **Skolem atom**
-  `'https://eyereasoner.github.io/.well-known/genid/' + G + '#sk_' + N`,
-  where `N` counts from 0 over the whole run and `G` is the run's genid;
-  meeting the same activation again, in this round or a later one, gives the
-  same atoms. A run's genid is a random UUID unless one is given
-  (Section 14), so the Skolem atoms of a run clash neither with the atoms of
-  the program nor with those of another run, including those that a program
-  reads from an earlier run's output. Variables shared between heads stay
-  shared, different activations never share an atom, and a rule that keeps
-  meeting new activations does not terminate (Section 7.3). Derived facts
-  are therefore ground;
+- a head variable the solution leaves unbound is bound to a **Skolem term**
+  `skolem(Rule, Variable, Arguments)`: `Rule` is the clause number of the
+  rule, `Variable` the variable's name as the program writes it (an
+  anonymous one as `_0`, `_1`, ..., Section 4.4), and `Arguments` the list of
+  the ground values the solution gives the heads' other variables, in order
+  of their first occurrence in the heads. A Skolem term is thus a function of
+  the activation: the rule and the instance of its heads. The same activation
+  gives the same terms, in any round and in any run, and different
+  activations give different terms; variables shared between heads stay
+  shared. A variable that a value of the solution brought in, rather than a
+  head variable, is named after its own variable, followed by `1`, `2`, ...
+  when that name is taken. A rule that keeps meeting new activations does
+  not terminate (Section 7.3). Derived facts are therefore ground;
 - a head `'true'` reports the instance of the rule's body, as a conjunction,
   once per distinct instance (by identity of canonical text);
 - a head `'false'` records the conclusion `'false'` and stops all reasoning
@@ -563,7 +561,8 @@ order. `By` is one of:
 
 `Bindings` is a dictionary from each variable name of the cited clause, as
 the program wrote it, to its value in this step: `{'X': 'socrates'}`. A
-reasoner writes every variable of the clause, in order of first occurrence;
+reasoner writes every variable of the clause, in the order the clause display
+first shows them (for `implies`, the premise first);
 a checker MUST accept any subset, since the goal and uses determine the
 rest. A primitive has no variables of its own, so `'builtin'` steps have
 empty bindings.
@@ -761,7 +760,6 @@ peye [OPTION ...] [FILE ...]
 | `--strict-proof` | With `--check-proof`, forbid trusted boundaries. |
 | `--unused` | Print the unused clauses (Section 13). |
 | `--stats` | Print reasoning statistics as JSON to standard error. |
-| `--skolem-genid G` | Use the nonempty `G` as the genid of the run's Skolem atoms (Section 7.2) instead of a random one. |
 | `--max-depth N`, `--max-iterations N`, `--max-inferences N` | The bounds of Section 7.3; `N` MUST be a positive integer. |
 | `--version`, `--help` | Print the version, or the usage. |
 
@@ -815,9 +813,8 @@ Sections 9, 11 and 12 and does not depend on a reasoner. For the same
 program, a conforming reasoner and checker MUST produce the same
 conclusions, proof documents and reports as peye 0.3.0, byte for byte,
 except for the `Detail` texts of failures (Section 12), the internal names of
-variables where Section 3 says so, the random genid of Skolem atoms when none
-is given (Section 7.2), and where Python's floating-point library functions
-differ in the last digit.
+variables where Section 3 says so, and where Python's floating-point library
+functions differ in the last digit.
 
 The conformance suite in the repository's `conformance/` directory tests an
 implementation against this document through its command line, case by case,
@@ -891,7 +888,7 @@ clause(1, fact(type('socrates', 'human')))
 clause(2, fact(subclass_of('human', 'mortal')))
 clause(3, implies(type(S, A) & subclass_of(A, B), type(S, B)))
 
-step(type('socrates', 'mortal'), clause(3), {'S': 'socrates', 'B': 'mortal', 'A': 'human'}, [type('socrates', 'human'), subclass_of('human', 'mortal')])
+step(type('socrates', 'mortal'), clause(3), {'S': 'socrates', 'A': 'human', 'B': 'mortal'}, [type('socrates', 'human'), subclass_of('human', 'mortal')])
 step(type('socrates', 'human'), clause(1), {}, [])
 step(subclass_of('human', 'mortal'), clause(2), {}, [])
 ```

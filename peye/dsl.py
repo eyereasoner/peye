@@ -41,8 +41,14 @@ class Builder:
         head = _term(head)
         body = [_term(goal) for goal in body]
         anonymous = _Anonymous([head, *body])
-        head = _rename_anonymous(head, anonymous)
-        body = [_rename_anonymous(goal, anonymous) for goal in body]
+        # In the order the statement writes them: a forward rule, implies(),
+        # writes its premise first.
+        if kind == 'forward':
+            body = [_rename_anonymous(goal, anonymous) for goal in body]
+            head = _rename_anonymous(head, anonymous)
+        else:
+            head = _rename_anonymous(head, anonymous)
+            body = [_rename_anonymous(goal, anonymous) for goal in body]
         for goal in body:
             if type(goal) is not Var and type(goal) is not str and type(goal) is not Struct:
                 raise PeyeError(f'line {_line_now()}: a goal must be an atom, a compound term or a '

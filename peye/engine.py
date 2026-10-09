@@ -11,16 +11,6 @@ from .terms import (
 )
 
 BUILTIN = 'builtin'
-# Skolem atoms are IRIs under this namespace, followed by a genid of the run,
-# '#sk_' and a number.
-SKOLEM_NAMESPACE = 'https://eyereasoner.github.io/.well-known/genid/'
-
-
-def new_genid():
-    """A genid for a run's Skolem atoms: a random UUID, as no other run has."""
-    import uuid
-    return str(uuid.uuid4())
-
 CONTROL = 'control'
 ABSENT = 'absent'
 COLLECTED = 'collected'
@@ -194,13 +184,6 @@ class Solver:
         self.reported = {}
         self.stats = {'inferences': 0, 'rounds': 0, 'derived': 0}
         self.halt_code = None
-        # Skolem atoms: one list per rule and head instance, so that the same
-        # activation in a later round gets the same atoms and a different one
-        # different atoms. They live in a namespace of their own for the run,
-        # so they cannot clash with any other atom, nor with another run's.
-        self.skolems = {}
-        self.skolem_count = 0
-        self.skolem_prefix = f"{SKOLEM_NAMESPACE}{options.get('skolem_genid') or new_genid()}#sk_"
         self.max_depth = options.get('max_depth') or 1000000
         # Semi-naive forward reasoning: while a rule's body is searched with a
         # window, each of its goals sees only the derived facts in its window,
@@ -417,15 +400,6 @@ class Solver:
             return self.child_frame(point.frame, body, pending, point.frame.depth + 1)
         return None
 
-    def skolem_atoms(self, clause, resolved, count):
-        memo_key = (clause.id, variant(resolved))
-        atoms = self.skolems.get(memo_key)
-        if atoms is None:
-            atoms = [f'{self.skolem_prefix}{self.skolem_count + i}' for i in range(count)]
-            self.skolem_count += count
-            self.skolems[memo_key] = atoms
-        return atoms
-
     def direct_keys(self, clause):
         """For a rule semi-naive search can take, the key of each body goal
         answered by facts alone, or None for a primitive or a negation or
@@ -502,14 +476,13 @@ class Solver:
         found = []
         for answer_env, nodes in self.solve(body):
             mark = answer_env.mark()
-            # Head variables the body leaves unbound become Skolem
-            # atoms, shared between the heads of one conclusion.
+            # Head variables the body leaves unbound become Skolem terms,
+            # shared between the heads of one conclusion.
             resolved = copy_resolved(head, answer_env)
             unresolved = variables(resolved)
             if unresolved:
-                atoms = self.skolem_atoms(clause, resolved, len(unresolved))
-                for value, atom in zip(unresolved.values(), atoms):
-                    unify(value, atom, answer_env)
+                for value, witness in zip(unresolved.values(), skolem_terms(clause, head, unresolved, answer_env)):
+                    unify(value, witness, answer_env)
             conclusions = [copy_resolved(item, answer_env) for item in flatten_conjunction(head)]
             if self.recording:
                 children = [resolve_node(node, answer_env) for node in nodes]
@@ -569,6 +542,31 @@ class Solver:
                             changed = True
 
 
+def skolem_terms(clause, head, unresolved, env):
+    """The Skolem terms for the variables a solution leaves unbound in a
+    rule's heads: skolem(Rule, Variable, Arguments), a function of the rule,
+    the variable and the values the solution gave the heads' other variables.
+    The same activation thus always gives the same terms, and a different one
+    different terms."""
+    arguments = []
+    for variable in variables(head).values():
+        value = copy_resolved(variable, env)
+        if is_ground(value):
+            arguments.append(value)
+    arguments = list_from_items(arguments)
+    names = []
+    for variable in unresolved.values():
+        # Each variable is named as the program names it; a variable that a
+        # value of the solution brought in may share a name, so it gets a
+        # number to keep the terms apart.
+        base = variable.name.partition('#')[0]
+        name, number = base, 1
+        while name in names:
+            name, number = f'{base}{number}', number + 1
+        names.append(name)
+    return [Struct('skolem', (clause.id, name, arguments)) for name in names]
+
+
 class Result:
     """What a run concluded.
 
@@ -587,19 +585,18 @@ class Result:
 
 
 def run(program, goal=None, goals=None, proof=False, max_depth=None, max_iterations=None,
-        max_inferences=None, skolem_genid=None):
+        max_inferences=None):
     """Reason over a program: forward to a fixpoint, then answer any goals.
 
     program is a Program, or a source accepted by load(). goal or goals are
     terms or goal text; without one, the program's own query() rules answer,
-    and without those every newly derived fact is a conclusion. skolem_genid
-    fixes the genid of the run's Skolem atoms, which is otherwise random.
+    and without those every newly derived fact is a conclusion.
     """
     from .dsl import load
     if not isinstance(program, Program):
         program = load(program)
     options = {'proof': proof, 'max_depth': max_depth, 'max_iterations': max_iterations,
-               'max_inferences': max_inferences, 'skolem_genid': skolem_genid or new_genid()}
+               'max_inferences': max_inferences}
     if goals is None:
         goals = [] if goal is None else [goal]
     try:
@@ -679,7 +676,6 @@ def _reason(program, goals, options):
         proof_report=report,
         stats=solver.stats,
         halt_code=solver.halt_code,
-        skolem_genid=options['skolem_genid'],
     )
 
 
@@ -696,8 +692,6 @@ def unused_clauses(program, **options):
     if not isinstance(program, Program):
         program = load(program)
     options.pop('proof', None)
-    # Runs without a clause are compared with this one, so they share its genid.
-    options['skolem_genid'] = options.get('skolem_genid') or new_genid()
     result = run(program, proof=True, **options)
     used = set(result.clauses_used)
     behind = set(result.clauses_behind_boundaries)

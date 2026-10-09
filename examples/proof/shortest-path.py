@@ -8,8 +8,8 @@ clause(7, implies(path(X, Y, Before) & edge(Y, Z, Weight) & is_(Cost, Before + W
 clause(9, implies(path(X, Y, Cost) & ~cheaper(X, Y, Cost), shortest(X, Y, Cost)))
 
 step(shortest('a', 'd', 6), clause(9), {'X': 'a', 'Y': 'd', 'Cost': 6}, [path('a', 'd', 6), ~cheaper('a', 'd', 6)])
-step(path('a', 'd', 6), clause(7), {'X': 'a', 'Z': 'd', 'Cost': 6, 'Y': 'b', 'Before': 3, 'Weight': 3}, [path('a', 'b', 3), edge('b', 'd', 3), is_(6, 3 + 3)])
-step(path('a', 'b', 3), clause(7), {'X': 'a', 'Z': 'b', 'Cost': 3, 'Y': 'c', 'Before': 2, 'Weight': 1}, [path('a', 'c', 2), edge('c', 'b', 1), is_(3, 2 + 1)])
+step(path('a', 'd', 6), clause(7), {'X': 'a', 'Y': 'b', 'Before': 3, 'Z': 'd', 'Weight': 3, 'Cost': 6}, [path('a', 'b', 3), edge('b', 'd', 3), is_(6, 3 + 3)])
+step(path('a', 'b', 3), clause(7), {'X': 'a', 'Y': 'c', 'Before': 2, 'Z': 'b', 'Weight': 1, 'Cost': 3}, [path('a', 'c', 2), edge('c', 'b', 1), is_(3, 2 + 1)])
 step(path('a', 'c', 2), clause(6), {'X': 'a', 'Y': 'c', 'Cost': 2}, [edge('a', 'c', 2)])
 step(edge('a', 'c', 2), clause(2), {}, [])
 step(edge('c', 'b', 1), clause(3), {}, [])

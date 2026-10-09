@@ -13,7 +13,10 @@ def fresh_clause(clause, suffix):
     renamed = renaming(clause)
     suffix = str(suffix)
     values = [Var(prefix + suffix) for prefix in renamed.prefixes]
-    return renamed.head(values), renamed.body(values), dict(zip(renamed.names, values))
+    names = dict(zip(renamed.names, values))
+    if renamed.written is not None:
+        names = {name: names[name] for name in renamed.written}
+    return renamed.head(values), renamed.body(values), names
 
 
 class Renaming:
@@ -24,7 +27,7 @@ class Renaming:
     from a list of fresh variables in that order: the first head_count of
     them suffice for the head. Subterms without variables are shared.
     """
-    __slots__ = ('names', 'prefixes', 'head_count', 'head', 'body', 'uses')
+    __slots__ = ('names', 'prefixes', 'head_count', 'head', 'body', 'uses', 'written')
 
 
 def renaming(clause):
@@ -61,6 +64,20 @@ def _renaming(clause):
     renamed.prefixes = [name + '#' for name in index]
     renamed.head_count = head_count
     renamed.uses = 0
+    # A forward rule is written premise first, implies(Body, Head), and its
+    # variables are listed in that order.
+    renamed.written = None
+    if clause.forward:
+        written = {}
+        for term in [*clause.body, clause.head]:
+            pending = [term]
+            while pending:
+                item = pending.pop()
+                if type(item) is Var:
+                    written.setdefault(item.name, None)
+                elif type(item) is Struct:
+                    pending.extend(reversed(item.args))
+        renamed.written = list(written)
 
     def substituted_head(values):
         return _substitute(clause.head, index, values)

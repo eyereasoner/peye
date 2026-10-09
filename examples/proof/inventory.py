@@ -4,7 +4,7 @@ clause(5, fact(sum([], 0)))
 clause(6, implied_by(sum([X, *Xs], Total), sum(Xs, Rest) & is_(Total, X + Rest)))
 clause(7, implies(findall(Amount, line_total(_0, Amount), Amounts) & sum(Amounts, Total), invoice(Total)))
 
-step(invoice(28), clause(7), {'Total': 28, 'Amount': A, '_0': B, 'Amounts': [6, 12, 10]}, [findall(A, line_total(B, A), [6, 12, 10]), sum([6, 12, 10], 28)])
+step(invoice(28), clause(7), {'Amount': A, '_0': B, 'Amounts': [6, 12, 10], 'Total': 28}, [findall(A, line_total(B, A), [6, 12, 10]), sum([6, 12, 10], 28)])
 step(findall(A, line_total(B, A), [6, 12, 10]), 'collected', {}, [])
 step(sum([6, 12, 10], 28), clause(6), {'X': 6, 'Xs': [12, 10], 'Total': 28, 'Rest': 22}, [sum([12, 10], 22), is_(28, 6 + 22)])
 step(sum([12, 10], 22), clause(6), {'X': 12, 'Xs': [10], 'Total': 22, 'Rest': 10}, [sum([10], 10), is_(22, 12 + 10)])

@@ -16,7 +16,6 @@ Programs are Python; forward rules run to a fixpoint.
   --max-depth N       Bound backward recursion (default 1000000)
   --max-iterations N  Bound forward rounds per stratum (default 1000)
   --max-inferences N  Bound reasoning work (default 1000000)
-  --skolem-genid G    Use G in Skolem IRIs instead of a random genid
   --version           Print the version
   --help              Print this help
 Source defaults to stdin; multiple files form one program.
@@ -70,7 +69,7 @@ def main(argv, sources=None, stdout=None, stderr=None):
                 as_json = True
             elif arg == '--unused':
                 unused = True
-            elif arg in ('--check-proof', '--goal', '--skolem-genid', *LIMITS):
+            elif arg in ('--check-proof', '--goal', *LIMITS):
                 i += 1
                 if i >= len(argv):
                     raise UsageError(f'{arg} needs a value')
@@ -79,10 +78,6 @@ def main(argv, sources=None, stdout=None, stderr=None):
                     proof_file = value
                 elif arg == '--goal':
                     goals.append(value)
-                elif arg == '--skolem-genid':
-                    if not value:
-                        raise UsageError('--skolem-genid needs a nonempty value')
-                    options['skolem_genid'] = value
                 else:
                     try:
                         number = int(value)

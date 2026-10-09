@@ -185,13 +185,13 @@ clauses.
 **Domains get representations, not syntax.** peye has no built-in notion of
 RDF or of anything else: IRIs, typed literals, triples and quoted graphs are
 just terms, such as `literal(V, lang(L))` or `triple(S, P, O)`. A forward head
-may contain variables its body never binds; each activation of the rule
-gives them fresh Skolem atoms, and the same activation in a later round gets
-the same ones, which keeps conclusions deduplicated without letting two
-unknowns pass for one. Skolem atoms are IRIs such as
-`'https://eyereasoner.github.io/.well-known/genid/<genid>#sk_0'`, with a
-random genid per run, so they clash neither with your atoms nor with another
-run's; `--skolem-genid G` fixes the genid for reproducible output.
+may contain variables its body never binds, and then says that something
+exists. Each such unknown becomes a Skolem function of the activation:
+`implies(person(X), has_parent(X, P))` concludes
+`has_parent('ann', skolem(2, 'P', ['ann']))`, the `P` of rule 2 for Ann. The
+same activation always gives the same term, in any round and any run, which
+keeps conclusions deduplicated, and a different one a different term, so two
+unknowns never pass for one.
 
 ## Proofs, and what checking one means
 

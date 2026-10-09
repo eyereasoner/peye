@@ -35,29 +35,29 @@ implies(path(X, Y) & edge(Y, Z), path(X, Z))
         result = proven(self, example('terms'))
         self.assertEqual(len(result.answers), 2)
         self.assertTrue(result.answers[0].startswith('found(triple'))
-        self.assertTrue(result.answers[1].endswith("#sk_0')"))
+        self.assertIn("skolem(6, 'W', [graph(", result.answers[1])
         source = program('''
 in_, pair = preds('in_ pair')
 X, Y = vars('X Y')
 fact(in_('a'))
 implies(in_(X), pair(X, Y, Y))
 ''')
-        sk = "'https://eyereasoner.github.io/.well-known/genid/g#sk_0'"
-        self.assertEqual(proven(self, source, skolem_genid='g').answers, [f"pair('a', {sk}, {sk})"])
+        sk = "skolem(2, 'Y', ['a'])"
+        self.assertEqual(proven(self, source).answers, [f"pair('a', {sk}, {sk})"])
 
-    def test_each_activation_gets_skolem_atoms_of_its_own(self):
+    def test_each_activation_gets_skolem_terms_of_its_own(self):
         source = program('''
-fact(person('a'), person('b'), knows('sk_1', 'x'))
+fact(person('a'), person('b'))
 implies(person(X), has_parent(X, P))
 implies(has_parent(X, P) & has_parent(Y, P) & not_identical(X, Y), siblings(X, Y))
 implies(has_parent(X, P), known(X))
 ''')
-        result = run(source, proof=True, skolem_genid='g')
+        result = run(source, proof=True)
         self.assertTrue(result.proof_report['valid'])
-        genid = 'https://eyereasoner.github.io/.well-known/genid/g#'
-        self.assertEqual(result.answers, [f"has_parent('a', '{genid}sk_0')", f"has_parent('b', '{genid}sk_1')",
-                                          "known('a')", "known('b')"])
-        self.assertNotEqual(run(source).answers[0], run(source).answers[0])
+        self.assertEqual(result.answers, ["has_parent('a', skolem(3, 'P', ['a']))",
+                                          "has_parent('b', skolem(3, 'P', ['b']))", "known('a')", "known('b')"])
+        # A Skolem term is a function of the activation, the same in every run.
+        self.assertEqual(run(source).answers, result.answers)
 
     def test_semi_naive_forward_reasoning_concludes_and_proves_as_a_full_search_does(self):
         import random
@@ -78,11 +78,11 @@ implies(witness(X, W), tagged(W, X))
 implies(node(X) & findall(Y, edge(X, Y), L), hub(X, L))
 implies(node(X) & ~edge(X, _), isolated(X))
 ''')
-            semi = run(source, proof=True, skolem_genid='g')
+            semi = run(source, proof=True)
             saved = engine.Solver.direct_keys
             engine.Solver.direct_keys = full
             try:
-                naive = run(source, proof=True, skolem_genid='g')
+                naive = run(source, proof=True)
             finally:
                 engine.Solver.direct_keys = saved
             with self.subTest(trial):

@@ -8,9 +8,6 @@ from peye import check_report, load, run
 
 ROOT = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'examples')
 KINDS = ('output', 'proof', 'check')
-# A run's Skolem atoms have a random genid; the saved artifacts use this one,
-# so that they can be reproduced.
-SKOLEM_GENID = 'examples'
 
 
 def read_manifest():
@@ -43,7 +40,7 @@ def certify(entry, program, output):
     """A certified run holds a valid nonempty proof, agrees with the plain
     run, and relies on exactly the trusted boundaries the manifest declares."""
     name = entry['name']
-    proved = run(program, proof=True, skolem_genid=SKOLEM_GENID)
+    proved = run(program, proof=True)
     report = proved.proof_report
     if not report or not report['valid'] or not report['steps'] or not report['claims']:
         raise AssertionError(f'{name}: no valid nonempty proof')
@@ -59,6 +56,6 @@ def certify(entry, program, output):
 
 def evaluate(entry):
     program = load_example(entry)
-    output = run(program, skolem_genid=SKOLEM_GENID)
+    output = run(program)
     proved = certify(entry, program, output)
     return {'output': output.stdout, 'proof': proved.proof, 'check': check_report(proved.proof_report)}

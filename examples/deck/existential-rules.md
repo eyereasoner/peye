@@ -39,51 +39,53 @@ are colleagues.
 ## What peye concludes
 
 ```python
-has_parent('ann', '…/genid/examples#sk_0')
-has_parent('bob', '…/genid/examples#sk_1')
+has_parent('ann', skolem(3, 'P', ['ann']))
+has_parent('bob', skolem(3, 'P', ['bob']))
 sibling('dan', 'fay')
 sibling('fay', 'dan')
-invoice_for('carl', '…/genid/examples#sk_2')
-invoice_for('dora', '…/genid/examples#sk_3')
-sent('…/genid/examples#sk_2')
-sent('…/genid/examples#sk_3')
-meeting('…/genid/examples#sk_4')
-attends('…/genid/examples#sk_4', 'ann')
-attends('…/genid/examples#sk_4', 'dora')
+invoice_for('carl', skolem(10, 'I', ['carl']))
+invoice_for('dora', skolem(10, 'I', ['dora']))
+sent(skolem(10, 'I', ['carl']))
+sent(skolem(10, 'I', ['dora']))
+meeting(skolem(13, 'M', ['ann', 'dora']))
+attends(skolem(13, 'M', ['ann', 'dora']), 'ann')
+attends(skolem(13, 'M', ['ann', 'dora']), 'dora')
 ```
 
-Each unknown became a **Skolem atom**, here shortened: a name that stands for
-"the one that exists here". The full name starts with
-`https://eyereasoner.github.io/.well-known/genid/`.
+Each unknown became a **Skolem term**, a name for "the one that exists
+here": `skolem(3, 'P', ['ann'])` reads *the `P` of rule 3, for Ann*. It is a
+function of what the rule knew when it concluded: the rule, the unknown, and
+the values of the conclusion's other variables.
 
 ---
 
 ## One witness per activation
 
-- **Ann and Bob each get a parent of their own**, `sk_0` and `sk_1`. Had they
-  shared one, the sibling rule would have made them siblings by accident.
-  Only Dan and Fay, whose parent the data names, are siblings.
-- **Carl ordered twice, and gets one invoice.** Both orders lead to the same
-  conclusion, an invoice for Carl, so one witness serves both.
+- **Ann and Bob each get a parent of their own**, the `P` of rule 3 for Ann
+  and for Bob. Had they shared one, the sibling rule would have made them
+  siblings by accident. Only Dan and Fay, whose parent the data names, are
+  siblings.
+- **Carl ordered twice, and gets one invoice.** The invoice depends on Carl
+  alone, not on what he ordered, so both orders give the same term.
 - **The meeting is one meeting.** The three conclusions of one activation
-  share their witness `sk_4`.
+  share their witness, the `M` of rule 13 for Ann and Dora.
 - **Invented values are values.** The `sent` rule uses the invoices like any
   other value. Whenever a rule meets the same activation again, it gives back
-  the same witness, so reasoning comes to an end.
+  the same term, so reasoning comes to an end.
 
 ---
 
 ## Never a clash
 
-The witnesses live in a namespace of their own, with a **genid** that is a
-random identifier for each run, as EYE does. So a witness never clashes:
+A Skolem term names the rule and the unknown it stands for, and the values it
+depends on, so it cannot be mistaken for anything else:
 
-- with a name in your data, even one that happens to be called `'sk_0'`;
-- with the witnesses of another run, even when a program reads that run's
-  output back in.
+- not for a name in your data, which says nothing of rule 3's `P`;
+- not for another unknown, which belongs to another rule, another variable or
+  other values.
 
-The saved files use the genid `examples`, so they can be reproduced:
-`--skolem-genid examples` does the same on the command line.
+And it is the same in every run: run the program twice, or read one run's
+output into another, and the same unknown has the same name.
 
 ---
 
@@ -92,11 +94,11 @@ The saved files use the genid `examples`, so they can be reproduced:
 For Bob's parent:
 
 1. Bob is a person — *clause 2, a fact*.
-2. So Bob has a parent, the witness `sk_1` — *clause 3, with X = bob and P =
-   that witness*.
+2. So Bob has a parent, `skolem(3, 'P', ['bob'])` — *clause 3, with X = bob
+   and P that term*.
 
 For Carl's invoice: Carl ordered a lamp (*clause 7*), so he has the invoice
-`sk_2` (*clause 10*). The desk is not needed: it would only give the same
+`skolem(10, 'I', ['carl'])` (*clause 10*). The desk is not needed: it would only give the same
 conclusion again, and `peye --unused` says so.
 
 ---
@@ -115,9 +117,8 @@ values that the rule's variables were bound to.
 ## Try it
 
 ```sh
-python -m peye examples/existential-rules.py                             # a fresh genid each run
-python -m peye --skolem-genid examples examples/existential-rules.py     # the saved output
-python -m peye --proof examples/existential-rules.py                     # with the proof
+python -m peye examples/existential-rules.py            # the conclusions
+python -m peye --proof examples/existential-rules.py    # with the proof
 ```
 
 Or open it in the [playground](https://eyereasoner.github.io/peye/playground/#example=existential-rules).
@@ -128,6 +129,7 @@ as well, beside Eve, because the rule says only that some parent exists.
 
 ## Takeaway
 
-An existential rule says that something exists. peye gives each such
-something a name of its own, keeps it when the same activation returns, and
-makes sure it can never be mistaken for anything else.
+An existential rule says that something exists. peye names each such
+something by a Skolem function of what the rule knew: the same activation
+always gives the same name, and the name can never be mistaken for anything
+else.
