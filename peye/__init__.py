@@ -20,7 +20,7 @@ from .reader import read_term, read_terms
 from .terms import PeyeError, Struct, Var
 from .writer import write
 
-__version__ = '0.4.3'
+__version__ = '0.4.4'
 
 # What `from peye import *` gives a program: the names it states clauses
 # with. The library API (load, run, check_proof, ...) is imported by name.
