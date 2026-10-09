@@ -12,6 +12,10 @@ programs can write ``X + 1``, ``X < Y``, ``p(X) & q(X)``, ``a | b`` and ``~g``;
 the operators only build terms, they never compute anything.
 """
 
+import contextlib
+import math
+import sys
+
 EMPTY = '[]'
 
 
@@ -19,9 +23,58 @@ class PeyeError(Exception):
     """An error in a peye program, a goal or a proof document."""
 
 
+# Python refuses to convert integers longer than a set number of digits
+# (4300 by default, never less than 640) between text and int. Exact integers
+# can be far longer, so peye converts them in pieces below that limit, and
+# lifts it only while Python itself parses source text; it never changes the
+# limit for the rest of the process.
+_PIECE = 600
+
+
+def decimal_int(digits):
+    """The integer a string of decimal digits spells, however long."""
+    if len(digits) <= _PIECE:
+        return int(digits)
+    low = len(digits) // 2
+    return decimal_int(digits[:-low]) * 10 ** low + decimal_int(digits[-low:])
+
+
+def decimal_text(number):
+    """The decimal text of an integer, however long."""
+    if number < 0:
+        return '-' + decimal_text(-number)
+    if number.bit_length() <= 1990:  # fewer than 600 digits
+        return str(number)
+    low = int(number.bit_length() * 0.30103) // 2
+    high, rest = divmod(number, 10 ** low)
+    return decimal_text(high) + decimal_text(rest).zfill(low)
+
+
+@contextlib.contextmanager
+def unlimited_digits():
+    """Lift Python's limit on integer digits while source text is parsed."""
+    get = getattr(sys, 'get_int_max_str_digits', None)
+    if get is None:
+        yield
+        return
+    previous = get()
+    sys.set_int_max_str_digits(0)
+    try:
+        yield
+    finally:
+        sys.set_int_max_str_digits(previous)
+
+
+def nonfinite(value, where=''):
+    """The error for a float that is not a term: an infinity or a NaN."""
+    return PeyeError(f'{where}a float term must be finite, not {value!r}')
+
+
 def _term(value):
     """Turn a Python value written in a rule program into a term."""
     kind = type(value)
+    if kind is float and not math.isfinite(value):
+        raise nonfinite(value)
     if kind is str or kind is int or kind is float or kind is Var or kind is Struct:
         return value
     if kind is list:

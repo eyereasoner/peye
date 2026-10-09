@@ -111,11 +111,11 @@ Pyodide. To run it from a checkout, serve it (`python -m http.server`) and open
 ## Writing programs
 
 A program is a Python module that starts with `from peye import *` and states
-one clause per call:
+clauses with these calls:
 
 | Call | Meaning |
 | --- | --- |
-| `fact(Head)` | `Head` holds. |
+| `fact(*Heads)` | Each `Head` holds; one fact per argument. |
 | `implies(Premise, Conclusion)` | A forward rule, N3's `=>`: whenever `Premise` holds, conclude `Conclusion`, until nothing new follows. |
 | `implied_by(Conclusion, Premise)` | A backward rule, N3's `<=`: `Conclusion` holds when `Premise` does, decided when a goal asks for it. |
 | `query(*Body)` | Publish every instance of `Body` that holds. |
@@ -155,13 +155,14 @@ in ordinary Python code, so a program can compute with `int`, `getattr` or
 builtin name is a predicate, except for the few a program computes with there:
 `print`, `range`, `len`, `list`, `dict`, `set`, `tuple`, `str`, `enumerate`,
 `zip`, `sorted`, `reversed`, `isinstance`, `open`, `repr`, `chr`, `ord`,
-`iter`, `any`, `all`, `map` and `filter`. A program that wants one of those as
+`iter`, `any`, `all`, `map` and `filter`, and builtins beginning with an
+uppercase letter. A program that wants one of those as
 a predicate says so, `range = preds('range')`. A call of
 an undeclared predicate on its own, such as a misspelled `fcat(p(1))`, states
 nothing, so peye stops with an error instead of ignoring it.
 
 **Terms are Python values.** An atom is a string, `'socrates'`; a number is an
-`int` of any size or a `float`; a list is a list, and `[H, *T]` has head `H`
+`int` of any size or a finite `float`; a list is a list, and `[H, *T]` has head `H`
 and tail `T`; a compound term is a call, `parent('alice', 'bob')`; and `_` is a
 fresh variable at every occurrence. Goals join with `&` (and), `|` (or) and `~`
 (not), alongside `call`, `once` and `findall`. Python reads `&` and `|` before
@@ -173,8 +174,9 @@ something else.
 example computes F(10000), a 2,090-digit integer, exactly. An expression means
 what it means in Python: `4 / 2` is `2.0`, `//` and `%` are floor division and
 modulo, `round` rounds half to even. `1` and `1.0` do not unify, yet compare
-exactly. A result that is not a finite real number stops the run rather than
-becoming a value.
+exactly. Infinity and NaN are rejected, including overflowing float literals
+such as `1e999` in programs, goals and documents. A result that is not a
+finite real number stops the run rather than becoming a value.
 
 The primitives (`unify`, `is_`, `eq`, comparisons, type tests, `functor`,
 `univ`, `atom_concat` and the rest) are listed in [SPEC §5](SPEC.md#5-goals-controls-and-primitives),
@@ -236,9 +238,11 @@ verdict('checked')
 
 Failures appear as `failed(N)` outcomes with `failure(Condition, Conclusion,
 Detail)` facts, an invalid proof gives `verdict(failed(N))` and exit code 2,
-and `--json` gives the same report as JSON. Proofs are read with Python's `ast`
-module and never executed, so checking a proof from someone else runs none of
-their code. Every proof peye generates is checked before it is returned.
+and `--json` gives the same report as JSON. Proofs are parsed as data and never
+executed. Simple lines use a direct reader; other syntax uses Python's `ast`
+module, with the same accepted terms, so checking a proof from someone else
+runs none of their code. Every proof peye generates is checked before it is
+returned.
 
 ### Why negation and aggregation are safe
 

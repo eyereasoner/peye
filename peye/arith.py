@@ -11,7 +11,7 @@ error, never a value.
 """
 import math
 
-from .terms import PeyeError, Var, deref
+from .terms import PeyeError, Var, decimal_text, deref
 
 # A power whose result would need more bits than this is refused rather than
 # allowed to exhaust memory.
@@ -21,13 +21,13 @@ MAX_POWER_BITS = 1 << 26
 def _power(a, b):
     if type(a) is int and type(b) is int and b > 0 and abs(a) > 1:
         if b * a.bit_length() > MAX_POWER_BITS:
-            raise PeyeError(f'arithmetic resource: {a} ** {b} is too large')
+            raise PeyeError(f'arithmetic resource: {decimal_text(a)} ** {b} is too large')
     return a ** b
 
 
 def _shift(a, b):
     if type(a) is int and type(b) is int and b > MAX_POWER_BITS:
-        raise PeyeError(f'arithmetic resource: {a} << {b} is too large')
+        raise PeyeError(f'arithmetic resource: {decimal_text(a)} << {decimal_text(b)} is too large')
     return a << b
 
 

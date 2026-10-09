@@ -52,6 +52,10 @@ class Proofs(unittest.TestCase):
         self.invalid("unterminated(", 'C3')
         self.invalid("__import__('os').system('true')", 'C3')
 
+    def test_nonfinite_values_cannot_be_certified_as_numeric_equalities(self):
+        self.invalid("eq(1e+999, 2e+999)\nstep(eq(1e+999, 2e+999), 'builtin', {}, [])",
+                     'C3', program(''))
+
     def test_cyclic_certificates_cannot_justify_their_own_conclusions(self):
         self.invalid("p()\nstep(p(), clause(1), {}, [p()])", 'C2', program("p = preds('p')\nimplied_by(p, p)"))
 

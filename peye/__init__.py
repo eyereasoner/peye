@@ -5,7 +5,6 @@ fixpoint, backward rules are decided when a goal asks for them, and every
 answer can come with a proof that a separate checker verifies against the
 program, condition by condition (C1-C7).
 """
-import sys
 
 from .dsl import (
     _, arg, atom_chars, atom_codes, atom_concat, atom_length, call, compare,
@@ -20,10 +19,6 @@ from .proof import check_proof, check_report, public_report, verdict_text
 from .reader import read_term, read_terms
 from .terms import PeyeError, Struct, Var
 from .writer import write
-
-# Exact integers can be far longer than Python prints by default.
-if hasattr(sys, 'set_int_max_str_digits'):
-    sys.set_int_max_str_digits(0)
 
 __version__ = '0.4.0'
 

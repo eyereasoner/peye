@@ -5,7 +5,7 @@ import os
 import re
 import unittest
 
-from peye import PeyeError, Struct, Var, read_term, read_terms, write
+from peye import PeyeError, Struct, Var, load_text, read_term, read_terms, run, write
 from peye.terms import list_from_items
 
 from helpers import ROOT
@@ -83,6 +83,44 @@ class Syntax(unittest.TestCase):
     def test_anonymous_variables_are_distinct(self):
         term = read_term('f(_, _)')
         self.assertNotEqual(term.args[0].name, term.args[1].name)
+
+    def test_nonfinite_numeric_literals_are_rejected(self):
+        for text in ['1e999', '-1e999', 'f(1e+999)', '[1e+999]', 'eq(1e+999, 2e+999)']:
+            for reader in (read_term, read_terms, ast_terms):
+                with self.subTest(text=text, reader=reader.__name__):
+                    with self.assertRaisesRegex(PeyeError, 'finite'):
+                        reader(text)
+
+    def test_document_reader_rejects_invalid_source_characters(self):
+        for text in ["'a\x00b'", "'a\rb'", 'p(1)\u00a0', '\v', '\u00a0']:
+            with self.subTest(text=text):
+                with self.assertRaises(PeyeError):
+                    read_terms(text)
+        self.assertEqual([(write(t), n) for t, n in read_terms('p(1)\r\np(2)\r\n')],
+                         [('p(1)', 1), ('p(2)', 2)])
+
+    def test_long_integers_need_no_change_to_pythons_digit_limit(self):
+        import sys
+        if not hasattr(sys, 'set_int_max_str_digits'):
+            self.skipTest('the interpreter has no decimal conversion limit')
+        previous = sys.get_int_max_str_digits()
+        try:
+            sys.set_int_max_str_digits(640)  # the smallest limit Python allows
+            digits = '9' * 5000
+            for text in (f'p({digits})', f'p({digits})  # read with ast'):
+                with self.subTest(text=text[-20:]):
+                    (term, _), = read_terms(text)
+                    self.assertEqual(term.args[0], 10 ** 5000 - 1)
+                    self.assertEqual(write(term), f'p({digits})')
+            self.assertEqual(run(load_text(f'from peye import *\nfact(p({digits}))')).stdout, '')
+            self.assertEqual(sys.get_int_max_str_digits(), 640)
+        finally:
+            sys.set_int_max_str_digits(previous)
+
+    def test_nonfinite_literals_are_reported_at_their_line(self):
+        for text in ['p(1)\np(1e999)', 'p(1)\np(1e999)  # read with ast', 'p(1)\np(-1e999)  # with ast']:
+            with self.subTest(text=text), self.assertRaisesRegex(PeyeError, r'^line 2: a float term must be finite'):
+                read_terms(text)
 
     def test_only_term_syntax_is_read(self):
         for text in ["os.system('x')", "f(x=1)", "f(*X)", "(1, 2)", "{1, 2}", "lambda: 1", "X == Y",

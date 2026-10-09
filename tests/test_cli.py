@@ -10,6 +10,18 @@ SOCRATES = "type('socrates', 'mortal')\ntype('socrates', 'human')\n"
 
 
 class CommandLine(unittest.TestCase):
+    def test_a_closed_output_pipe_exits_successfully(self):
+        import io
+        from peye.cli import main
+
+        class ClosedPipe:
+            def write(self, text):
+                raise BrokenPipeError('consumer closed the pipe')
+
+        errors = io.StringIO()
+        self.assertEqual(main(['--help'], stdout=ClosedPipe(), stderr=errors), 0)
+        self.assertEqual(errors.getvalue(), '')
+
     def test_runs_files_stdin_multiple_sources_and_goals(self):
         self.assertEqual(cli(['examples/socrates.py']).stdout, SOCRATES)
         self.assertEqual(cli([], "from peye import *\np, q = preds('p q')\nX = vars('X')\n"

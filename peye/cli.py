@@ -129,11 +129,11 @@ def main(argv, sources=None, stdout=None, stderr=None):
         if stats:
             stderr.write(json.dumps(result.stats) + '\n')
         return result.halt_code or 0
+    except BrokenPipeError:
+        return 0
     except (UsageError, PeyeError, OSError) as error:
         stderr.write(f'peye: {error}\n')
         return 1
-    except BrokenPipeError:
-        return 0
 
 
 def with_deep_stack(function, *args, **kwargs):

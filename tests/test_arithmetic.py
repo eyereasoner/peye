@@ -20,6 +20,17 @@ def fails(expression):
 
 
 class Arithmetic(unittest.TestCase):
+    def test_nonfinite_python_values_cannot_enter_terms(self):
+        from peye.terms import _term
+        for number in (float('inf'), float('-inf'), float('nan')):
+            with self.subTest(number=number), self.assertRaisesRegex(PeyeError, 'finite'):
+                _term(number)
+        # A program says where: the line of the statement, and the value.
+        with self.assertRaisesRegex(PeyeError, r'^line 3: a float term must be finite, not inf$'):
+            program("fact(p(1))\nfact(p(1e999))")
+        with self.assertRaisesRegex(PeyeError, r'^line 3: a float term must be finite, not -inf$'):
+            program("import math\nquery(is_(X, -math.inf))")
+
     def test_integer_results_never_round_through_a_double(self):
         self.assertEqual(value('trunc(10000000000000000001)'), '10000000000000000001')
         self.assertEqual(value('ceil(123456789012345678901234567890)'), '123456789012345678901234567890')

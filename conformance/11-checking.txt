@@ -469,6 +469,33 @@ trusted(0)
 claims(0)
 verdict(failed(1))
 
+=== C3: a document with a nonfinite number does not read
+spec: 3, 9, 11.1, 12
+args: --check-proof proof.py program.py
+exit: 2
+stderr: empty
+--- program.py
+from peye import *
+--- proof.py
+eq(1e+999, 2e+999)
+step(eq(1e+999, 2e+999), 'builtin', {}, [])
+--- stdout
+condition('C1', 'resolution', 'ok', 0)
+condition('C2', 'well_founded', 'ok', 0)
+condition('C3', 'justification', failed(1), 0)
+condition('C4', 'coverage', 'ok', 0)
+condition('C5', 're_decision', 'ok', 0)
+condition('C6', 'boundary_consistency', 'ok', 0)
+condition('C7', 'relevance', 'ok', 0)
+failure('C3', 'proof_document', '…')
+steps(0)
+verified(0)
+recomputed(0)
+composed(0)
+trusted(0)
+claims(0)
+verdict(failed(1))
+
 === C4: an empty document claims nothing, and so checks
 spec: 11.5
 args: --check-proof proof.py program.py

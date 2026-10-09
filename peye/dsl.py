@@ -20,7 +20,7 @@ import sys
 
 from .program import CONTROL_KEYS, RESERVED_KEYS, Program, Source
 from .builtins import PRIMITIVE_KEYS
-from .terms import PeyeError, Struct, Term, Var, _term
+from .terms import PeyeError, Struct, Term, Var, _term, unlimited_digits
 from .writer import RESERVED_CALLS
 
 _builders = []
@@ -331,7 +331,12 @@ def facts_from(path=None, text=None):
     # Each fact is stated by this call, so it records the call's line, as
     # every clause records the line of the statement that states it.
     builder = _builder()
-    for term, _line in read_terms(text):
+    try:
+        terms = read_terms(text)
+    except PeyeError as error:
+        # The document's own line, named so it is not taken for the program's.
+        raise PeyeError(f"{path if path is not None else 'the text'}: {error}") from None
+    for term, _line in terms:
         builder.add('fact', term, [])
 
 
@@ -519,26 +524,38 @@ _LEADING_CALL = re.compile(r'^([^\W\d]\w*)[ \t]*\(', re.MULTILINE)
 
 
 def _exec(source, filename):
+    # A program's source may spell integers longer than Python parses by default.
+    with unlimited_digits():
+        _exec_program(source, filename)
+
+
+def _exec_program(source, filename):
     if _PROOF.search(source) and not STAR.search(source):
         raise PeyeError('this is a proof document, not a program: check it with --check-proof PROOF PROGRAM')
     try:
         code = compile(source, filename, 'exec')
         names = implicit_names(source, filename)
     except SyntaxError as error:
-        raise PeyeError(f'line {error.lineno}: {error.msg}') from None
+        where = f'line {error.lineno}: ' if error.lineno else ''
+        raise PeyeError(f'{where}{error.msg}') from None
+    except ValueError as error:  # before Python 3.12, a null character
+        raise PeyeError(str(error)) from None
     _statements_nothing(source, filename, names)
     namespace = {'__name__': '__peye__', '__file__': filename, '__builtins__': __builtins__}
     namespace.update(names)
     try:
         exec(code, namespace)
-    except PeyeError:
-        raise
     except Exception as error:
-        # An error in the program's own Python code is reported at its line.
+        # An error is reported at the line of the program that raised it,
+        # unless it already names one.
         import traceback
         lines = [frame.lineno for frame in traceback.extract_tb(error.__traceback__)
                  if frame.filename == filename]
         where = f'line {lines[-1]}: ' if lines else ''
+        if isinstance(error, PeyeError):
+            if str(error).startswith('line ') or not where:
+                raise
+            raise PeyeError(f'{where}{error}') from None
         raise PeyeError(f'{where}{type(error).__name__}: {error}') from None
 
 

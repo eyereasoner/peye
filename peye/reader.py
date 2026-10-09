@@ -1,17 +1,18 @@
 """Reading terms back from Python source, without executing it.
 
 Conclusions, proofs and check reports are written as Python expressions, one
-statement each (writer.py). This module parses such text with ``ast`` and
-builds the terms it spells, so a proof document is data for the checker and
-never code that runs: only literals, names, calls of a plain name, list
-displays, dictionary displays of bindings and the operators of writer.py are
-accepted.
+statement each (writer.py). This module reads simple lines directly and uses
+``ast`` for other syntax, building the same terms, so a proof document is
+data for the checker and never code that runs: only literals, names, calls of
+a plain name, list displays, dictionary displays of bindings and the
+operators of writer.py are accepted.
 """
 import ast
 import keyword
+import math
 import re
 
-from .terms import EMPTY, PeyeError, Struct, Var
+from .terms import EMPTY, PeyeError, Struct, Var, decimal_int, nonfinite, unlimited_digits
 from .writer import decode_name
 
 
@@ -98,6 +99,8 @@ class _Build:
         kind = type(node)
         if kind is ast.Constant:
             value = node.value
+            if type(value) is float and not math.isfinite(value):
+                raise nonfinite(value, f'line {node.lineno}: ')
             if type(value) in (str, int, float):
                 return value
             raise PeyeError(f'line {node.lineno}: {value!r} is not a term')
@@ -108,7 +111,10 @@ class _Build:
             return Var(_variable_name(node.id))
         if kind is ast.UnaryOp:
             if not args:
-                return -node.operand.value
+                value = -node.operand.value
+                if type(value) is float and not math.isfinite(value):
+                    raise nonfinite(value, f'line {node.lineno}: ')
+                return value
             return Struct(UNARY[type(node.op)], (args[0],)) if type(node.op) in UNARY else _bad(node)
         if kind is ast.BinOp:
             name = BINARY.get(type(node.op))
@@ -159,9 +165,13 @@ def _bad(node):
 
 def _parse(text, mode):
     try:
-        return ast.parse(text, mode=mode)
+        with unlimited_digits():
+            return ast.parse(text, mode=mode)
     except SyntaxError as error:
-        raise PeyeError(f'syntax error on line {error.lineno}: {error.msg}') from None
+        where = f' on line {error.lineno}' if error.lineno else ''
+        raise PeyeError(f'syntax error{where}: {error.msg}') from None
+    except ValueError as error:  # before Python 3.12, a null character
+        raise PeyeError(f'syntax error: {error}') from None
 
 
 def read_term(text):
@@ -227,22 +237,27 @@ def _read_lines(text):
 def _parse_document(text, reader):
     """Every line's expression, by recursive descent over one token stream in
     which each line ends with an 'end' token."""
+    if '\r' in text or '\x00' in text:
+        raise _NotSimple
     texts = []
     kinds = []
+    lines = []
     numbers = []
     for number, line in enumerate(text.split('\n'), 1):
-        if not line.strip():
+        if not line.strip(' \t'):
             continue
         if line[0] in ' \t':
             raise _NotSimple  # Python reads an indented line as an error
-        for m in _TOKEN.finditer(line.rstrip()):
+        for m in _TOKEN.finditer(line.rstrip(' \t')):
             kind = m.lastgroup
             if kind == 'other':
                 raise _NotSimple
             texts.append(m.group(kind))
             kinds.append(kind)
+            lines.append(number)
         texts.append('')
         kinds.append('end')
+        lines.append(number)
         numbers.append(number)
     n = len(texts)
     pos = 0
@@ -316,9 +331,12 @@ def _parse_document(text, reader):
         if kind == 'string':
             return text[1:-1], False
         if kind == 'int':
-            return int(text), True
+            return decimal_int(text), True
         if kind == 'float':
-            return float(text), True
+            value = float(text)
+            if not math.isfinite(value):
+                raise nonfinite(value, f'line {lines[pos - 1]}: ')
+            return value, True
         if kind == 'name':
             if text in _KEYWORDS:
                 raise _NotSimple

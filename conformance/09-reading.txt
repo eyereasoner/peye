@@ -416,3 +416,41 @@ stderr: nonempty
 --- stdin
 from peye import *
 --- stdout
+
+=== goal text rejects overflowing float literals
+spec: 3, 9
+args: --goal "eq(1e999, 2e999)"
+exit: 1
+stderr: nonempty
+--- stdin
+from peye import *
+--- stdout
+
+=== documents reject overflowing float literals
+spec: 3, 9
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+facts_from('data.py')
+--- data.py
+p(1e+999)
+--- stdout
+
+=== documents reject a null character in a string literal
+spec: 9
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+facts_from(text="p('a\x00b')")
+--- stdout
+
+=== documents reject a nonbreaking space outside a literal
+spec: 9
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+facts_from(text="p(1)\u00a0")
+--- stdout

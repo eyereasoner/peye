@@ -173,3 +173,22 @@ from peye import *
 fact(p(123456789012345678901234567890123456789))
 --- stdout
 p(123456789012345678901234567890123456789)
+
+=== an overflowing Python float literal is not a term
+spec: 3
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+fact(p(1e999))
+--- stdout
+
+=== a Python NaN is not a term
+spec: 3
+exit: 1
+stderr: nonempty
+--- program.py
+from peye import *
+import math
+fact(p(math.nan))
+--- stdout

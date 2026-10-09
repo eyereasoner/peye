@@ -3,8 +3,8 @@
 A proof document is Python source, one expression per line: first the claims,
 then clause(N, Display) for every source clause the proof cites, written as
 the program states it (fact(...), implies(...) or implied_by(...)), then one
-step(Goal, By, Bindings, Uses) per inference. The document is read with the
-ast module and never executed.
+step(Goal, By, Bindings, Uses) per inference. The document reader parses
+simple lines directly and other syntax with ast; it never executes them.
 
 Verification follows recorded uses; it never asks the solver to find a missing
 derivation. Only pure primitives are independently recomputed.

@@ -51,6 +51,10 @@ query(path(0, W))
 ''')
         self.assertEqual(run(source).answers, ['path(0, 1)', 'path(0, 2)', 'path(0, 3)'])
 
+    def test_local_parameters_do_not_suppress_implicit_globals(self):
+        source = program("def state(X):\n    fact(p(X))\nstate(1)\nquery(p(X))")
+        self.assertEqual(run(source).answers, ['p(1)'])
+
     def test_predicate_names_work_as_atoms_and_in_expressions(self):
         source = program("fact(ready)\nquery(is_(V, 2 * pi + sqrt(4)), ~blocked, ready)")
         self.assertEqual(run(source).answers, ["is_(8.283185307179586, 2 * 'pi' + sqrt(4)) & ~'blocked' & 'ready'"])

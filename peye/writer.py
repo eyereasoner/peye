@@ -12,7 +12,7 @@ import functools
 import keyword
 import re
 
-from .terms import Struct, Var, deref
+from .terms import Struct, Var, decimal_text, deref
 
 INFIX = {
     ';': ('|', 7), '^': ('^', 8), ',': ('&', 9), '<<': ('<<', 10), '>>': ('>>', 10),
@@ -167,7 +167,7 @@ def _format(term, env, names, out):
     if kind is str:
         out.append(repr(term) if term != '[]' else '[]')
     elif kind is int:
-        out.append(str(term))
+        out.append(decimal_text(term))
     elif kind is float:
         out.append(repr(term))
     elif kind is Var:

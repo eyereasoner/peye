@@ -106,7 +106,9 @@ list. Character text is a list of one-character atoms.
 
 **Numbers.** Integers and floats are distinct: `1` and `1.0` MUST NOT unify.
 Floats MUST be finite; no operation produces an infinity or a NaN as a term
-(Section 6). Booleans and `None` are not terms.
+(Section 6). Nonfinite Python values and float literals that overflow, such
+as `1e999`, MUST be rejected in programs, goals and documents. Booleans and
+`None` are not terms.
 
 **Unification** is syntactic unification on finite trees. It MUST apply the
 occurs check: binding a variable to a term that contains it fails. Atoms unify
@@ -129,8 +131,9 @@ order of two distinct unbound variables.
 ### 4.1 Program modules
 
 A program is a Python module whose top level contains `from peye import *`.
-Running the module states the program's clauses, one per call, in the order
-the calls are made. Several modules MAY be loaded as one program; their
+Running the module states the program's clauses in the order the calls are
+made; `fact` MAY state several clauses in one call (Section 4.2).
+Several modules MAY be loaded as one program; their
 clauses are then numbered in the order the modules are run.
 
 `from peye import *` provides exactly the names needed to state a program:
@@ -165,9 +168,10 @@ A clause MUST be rejected when:
 
 ### 4.3 Names a program does not define
 
-Before a program module runs, its source is analysed and every name it uses
-without binding it anywhere (by assignment, import, function definition or
-parameter, at any scope) is supplied:
+Before a program module runs, its source is analysed. A referenced name with
+no module-level binding (by assignment, import or definition) is supplied as
+follows. References in nested scopes are considered only when Python resolves
+them as global names; local variables and parameters keep their Python scope.
 
 1. a name beginning with an uppercase letter or `_` is the variable of that
    name;
@@ -492,7 +496,7 @@ from the syntax tree of the text and MUST NOT execute it. It accepts
 exactly:
 
 - a string literal, or adjacent string literals: the atom; an integer or
-  float literal: the number;
+  finite float literal: the number;
 - a name: the variable of that name, where each `_` is a new anonymous
   variable (Section 5.1) and a name starting with `VAR_` is decoded
   (Section 8.1), or rejected when it encodes no name;
