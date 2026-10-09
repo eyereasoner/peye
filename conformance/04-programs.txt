@@ -337,13 +337,32 @@ from peye import *
 implied_by(call('a'), 'true')
 --- stdout
 
-=== true and false are heads of forward rules only
+=== true and false are not the conclusion of a backward rule
 spec: 4.2
 exit: 1
 stderr: nonempty
 --- program.py
 from peye import *
 implied_by('true', p(1))
+--- stdout
+
+=== implies cannot conclude true or false: query and contradiction do
+spec: 4.2
+exit: 1
+stderr: prefix peye: line 3: implies() cannot conclude 'true' or 'false'
+--- program.py
+from peye import *
+fact(p(1))
+implies(p(X), q(X) & false)
+--- stdout
+
+=== query and contradiction need a goal
+spec: 4.2
+exit: 1
+stderr: prefix peye: line 2: query() needs at least one goal
+--- program.py
+from peye import *
+query()
 --- stdout
 
 === a number cannot be a head

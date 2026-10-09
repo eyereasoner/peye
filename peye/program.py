@@ -9,6 +9,10 @@ CONTROL_KEYS = frozenset({(',', 2), (';', 2), ('~', 1), ('call', 1), ('once', 1)
 RESERVED_KEYS = frozenset({('step', 4), ('clause', 2)})
 
 
+# The statements that state a forward rule, and how an error names them.
+FORWARD_KINDS = {'forward': 'a forward rule', 'query': 'query()', 'contradiction': 'contradiction()'}
+
+
 class Clause:
     __slots__ = ('id', 'head', 'heads', 'body', 'forward', 'line', 'renaming')
 
@@ -26,7 +30,8 @@ class Clause:
 class Source:
     """One clause as a program states it, before validation.
 
-    kind is 'fact', 'backward' or 'forward'; body is a list of goals.
+    kind is 'fact', 'backward', 'forward', 'query' or 'contradiction'; body is
+    a list of goals.
     """
     __slots__ = ('kind', 'head', 'body', 'line', 'file')
 
@@ -57,15 +62,19 @@ class Program:
         for ordinal, source in enumerate(self.sources, 1):
             if ordinal == without:
                 continue
-            forward = source.kind == 'forward'
+            forward = source.kind in FORWARD_KINDS
             body = []
             for goal in source.body:
                 _push_goals(goal, body)
             if forward and not body:
-                raise PeyeError(f'line {source.line}: a forward rule needs a body')
+                raise PeyeError(f'line {source.line}: {FORWARD_KINDS[source.kind]} needs at least one goal')
             if source.kind == 'fact' and body:
                 raise PeyeError(f'line {source.line}: a fact has no body')
             heads = flatten_conjunction(source.head) if forward else [source.head]
+            if source.kind == 'forward' and any(item in ('true', 'false') for item in heads):
+                # query() and contradiction() state these, and say so.
+                raise PeyeError(f"line {source.line}: implies() cannot conclude 'true' or 'false'; "
+                                f"write query(Premise) or contradiction(Premise)")
             for goal in body:
                 if not stratifying and _may_need_stratifying(goal):
                     stratifying = True

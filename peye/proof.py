@@ -23,6 +23,11 @@ from .writer import Lettering, letter_name, write, write_noting_variables
 def clause_display(clause):
     """A clause as the program states it."""
     if clause.forward:
+        # A query or a contradiction is displayed as the statement that wrote it.
+        if clause.head == 'true':
+            return Struct('query', tuple(clause.body))
+        if clause.head == 'false':
+            return Struct('contradiction', tuple(clause.body))
         return Struct('implies', (conjunction(clause.body), clause.head))
     if clause.body:
         return Struct('implied_by', (clause.head, conjunction(clause.body)))

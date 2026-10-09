@@ -220,7 +220,7 @@ step(q(1), clause(2), {'X': 1}, [p(1)])
 step(p(1), clause(1), {}, [])
 
 === a halted run's proof claims what it derived and false
-spec: 10.1
+spec: 10.1, 10.2
 args: --proof program.py
 exit: 65
 --- program.py
@@ -231,7 +231,7 @@ contradiction(account(O, B), B < 0)
 'false'
 
 clause(1, fact(account('bob', -5)))
-clause(2, implies(account(O, B) & (B < 0), 'false'))
+clause(2, contradiction(account(O, B), B < 0))
 
 step('false', clause(2), {'O': 'bob', 'B': -5}, [account('bob', -5), -5 < 0])
 step(account('bob', -5), clause(1), {}, [])

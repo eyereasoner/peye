@@ -120,10 +120,26 @@ clauses with these calls:
 | `implied_by(Conclusion, Premise)` | A backward rule, N3's `<=`: `Conclusion` holds when `Premise` does, decided when a goal asks for it. |
 | `query(*Body)` | Publish every instance of `Body` that holds. |
 | `contradiction(*Body)` | Stop with exit code 65 when `Body` holds: an integrity constraint. |
-| `facts_from(path)` | State every expression of a saved document as a fact. |
+| `facts_from(path)`, `facts_from(text=...)` | State every expression of a document as a fact, without running it. |
 
 A premise joins its goals with `&`, as N3 joins them with `.`, and so can a
-forward rule's conclusion: `implies(p(X) & q(X), r(X) & s(X))`.
+forward rule's conclusion: `implies(p(X) & q(X), r(X) & s(X))`. A conclusion
+is never `true` or `false`: `query(...)` and `contradiction(...)` say those,
+and proofs show them that way.
+
+**Data that is not a program.** Everything peye writes, conclusions, proofs
+and check reports, is a *document*: plain expressions, one per line, with no
+`from peye import *` and no `fact(...)` around them, so it cannot be imported.
+`facts_from` reads such a document as data and states each expression as a
+fact. It never executes the text, so it is also the safe way to take in data
+you do not trust; a data file written as a program would run as Python code.
+It is what lets one run reason over another, as
+[audited-grants](examples/audited-grants.py) reasons over its own check report:
+
+```python
+facts_from('data.py')                                 # a file of expressions such as score('ann', 3)
+facts_from(text=check_report(result.proof_report))    # or text, such as another run's report
+```
 
 The two kinds of rule compose. A forward rule's body may call backward
 definitions, and a backward goal may use facts that forward reasoning

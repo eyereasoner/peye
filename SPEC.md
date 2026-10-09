@@ -147,8 +147,8 @@ and primitives of Section 5, and the atoms `true`, `fail` and `false`.
 | `fact(T1, T2, ...)` | One fact per argument. |
 | `implies(Premise, Conclusion)` | A forward rule, N3's `=>`: the premise's goals are its body and the conclusion its head, which MAY join several conclusions with `&`. |
 | `implied_by(Conclusion, Premise)` | A backward rule, N3's `<=`: the conclusion is its head and the premise's goals are its body. |
-| `query(G1, G2, ...)` | The forward rule `implies(G1 & G2 & ..., 'true')`. |
-| `contradiction(G1, G2, ...)` | The forward rule `implies(G1 & G2 & ..., 'false')`. |
+| `query(G1, G2, ...)` | A forward rule with the head `'true'` and the body `G1, G2, ...`: it reports its body's instances (Section 7.2). At least one goal is REQUIRED. |
+| `contradiction(G1, G2, ...)` | A forward rule with the head `'false'` and the body `G1, G2, ...`: it halts the run (Section 7.2). At least one goal is REQUIRED. |
 | `facts_from(path)` or `facts_from(text=...)` | One fact per expression of a document (Section 9). |
 
 A body goal that is a conjunction (`&`, Section 5.1) is split into its
@@ -158,12 +158,20 @@ Clauses are numbered from 1 in the order they are stated. Each clause records
 the line of the program on which the statement stating it begins; the facts
 of `facts_from` record the line of that call.
 
+`facts_from` is how a program takes in data that is not a program: a document
+of plain expressions, one per line, such as the conclusions, proof or check
+report of another run, or data from a source that is not trusted. The
+document is read as Section 9 describes and is never executed, so it can only
+ever state facts. A data file written as a program instead (`fact(...)`
+statements) would run as Python code.
+
 A clause MUST be rejected when:
 
 - a head is not an atom or a compound;
 - a head is `step/4` or `clause/2`, which are reserved for proof documents;
-- a head is a primitive (Section 5.2) or a control (Section 5.1), except that
-  a forward rule's heads MAY be `'true'` and `'false'`;
+- a head is a primitive (Section 5.2) or a control (Section 5.1), except the
+  head `'true'` of a query and `'false'` of a contradiction; in particular a
+  conclusion of `implies` is never `'true'` or `'false'`;
 - a body goal is not a variable, an atom or a compound, or is a non-empty list.
 
 ### 4.3 Names a program does not define
@@ -539,8 +547,9 @@ as a claim, whatever its position.
 ### 10.2 Clause displays
 
 `Display` shows clause `N` as the program states it: `fact(Head)`,
-`implies(Body, Head)` or `implied_by(Head, Body)`, where `Body` is the
-clause's body goals joined left to right with `&`. Displays are not
+`implies(Body, Head)`, `implied_by(Head, Body)`, `query(G1, ...)` or
+`contradiction(G1, ...)`, where `Body` is the clause's body goals joined left
+to right with `&` and `G1, ...` are those goals themselves. Displays are not
 authority: a checker MUST compare each with the program it checks against.
 
 ### 10.3 Steps

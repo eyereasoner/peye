@@ -43,7 +43,7 @@ class Builder:
         anonymous = _Anonymous([head, *body])
         # In the order the statement writes them: a forward rule, implies(),
         # writes its premise first.
-        if kind == 'forward':
+        if kind != 'backward':
             body = [_rename_anonymous(goal, anonymous) for goal in body]
             head = _rename_anonymous(head, anonymous)
         else:
@@ -241,12 +241,12 @@ def implied_by(conclusion, premise):
 
 def query(*body):
     """Publish every instance of body that holds."""
-    _builder().add('forward', 'true', list(body))
+    _builder().add('query', 'true', list(body))
 
 
 def contradiction(*body):
     """Stop with exit code 65 when body holds: an integrity constraint."""
-    _builder().add('forward', 'false', list(body))
+    _builder().add('contradiction', 'false', list(body))
 
 
 def _goal(*goals):

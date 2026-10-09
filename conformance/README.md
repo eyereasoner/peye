@@ -26,7 +26,7 @@ the topic of each.
 | File | SPEC | Cases | What it tests |
 | --- | --- | --- | --- |
 | [03-terms.txt](03-terms.txt) | 3 | 22 | Unification, the occurs check, integers and finite floats, lists, the standard order |
-| [04-programs.txt](04-programs.txt) | 4 | 40 | Statements, clause numbering, names a program leaves undefined, rejected clauses, stratification |
+| [04-programs.txt](04-programs.txt) | 4 | 42 | Statements, clause numbering, names a program leaves undefined, rejected clauses, stratification |
 | [05-controls-and-primitives.txt](05-controls-and-primitives.txt) | 5 | 47 | Every control and primitive, and the errors of their flow patterns |
 | [06-arithmetic.txt](06-arithmetic.txt) | 6 | 28 | Python's meaning of every operator and function, exact integers, and each error |
 | [07-reasoning.txt](07-reasoning.txt) | 7 | 29 | Search order, forward rounds, Skolem terms, conclusions, halting, bounds |
