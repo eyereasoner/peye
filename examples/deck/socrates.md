@@ -26,7 +26,7 @@ implies(type(S, A) & subclass_of(A, B), type(S, B))
 ```
 
 The rule reads: *if S is an A, and every A is a B, then S is a B.*
-`implies(premise, conclusion)` is N3's `=>`: whenever the premise holds,
+`implies(premise, conclusion)` is a forward rule: whenever the premise holds,
 conclude the conclusion, and keep applying it until nothing new follows.
 Names in quotes, like `'socrates'`, are plain values; capitalized names like
 `S`, `A` and `B` are variables, and `type` and `subclass_of` are the

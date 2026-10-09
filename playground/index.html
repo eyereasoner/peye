@@ -114,9 +114,9 @@
     import { colorize, escapeHtml } from './python-highlight.js';
     import { pack, unpack } from './share.js';
 
-    const FALLBACK_SOURCE = `# Facts and rules are Python. implies(Premise, Conclusion), N3's =>,
-# concludes until nothing new follows; implied_by(Conclusion, Premise),
-# N3's <=, is decided when a goal asks for it.
+    const FALLBACK_SOURCE = `# Facts and rules are Python. implies(Premise, Conclusion) concludes
+# until nothing new follows; implied_by(Conclusion, Premise) is decided
+# when a goal asks for it.
 from peye import *
 
 fact(parent('alice', 'bob'))

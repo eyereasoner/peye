@@ -279,7 +279,7 @@ than clock readings, and the example passes strict proof checking.
 The classics from `ackermann.py` to `teleportation.py` are written without a
 library. Relations such as `between`, `member` or `length` are defined in
 each program as ordinary clauses, and a search commits with `once`, or with
-guards that make its alternatives exclusive, where Prolog would use cut.
+guards that make its alternatives exclusive.
 
 `ackermann.py` computes A(4, 2), a number with 19,729 digits, through the
 hyperoperation sequence: addition, multiplication and exponentiation have closed

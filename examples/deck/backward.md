@@ -28,9 +28,9 @@ implied_by(more_interesting(X, Y), X > Y)
 implies(more_interesting(5, 3), indeed_more_interesting(5, 3))
 ```
 
-- `implied_by` is a **backward definition**, N3's `<=`: X is more interesting
+- `implied_by` is a **backward definition**: X is more interesting
   than Y *if* X > Y. peye only uses it when some question needs it.
-- `implies` is a **forward rule**, N3's `=>`: if 5 is more interesting than 3, then
+- `implies` is a **forward rule**: if 5 is more interesting than 3, then
   record that it is *indeed* more interesting.
 
 ---

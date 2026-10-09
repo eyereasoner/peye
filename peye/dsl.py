@@ -228,13 +228,13 @@ def fact(*terms):
 
 
 def implies(premise, conclusion):
-    """A forward rule, N3's =>: whenever premise holds, conclude conclusion,
+    """A forward rule: whenever premise holds, conclude conclusion,
     until nothing new follows. Both may join several goals with &."""
     _builder().add('forward', conclusion, [premise])
 
 
 def implied_by(conclusion, premise):
-    """A backward rule, N3's <=: conclusion holds when premise does, decided
+    """A backward rule: conclusion holds when premise does, decided
     when a goal asks for it. premise may join several goals with &."""
     _builder().add('backward', conclusion, [premise])
 
@@ -516,8 +516,8 @@ def _statements_nothing(source, filename, names):
 
 
 # Statements of earlier versions, and what states the same clause now.
-_RENAMED = {'forward': 'implies(Premise, Conclusion), premise first as in N3\'s =>',
-            'backward': 'implied_by(Conclusion, Premise), as in N3\'s <='}
+_RENAMED = {'forward': 'implies(Premise, Conclusion), premise first',
+            'backward': 'implied_by(Conclusion, Premise)'}
 
 _RENAMED_CALL = re.compile(r'^[ \t]*(forward|backward)[ \t]*\(', re.MULTILINE)
 _LEADING_CALL = re.compile(r'^([^\W\d]\w*)[ \t]*\(', re.MULTILINE)

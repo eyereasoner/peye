@@ -116,14 +116,13 @@ clauses with these calls:
 | Call | Meaning |
 | --- | --- |
 | `fact(*Heads)` | Each `Head` holds; one fact per argument. |
-| `implies(Premise, Conclusion)` | A forward rule, N3's `=>`: whenever `Premise` holds, conclude `Conclusion`, until nothing new follows. |
-| `implied_by(Conclusion, Premise)` | A backward rule, N3's `<=`: `Conclusion` holds when `Premise` does, decided when a goal asks for it. |
+| `implies(Premise, Conclusion)` | A forward rule: whenever `Premise` holds, conclude `Conclusion`, until nothing new follows. |
+| `implied_by(Conclusion, Premise)` | A backward rule: `Conclusion` holds when `Premise` does, decided when a goal asks for it. |
 | `query(*Body)` | Publish every instance of `Body` that holds. |
 | `contradiction(*Body)` | Stop with exit code 65 when `Body` holds: an integrity constraint. |
 | `facts_from(path)`, `facts_from(text=...)` | State every expression of a document as a fact, without running it. |
 
-A premise joins its goals with `&`, as N3 joins them with `.`, and so can a
-forward rule's conclusion: `implies(p(X) & q(X), r(X) & s(X))`. A conclusion
+A premise joins its goals with `&`, and so can a forward rule's conclusion: `implies(p(X) & q(X), r(X) & s(X))`. A conclusion
 is never `true` or `false`: `query(...)` and `contradiction(...)` say those,
 and proofs show them that way.
 

@@ -145,8 +145,8 @@ and primitives of Section 5, and the atoms `true`, `fail` and `false`.
 | Statement | Clause stated |
 | --- | --- |
 | `fact(T1, T2, ...)` | One fact per argument. |
-| `implies(Premise, Conclusion)` | A forward rule, N3's `=>`: the premise's goals are its body and the conclusion its head, which MAY join several conclusions with `&`. |
-| `implied_by(Conclusion, Premise)` | A backward rule, N3's `<=`: the conclusion is its head and the premise's goals are its body. |
+| `implies(Premise, Conclusion)` | A forward rule: the premise's goals are its body and the conclusion its head, which MAY join several conclusions with `&`. |
+| `implied_by(Conclusion, Premise)` | A backward rule: the conclusion is its head and the premise's goals are its body. |
 | `query(G1, G2, ...)` | A forward rule with the head `'true'` and the body `G1, G2, ...`: it reports its body's instances (Section 7.2). At least one goal is REQUIRED. |
 | `contradiction(G1, G2, ...)` | A forward rule with the head `'false'` and the body `G1, G2, ...`: it halts the run (Section 7.2). At least one goal is REQUIRED. |
 | `facts_from(path)` or `facts_from(text=...)` | One fact per expression of a document (Section 9). |
