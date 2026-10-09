@@ -1,7 +1,7 @@
 import re
 import unittest
 
-from peye import check_proof, run
+from peye import check_proof, public_report, run
 
 from helpers import program
 
@@ -19,6 +19,40 @@ def proof():
 
 
 class Proofs(unittest.TestCase):
+    def test_flat_resolution_agrees_with_the_general_checker(self):
+        from unittest.mock import patch
+        source = program('''
+fact(p('a', 1), p('b', 1.0))
+implied_by(q(X, Y, X), p(X, Y))
+query(q(X, Y, X))
+''')
+        document = run(source, proof=True).proof
+        documents = [document]
+        for original, altered in [("{'X': 'a', 'Y': 1}", '{}'),
+                                  ("{'X': 'a', 'Y': 1}", "{'unknown': 'a'}"),
+                                  ("{'X': 'a', 'Y': 1}", "{'X': 'b', 'Y': 1}"),
+                                  ("{'X': 'a', 'Y': 1}", "{'X': A, 'Y': 1}"),
+                                  ("{'X': 'a', 'Y': 1}", "{'X': 'a', 'Y': 1.0}"),
+                                  ("[p('a', 1)]", "[p('b', 1)]"),
+                                  ("q('a', 1, 'a')", "q('a', 1, 'b')"),
+                                  ("q('a', 1, 'a')", "q(A, 1, A)"),
+                                  ("q('a', 1, 'a')", "q(f('a'), 1, f('a'))")]:
+            self.assertIn(original, document)
+            documents.append(document.replace(original, altered))
+        for document in documents:
+            with self.subTest(document=document):
+                fast = check_proof(source, document)
+                with patch('peye.proof._flat_resolution', return_value=None):
+                    general = check_proof(source, document)
+                self.assertEqual(public_report(fast), public_report(general))
+
+    def test_identity_keeps_the_sign_of_zero_in_displays_and_steps(self):
+        source = program("fact(p(0.0))\nquery(p(X))")
+        document = run(source, proof=True).proof
+        self.assertTrue(check_proof(source, document)['valid'])
+        self.invalid(document.replace('clause(1, fact(p(0.0)))', 'clause(1, fact(p(-0.0)))'), 'C1', source)
+        self.invalid(document.replace('step(p(0.0)', 'step(p(-0.0)'), 'C1', source)
+
     def invalid(self, document, condition, source=SOURCE):
         report = check_proof(source, document)
         self.assertFalse(report['valid'])

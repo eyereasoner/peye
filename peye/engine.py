@@ -225,6 +225,12 @@ class Solver:
                      frame.parent, frame.pending, frame.depth)
 
     def child_frame(self, parent, goals, pending, depth):
+        # A last goal can return straight to its caller when there is no
+        # proof step or control cut to finish. Choice points still retain
+        # their own frames, so alternatives backtrack normally.
+        if (not self.recording and (pending is QUIET or pending is SPLICE) and
+                parent.index + 1 == len(parent.goals)):
+            return Frame(goals, 0, NO_NODES, parent.parent, parent.pending, depth)
         return Frame(goals, 0, () if self.recording else NO_NODES, parent, pending, depth)
 
     def control_pending(self, goal, cut):

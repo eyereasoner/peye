@@ -140,6 +140,17 @@ class Syntax(unittest.TestCase):
         self.assertIsNotNone(direct, 'every saved line can be read directly')
         self.assertEqual([(write(t), n) for t, n in direct], [(write(t), n) for t, n in ast_terms(text)])
 
+    def test_large_documents_keep_line_numbers_anonymous_names_and_fallback(self):
+        text = '\n'.join('f(_, _)\n' for _ in range(600))
+        self.assertEqual([(write(t), n) for t, n in read_terms(text)],
+                         [(write(t), n) for t, n in ast_terms(text)])
+        # A multiline expression crossing a token batch still uses the full reader.
+        text = 'p()\n' * 511 + 'f(\n X)\n'
+        self.assertEqual([(write(t), n) for t, n in read_terms(text)],
+                         [(write(t), n) for t, n in ast_terms(text)])
+        with self.assertRaisesRegex(PeyeError, r'^line 514: a float term must be finite'):
+            read_terms('p()\n' * 513 + 'p(1e999)')
+
     def test_the_direct_reading_agrees_with_ast_or_steps_aside(self):
         from peye.reader import _read_lines
         cases = CASES + [

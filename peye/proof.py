@@ -39,7 +39,9 @@ def _resolves_to(term, env, target):
     pending = [term, target]
     while pending:
         expected = pending.pop()
-        actual = deref(pending.pop(), env)
+        actual = pending.pop()
+        if type(actual) is Var:
+            actual = deref(actual, env)
         kind = type(actual)
         if kind is not type(expected):
             return False
@@ -52,7 +54,8 @@ def _resolves_to(term, env, target):
         elif kind is Var:
             if actual.name != expected.name:
                 return False
-        elif actual != expected:
+        elif actual != expected or (kind is float and repr(actual) != repr(expected)):
+            # Identical means the same canonical text: 0.0 and -0.0 differ.
             return False
     return True
 
@@ -224,6 +227,7 @@ def _read_document(program, document, fail, spell):
     clause/2 records are compared with the source."""
     claims = []
     steps = {}
+    empty = Env()
     try:
         for term, _ in read_terms(document):
             if is_term(term, 'clause', 2):
@@ -231,15 +235,15 @@ def _read_document(program, document, fail, spell):
                 clause_id = term.args[0]
                 clause = (program.clauses[clause_id - 1]
                           if type(clause_id) is int and 1 <= clause_id <= len(program.clauses) else None)
-                if clause is None or text(term.args[1]) != text(clause_display(clause)):
+                if clause is None or not _resolves_to(term.args[1], empty, clause_display(clause)):
                     fail('C1', 'clause display differs from source', term)
                 continue
             if not is_term(term, 'step', 4):
                 claims.append(term)
                 continue
             goal, by, binding_list, use_list = term.args
-            bindings = proper_list_items(binding_list, Env())
-            uses = proper_list_items(use_list, Env())
+            bindings = proper_list_items(binding_list, empty)
+            uses = proper_list_items(use_list, empty)
             if bindings is None or uses is None:
                 fail('C3', 'step bindings must be a dictionary and uses a list', goal)
                 continue
@@ -330,6 +334,50 @@ BUILTIN_BY = 'builtin'
 CONTROL_BY = 'control'
 
 
+def _flat_resolution(clause, goal, bindings, uses):
+    """Check a ground instance of a flat backward clause by substitution.
+
+    None delegates structured arguments, proof variables and forward heads
+    to the general unifier. Flat ground steps need neither renamed terms nor
+    a substitution trail: source variables can be matched directly.
+    """
+    if clause.forward:
+        return None
+    values = {}
+    for binding in bindings:
+        if (not is_term(binding, '=', 2) or type(binding.args[0]) is not str or
+                binding.args[0] in values):
+            return False
+        if type(binding.args[1]) not in (str, int, float):
+            return None
+        values[binding.args[0]] = binding.args[1]
+    declared = set(values)
+    names = set()
+    if len(clause.body) != len(uses):
+        return False
+    for pattern, target in zip([clause.head, *clause.body], [goal, *uses]):
+        if type(pattern) is Var or type(target) is Var:
+            return None
+        if type(pattern) is Struct and type(target) is Struct:
+            if pattern.name != target.name or len(pattern.args) != len(target.args):
+                return False
+            for expected, actual in zip(pattern.args, target.args):
+                if type(expected) is Struct or type(actual) in (Struct, Var):
+                    return None
+                if type(expected) is Var:
+                    names.add(expected.name)
+                    if expected.name not in values:
+                        values[expected.name] = actual
+                        continue
+                    expected = values[expected.name]
+                if (type(expected) is not type(actual) or expected != actual or
+                        (type(actual) is float and repr(expected) != repr(actual))):
+                    return False
+        elif type(pattern) is not type(target) or pattern != target:
+            return False
+    return declared <= names
+
+
 def _check_resolution(program, step, fail):
     """C1: a clause step names a source clause, its bindings name
     distinct variables of that clause, and under them one of the clause's
@@ -341,6 +389,11 @@ def _check_resolution(program, step, fail):
     if clause is None:
         fail('C1', f'unknown clause {text(by)}', goal)
         return False
+    flat = _flat_resolution(clause, goal, bindings, uses)
+    if flat is not None:
+        if not flat:
+            fail('C1', f'not an instance of source clause {clause_id}: {text(goal)}', goal)
+        return flat
     head, body, names = fresh_clause(clause, f'check{clause_id}')
     env = Env()
     seen = set()

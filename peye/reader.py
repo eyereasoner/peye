@@ -239,32 +239,21 @@ def _parse_document(text, reader):
     which each line ends with an 'end' token."""
     if '\r' in text or '\x00' in text:
         raise _NotSimple
-    texts = []
-    kinds = []
-    lines = []
-    numbers = []
-    for number, line in enumerate(text.split('\n'), 1):
-        if not line.strip(' \t'):
-            continue
-        if line[0] in ' \t':
-            raise _NotSimple  # Python reads an indented line as an error
-        for m in _TOKEN.finditer(line.rstrip(' \t')):
-            kind = m.lastgroup
-            if kind == 'other':
-                raise _NotSimple
-            texts.append(m.group(kind))
-            kinds.append(kind)
-            lines.append(number)
-        texts.append('')
-        kinds.append('end')
-        lines.append(number)
-        numbers.append(number)
-    n = len(texts)
-    pos = 0
+    texts, kinds, lines = [], [], []
+    n = pos = 0
 
     def expression():
         nonlocal pos
-        left = binary(1)
+        # Most document expressions are calls or literals followed by a
+        # delimiter. They need no operator-precedence descent.
+        if pos < n and kinds[pos] != 'op':
+            left, literal = primary()
+            if pos >= n or kinds[pos] != 'op':
+                return left
+            left = power(left, literal)[0]
+        else:
+            left = unary()[0]
+        left = binary_tail(left, 1)
         if pos < n and kinds[pos] == 'op' and texts[pos] in _COMPARE:
             op = texts[pos]
             pos += 1
@@ -275,8 +264,10 @@ def _parse_document(text, reader):
         return left
 
     def binary(minimum):
+        return binary_tail(unary()[0], minimum)
+
+    def binary_tail(left, minimum):
         nonlocal pos
-        left = unary()[0]
         while pos < n and kinds[pos] == 'op':
             entry = _BINARY.get(texts[pos])
             if entry is None or entry[0] < minimum:
@@ -295,6 +286,10 @@ def _parse_document(text, reader):
                 return -operand, False
             return Struct(_UNARY[op], (operand,)), False
         base, literal = primary()
+        return power(base, literal)
+
+    def power(base, literal):
+        nonlocal pos
         if pos < n and kinds[pos] == 'op' and texts[pos] == '**':
             pos += 1
             return Struct('**', (base, unary()[0])), False
@@ -397,11 +392,37 @@ def _parse_document(text, reader):
             return result, False
         raise _NotSimple
 
+    # Reuse the parser's closures across bounded token batches. Keeping a
+    # whole large proof's tokens alive adds substantial memory and GC work.
+    source_lines = text.split('\n')
     out = []
-    for number in numbers:
-        term = expression()
-        if kinds[pos] != 'end':
-            raise _NotSimple
-        pos += 1
-        out.append((term, number))
+    for start in range(0, len(source_lines), 512):
+        texts = []
+        kinds = []
+        lines = []
+        numbers = []
+        for number, line in enumerate(source_lines[start:start + 512], start + 1):
+            if not line.strip(' \t'):
+                continue
+            if line[0] in ' \t':
+                raise _NotSimple  # Python reads an indented line as an error
+            for m in _TOKEN.finditer(line.rstrip(' \t')):
+                kind = m.lastgroup
+                if kind == 'other':
+                    raise _NotSimple
+                texts.append(m.group(kind))
+                kinds.append(kind)
+                lines.append(number)
+            texts.append('')
+            kinds.append('end')
+            lines.append(number)
+            numbers.append(number)
+        n = len(texts)
+        pos = 0
+        for number in numbers:
+            term = expression()
+            if kinds[pos] != 'end':
+                raise _NotSimple
+            pos += 1
+            out.append((term, number))
     return out

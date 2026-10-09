@@ -327,8 +327,12 @@ def unify(left, right, env):
     """Unify on finite trees: the occurs check always applies."""
     pending = [left, right]
     while pending:
-        b = deref(pending.pop(), env)
-        a = deref(pending.pop(), env)
+        b = pending.pop()
+        a = pending.pop()
+        if type(b) is Var:
+            b = deref(b, env)
+        if type(a) is Var:
+            a = deref(a, env)
         if a is b:
             continue
         ta = type(a)
@@ -352,8 +356,16 @@ def unify(left, right, env):
             args_a = a.args
             args_b = b.args
             for i in range(len(args_a) - 1, -1, -1):
-                pending.append(args_a[i])
-                pending.append(args_b[i])
+                arg_a, arg_b = args_a[i], args_b[i]
+                if arg_a is arg_b:
+                    continue
+                kind_a, kind_b = type(arg_a), type(arg_b)
+                if kind_a is not Var and kind_a is not Struct and kind_b is not Var:
+                    if kind_a is not kind_b or arg_a != arg_b:
+                        return False
+                    continue
+                pending.append(arg_a)
+                pending.append(arg_b)
         elif a != b:
             return False
     return True
@@ -376,7 +388,14 @@ def fresh_term(term, suffix, names=None):
     copied = None
     for index, arg in enumerate(args):
         kind = type(arg)
-        copy = arg if (kind is not Var and kind is not Struct) else fresh_term(arg, suffix, names)
+        if kind is Var:
+            copy = names.get(arg.name)
+            if copy is None:
+                copy = names[arg.name] = Var(f'{arg.name}#{suffix}')
+        elif kind is Struct:
+            copy = fresh_term(arg, suffix, names)
+        else:
+            copy = arg
         if copied is None:
             if copy is arg:
                 continue

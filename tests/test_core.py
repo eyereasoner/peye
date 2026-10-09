@@ -11,6 +11,37 @@ def example(name):
 
 
 class Core(unittest.TestCase):
+    def test_deep_branching_taxonomy_answers_proves_and_checks(self):
+        source = program('''
+fact(type('a', 'n0'), type('b', 'n0'))
+for level in range(1, 2049):
+    implied_by(type(X, f'n{level}'), type(X, f'n{level - 1}'))
+    implied_by(type(X, f'i{level}'), type(X, f'n{level - 1}'))
+    implied_by(type(X, f'j{level}'), type(X, f'n{level - 1}'))
+query(type(X, 'n2048'))
+''')
+        plain = run(source)
+        certified = proven(self, source)
+        self.assertEqual(plain.answers, ["type('a', 'n2048')", "type('b', 'n2048')"])
+        self.assertEqual(plain.answers, certified.answers)
+        self.assertEqual(plain.stats, certified.stats)
+
+    def test_tail_calls_preserve_alternatives_and_once_cuts(self):
+        source = program('''
+fact(p('a'), p('b'))
+implied_by(inner(X), p(X))
+implied_by(outer(X), inner(X))
+''')
+        for goal, count in [('outer(X)', 2), ('once(outer(X)) & p(Y)', 2),
+                            ('outer(X) & once(p(Y))', 2),
+                            ("once(outer(X) & unify(X, 'b'))", 1),
+                            ('once(outer(X)) | outer(X)', 2)]:
+            with self.subTest(goal=goal):
+                plain = run(source, goal=goal)
+                certified = proven(self, source, goal=goal)
+                self.assertEqual(plain.answers, certified.answers)
+                self.assertEqual(len(plain.answers), count)
+
     def test_standalone_forward_inference_and_proof(self):
         self.assertEqual(proven(self, example('socrates')).answers,
                          ["type('socrates', 'mortal')", "type('socrates', 'human')"])
